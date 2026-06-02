@@ -1,0 +1,247 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Fonts */
+  --font-display: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Color Palette (Golden-Green Heritage Theme) */
+  --color-brand-primary: #bfa15f;    /* Heritage Gold */
+  --color-brand-secondary: #0f5132;  /* Traditional Forest Green */
+  --color-brand-accent: #dc3545;     /* Crimson Red for accents/celebration */
+
+  /* Light Theme Variables */
+  --bg-app: radial-gradient(circle at top left, #faf8f5, #f5f0e6);
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --border-card: rgba(191, 161, 95, 0.2);
+  --text-primary: #2d261e;
+  --text-secondary: #605244;
+  --text-muted: #8d7e6f;
+  --bg-input: rgba(255, 255, 255, 0.9);
+  --shadow-sm: 0 4px 6px -1px rgba(191, 161, 95, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(191, 161, 95, 0.1);
+  --shadow-lg: 0 20px 25px -5px rgba(191, 161, 95, 0.15);
+  --bg-nav: rgba(255, 255, 255, 0.7);
+  --glass-blur: blur(12px);
+  --node-deceased-bg: #eceae6;
+  --node-deceased-border: #8d7e6f;
+  --node-deceased-text: #605244;
+  --node-living-male-bg: #e6f0fa;
+  --node-living-male-border: #4a90e2;
+  --node-living-female-bg: #fae6f0;
+  --node-living-female-border: #e24a90;
+
+  /* Status colors */
+  --color-active: #28a745;
+  --color-deceased: #495057;
+
+  /* Common transitions */
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] {
+  --bg-app: radial-gradient(circle at top left, #121410, #1b1e17);
+  --bg-card: rgba(30, 35, 28, 0.75);
+  --bg-card-hover: rgba(40, 46, 38, 0.9);
+  --border-card: rgba(191, 161, 95, 0.15);
+  --text-primary: #f5f0e6;
+  --text-secondary: #c2baa8;
+  --text-muted: #8c8270;
+  --bg-input: rgba(20, 24, 18, 0.8);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  --bg-nav: rgba(20, 24, 18, 0.6);
+  --node-deceased-bg: #2d261e;
+  --node-deceased-border: #605244;
+  --node-deceased-text: #c2baa8;
+  --node-living-male-bg: rgba(74, 144, 226, 0.15);
+  --node-living-male-border: #4a90e2;
+  --node-living-female-bg: rgba(226, 74, 144, 0.15);
+  --node-living-female-border: #e24a90;
+}
+
+/* Reset & Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-app);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--transition-normal);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-card);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-primary);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-card);
+  box-shadow: var(--shadow-md);
+  transition: background var(--transition-normal), border var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.glass-hover:hover {
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-brand-primary);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(50px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-fade {
+  animation: fadeIn var(--transition-normal) forwards;
+}
+
+.animate-slide-up {
+  animation: slideInUp var(--transition-normal) forwards;
+}
+
+.animate-slide-right {
+  animation: slideInRight var(--transition-normal) forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp var(--transition-normal) forwards;
+}
+
+/* Common Layouts */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-primary {
+  background: rgba(191, 161, 95, 0.15);
+  color: var(--color-brand-primary);
+  border: 1px solid rgba(191, 161, 95, 0.3);
+}
+
+.badge-success {
+  background: rgba(40, 167, 69, 0.15);
+  color: var(--color-active);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.badge-secondary {
+  background: rgba(141, 126, 111, 0.15);
+  color: var(--text-muted);
+  border: 1px solid rgba(141, 126, 111, 0.3);
+}
+
+/* Tooltip style */
+.tooltip-container {
+  position: relative;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #2d261e;
+  color: #fff;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 1000;
+}
+
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.tooltip-container.tooltip-bottom .tooltip-text {
+  bottom: auto;
+  top: calc(100% + 8px);
+}

@@ -1,0 +1,231 @@
+import React from "react";
+import { getAge, getGenderLabel } from "../utils/mockData";
+
+export default function Sidebar({
+  personId,
+  members,
+  onSelectPerson,
+  onClose,
+  onEditPerson,
+  onAddRelative,
+  currentUser
+}) {
+  const person = members.find((m) => m.id === personId);
+  if (!person) return null;
+
+  const age = getAge(person.birthDate, person.deathDate, person.isDeceased);
+
+  // Retrieve relations
+  const father = members.find((m) => m.id === person.fatherId);
+  const mother = members.find((m) => m.id === person.motherId);
+  
+  // Spouses
+  const spouses = members.filter((m) => person.spouseIds?.includes(m.id));
+
+  // Children
+  const children = members.filter((m) => m.fatherId === person.id || m.motherId === person.id);
+
+  const canEdit = currentUser?.role === "admin" || currentUser?.role === "editor";
+
+  return (
+    <aside className="sidebar glass">
+      <div className="sidebar-handle-bar"></div>
+      <div className="sidebar-header">
+        <h3>Hồ sơ Thành viên</h3>
+        <button className="sidebar-close" onClick={onClose}>
+          ❌
+        </button>
+      </div>
+
+      <div className="sidebar-body">
+        {/* Profile Card Hero */}
+        <div className="profile-hero animate-scale-up">
+          <div className={`profile-avatar ${person.isDeceased ? "deceased" : ""}`}>
+            {person.avatar ? (
+              <img
+                src={person.avatar}
+                alt={person.name}
+                className="profile-avatar"
+                style={{ border: "none" }}
+              />
+            ) : (
+              person.name.trim().split(" ").pop().charAt(0)
+            )}
+          </div>
+          <h2 className="profile-name">{person.name}</h2>
+          
+          <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+            <span className="badge badge-primary">Đời thứ {person.generation}</span>
+            {person.isDeceased ? (
+              <span className="badge badge-secondary">🕯️ Đã khuất</span>
+            ) : (
+              <span className="badge badge-success">🟢 Còn sống</span>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          {canEdit && (
+            <div className="profile-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => onEditPerson(person)}
+                title="Chỉnh sửa hồ sơ"
+              >
+                📝 Sửa
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => onAddRelative(person)}
+                title="Thêm quan hệ gia đình"
+              >
+                ➕ Thêm thân nhân
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Section 1: Tiểu sử */}
+        <div className="info-section">
+          <h4>ℹ️ Thông tin cá nhân</h4>
+          <div className="info-grid">
+            <span className="info-label">Giới tính:</span>
+            <span className="info-value">{getGenderLabel(person.gender)}</span>
+
+            <span className="info-label">Ngày sinh:</span>
+            <span className="info-value">
+              {person.birthDate ? new Date(person.birthDate).toLocaleDateString("vi-VN") : "Chưa rõ"}
+            </span>
+
+            {person.isDeceased ? (
+              <>
+                <span className="info-label">Ngày mất:</span>
+                <span className="info-value">
+                  {person.deathDate ? new Date(person.deathDate).toLocaleDateString("vi-VN") : "Chưa rõ"}
+                </span>
+                <span className="info-label">Thọ/Hưởng thọ:</span>
+                <span className="info-value">{age !== null ? `${age} tuổi` : "Chưa rõ"}</span>
+                <span className="info-label">Nơi an nghỉ:</span>
+                <span className="info-value">{person.restingPlace || "Chưa rõ"}</span>
+              </>
+            ) : (
+              <>
+                <span className="info-label">Tuổi hiện tại:</span>
+                <span className="info-value">{age !== null ? `${age} tuổi` : "Chưa rõ"}</span>
+                {person.phone && (
+                  <>
+                    <span className="info-label">Điện thoại:</span>
+                    <span className="info-value">{person.phone}</span>
+                  </>
+                )}
+                {person.address && (
+                  <>
+                    <span className="info-label">Địa chỉ:</span>
+                    <span className="info-value">{person.address}</span>
+                  </>
+                )}
+              </>
+            )}
+
+            <span className="info-label">Nơi sinh:</span>
+            <span className="info-value">{person.birthPlace || "Chưa rõ"}</span>
+
+            <span className="info-label">Nghề nghiệp:</span>
+            <span className="info-value">{person.occupation || "Chưa rõ"}</span>
+          </div>
+        </div>
+
+        {/* Section 2: Tóm tắt cuộc đời */}
+        <div className="info-section">
+          <h4>📜 Tiểu sử & Ghi chú</h4>
+          <p style={{ fontSize: "0.85rem", lineHeight: "1.5", color: "var(--text-secondary)" }}>
+            {person.bio || "Chưa có thông tin tiểu sử chi tiết."}
+          </p>
+        </div>
+
+        {/* Section 3: Quan hệ trực hệ */}
+        <div className="info-section">
+          <h4>👥 Mối quan hệ trực hệ</h4>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+            {/* Parents */}
+            {(father || mother) && (
+              <div>
+                <p className="info-label" style={{ fontSize: "0.75rem", marginBottom: "4px" }}>Cha mẹ:</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  {father && (
+                    <div className="relation-item" onClick={() => onSelectPerson(father.id)}>
+                      <div className={`relation-avatar ${father.isDeceased ? "deceased" : ""}`}>
+                        {father.name.substring(0, 1)}
+                      </div>
+                      <div className="relation-details">
+                        <span className="relation-name">{father.name}</span>
+                        <span className="relation-role">Cha</span>
+                      </div>
+                    </div>
+                  )}
+                  {mother && (
+                    <div className="relation-item" onClick={() => onSelectPerson(mother.id)}>
+                      <div className={`relation-avatar ${mother.isDeceased ? "deceased" : ""}`}>
+                        {mother.name.substring(0, 1)}
+                      </div>
+                      <div className="relation-details">
+                        <span className="relation-name">{mother.name}</span>
+                        <span className="relation-role">Mẹ</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Spouses */}
+            {spouses.length > 0 && (
+              <div>
+                <p className="info-label" style={{ fontSize: "0.75rem", marginBottom: "4px" }}>Bạn đời:</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {spouses.map((spouse) => (
+                    <div key={spouse.id} className="relation-item" onClick={() => onSelectPerson(spouse.id)}>
+                      <div className={`relation-avatar ${spouse.isDeceased ? "deceased" : ""}`}>
+                        {spouse.name.substring(0, 1)}
+                      </div>
+                      <div className="relation-details">
+                        <span className="relation-name">{spouse.name}</span>
+                        <span className="relation-role">
+                          {person.gender === "nam" ? "Vợ" : "Chồng"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Children */}
+            {children.length > 0 && (
+              <div>
+                <p className="info-label" style={{ fontSize: "0.75rem", marginBottom: "4px" }}>
+                  Con cái ({children.length}):
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {children.map((child) => (
+                    <div key={child.id} className="relation-item" onClick={() => onSelectPerson(child.id)}>
+                      <div className={`relation-avatar ${child.isDeceased ? "deceased" : ""}`}>
+                        {child.name.substring(0, 1)}
+                      </div>
+                      <div className="relation-details">
+                        <span className="relation-name">{child.name}</span>
+                        <span className="relation-role">
+                          {child.gender === "nam" ? "Con trai" : "Con gái"} (Đời thứ {child.generation})
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}

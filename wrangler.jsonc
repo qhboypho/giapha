@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "giapha-tc",
+  "compatibility_date": "2026-06-03",
+  "pages_build_output_dir": "./dist",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "giapha-tc-db",
+      "database_id": "b3e34b9d-4c3e-4613-bfd0-f1c2eb2160d5",
+      "preview_database_id": "b3e34b9d-4c3e-4613-bfd0-f1c2eb2160d5"
+    }
+  ]
+}
