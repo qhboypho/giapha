@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
+import Homepage from "./components/Homepage";
 import TreeChart from "./components/TreeChart";
 import MemberList from "./components/MemberList";
 import Sidebar from "./components/Sidebar";
@@ -24,7 +25,7 @@ export default function App() {
   });
 
   // View states
-  const [activeView, setActiveView] = useState("tree"); // "tree" or "list"
+  const [activeView, setActiveView] = useState("home"); // "home", "tree" or "list"
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState(null);
 
@@ -299,7 +300,9 @@ export default function App() {
           // Unlocked Work View
           <>
             <div className="viewport-container">
-              {activeView === "tree" ? (
+              {activeView === "home" ? (
+                <Homepage onNavigate={setActiveView} />
+              ) : activeView === "tree" ? (
                 <TreeChart
                   members={members}
                   selectedPersonId={selectedPersonId}

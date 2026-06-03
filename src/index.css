@@ -5,32 +5,41 @@
   --font-display: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* Color Palette (Golden-Green Heritage Theme) */
-  --color-brand-primary: #bfa15f;    /* Heritage Gold */
-  --color-brand-secondary: #0f5132;  /* Traditional Forest Green */
-  --color-brand-accent: #dc3545;     /* Crimson Red for accents/celebration */
+  /* Heritage Colors */
+  --heritage-red: #7A0612;
+  --heritage-gold: #BF9E55;
+  --heritage-cream: #FCF9F2;
+  --heritage-cream-card: #FFF8EF;
+  --heritage-dark-brown: #1B120C;
+  --heritage-green: #55745F;
+  --heritage-gold-border: #E2CBAF;
+
+  /* Color Palette (Golden-Red Heritage Theme) */
+  --color-brand-primary: var(--heritage-red);    /* Royal Red as primary */
+  --color-brand-secondary: var(--heritage-green);  /* Forest Green */
+  --color-brand-accent: var(--heritage-gold);     /* Gold as accent */
 
   /* Light Theme Variables */
-  --bg-app: radial-gradient(circle at top left, #faf8f5, #f5f0e6);
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --bg-card-hover: rgba(255, 255, 255, 0.95);
-  --border-card: rgba(191, 161, 95, 0.2);
-  --text-primary: #2d261e;
-  --text-secondary: #605244;
-  --text-muted: #8d7e6f;
-  --bg-input: rgba(255, 255, 255, 0.9);
-  --shadow-sm: 0 4px 6px -1px rgba(191, 161, 95, 0.05);
-  --shadow-md: 0 10px 15px -3px rgba(191, 161, 95, 0.1);
-  --shadow-lg: 0 20px 25px -5px rgba(191, 161, 95, 0.15);
-  --bg-nav: rgba(255, 255, 255, 0.7);
+  --bg-app: radial-gradient(circle at top left, var(--heritage-cream), #F0E8D9);
+  --bg-card: var(--heritage-cream-card);
+  --bg-card-hover: #FFFDF8;
+  --border-card: var(--heritage-gold-border);
+  --text-primary: #2B2118;
+  --text-secondary: #5A4E42;
+  --text-muted: #8E7F72;
+  --bg-input: #FCF9F2;
+  --shadow-sm: 0 4px 6px -1px rgba(122, 6, 18, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(122, 6, 18, 0.08);
+  --shadow-lg: 0 20px 25px -5px rgba(122, 6, 18, 0.12);
+  --bg-nav: var(--heritage-red);
   --glass-blur: blur(12px);
-  --node-deceased-bg: #eceae6;
-  --node-deceased-border: #8d7e6f;
-  --node-deceased-text: #605244;
-  --node-living-male-bg: #e6f0fa;
-  --node-living-male-border: #4a90e2;
-  --node-living-female-bg: #fae6f0;
-  --node-living-female-border: #e24a90;
+  --node-deceased-bg: #EAE3D5;
+  --node-deceased-border: #8E7F72;
+  --node-deceased-text: #5A4E42;
+  --node-living-male-bg: #E6F0FA;
+  --node-living-male-border: #4A90E2;
+  --node-living-female-bg: #FAE6F0;
+  --node-living-female-border: #E24A90;
 
   /* Status colors */
   --color-active: #28a745;
@@ -44,25 +53,30 @@
 
 /* Dark Mode Overrides */
 [data-theme="dark"] {
-  --bg-app: radial-gradient(circle at top left, #121410, #1b1e17);
-  --bg-card: rgba(30, 35, 28, 0.75);
-  --bg-card-hover: rgba(40, 46, 38, 0.9);
-  --border-card: rgba(191, 161, 95, 0.15);
-  --text-primary: #f5f0e6;
-  --text-secondary: #c2baa8;
-  --text-muted: #8c8270;
-  --bg-input: rgba(20, 24, 18, 0.8);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-  --bg-nav: rgba(20, 24, 18, 0.6);
-  --node-deceased-bg: #2d261e;
-  --node-deceased-border: #605244;
-  --node-deceased-text: #c2baa8;
+  --heritage-red: #B64235;
+  --heritage-gold: #D6A85A;
+  --heritage-cream: #17110C;
+  --heritage-cream-card: #241A12;
+
+  --bg-app: radial-gradient(circle at top left, var(--heritage-cream), #0F0A07);
+  --bg-card: var(--heritage-cream-card);
+  --bg-card-hover: #2D2017;
+  --border-card: #4B3828;
+  --text-primary: #F5E7D3;
+  --text-secondary: #D4C6B2;
+  --text-muted: #8E7F72;
+  --bg-input: #1C150F;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --bg-nav: #4A020A;
+  --node-deceased-bg: #1B120C;
+  --node-deceased-border: #4B3828;
+  --node-deceased-text: #8E7F72;
   --node-living-male-bg: rgba(74, 144, 226, 0.15);
-  --node-living-male-border: #4a90e2;
+  --node-living-male-border: #4A90E2;
   --node-living-female-bg: rgba(226, 74, 144, 0.15);
-  --node-living-female-border: #e24a90;
+  --node-living-female-border: #E24A90;
 }
 
 /* Reset & Base Styles */

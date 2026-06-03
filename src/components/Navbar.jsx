@@ -44,10 +44,16 @@ export default function Navbar({
         {/* View toggles */}
         <div className="btn-group">
           <button
+            className={`btn-tab ${activeView === "home" ? "active" : ""}`}
+            onClick={() => setActiveView("home")}
+          >
+            🏠 Trang chủ
+          </button>
+          <button
             className={`btn-tab ${activeView === "tree" ? "active" : ""}`}
             onClick={() => setActiveView("tree")}
           >
-            🌿 Sơ đồ cây
+            🌿 Cây gia phả
           </button>
           <button
             className={`btn-tab ${activeView === "list" ? "active" : ""}`}
@@ -119,16 +125,23 @@ export default function Navbar({
         {/* View Toggle */}
         <div className="btn-group" style={{ padding: "2px" }}>
           <button
+            className={`btn-tab ${activeView === "home" ? "active" : ""}`}
+            onClick={() => setActiveView("home")}
+            style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
+          >
+            🏠 Chủ
+          </button>
+          <button
             className={`btn-tab ${activeView === "tree" ? "active" : ""}`}
             onClick={() => setActiveView("tree")}
-            style={{ padding: "4px 10px", fontSize: "0.75rem", borderRadius: "15px" }}
+            style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
           >
             🌳 Cây
           </button>
           <button
             className={`btn-tab ${activeView === "list" ? "active" : ""}`}
             onClick={() => setActiveView("list")}
-            style={{ padding: "4px 10px", fontSize: "0.75rem", borderRadius: "15px" }}
+            style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
           >
             📋 Bảng
           </button>
