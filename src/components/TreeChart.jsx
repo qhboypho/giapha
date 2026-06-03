@@ -50,7 +50,7 @@ export default function TreeChart({
       const dx = Math.abs(e.clientX - clickStartCoord.current.x);
       const dy = Math.abs(e.clientY - clickStartCoord.current.y);
       if (dx < 5 && dy < 5) {
-        if (e.target.tagName === "svg" || e.target.classList.contains("tree-canvas-wrapper")) {
+        if (!e.target.closest(".member-card") && !e.target.closest(".zoom-controls")) {
           onSelectPerson(null);
         }
       }
@@ -82,7 +82,7 @@ export default function TreeChart({
       const dx = Math.abs(touch.clientX - clickStartCoord.current.x);
       const dy = Math.abs(touch.clientY - clickStartCoord.current.y);
       if (dx < 5 && dy < 5) {
-        if (e.target.tagName === "svg" || e.target.classList.contains("tree-canvas-wrapper")) {
+        if (!e.target.closest(".member-card") && !e.target.closest(".zoom-controls")) {
           onSelectPerson(null);
         }
       }
@@ -127,10 +127,14 @@ export default function TreeChart({
         <button className="zoom-btn glass glass-hover" onClick={handleReset} style={{ fontSize: "0.9rem" }}>🔄</button>
       </div>
 
-      {/* SVG Canvas */}
-      <svg className="tree-svg" width="100%" height="100%">
+      {/* SVG Canvas (Only renders connectors/lines) */}
+      <svg
+        className="tree-svg"
+        width="100%"
+        height="100%"
+        style={{ pointerEvents: "none" }}
+      >
         <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-          {/* Render lines */}
           {links.map((link) => (
             <path
               key={link.id}
@@ -138,62 +142,79 @@ export default function TreeChart({
               className={`tree-connector ${link.type === "spouse" ? "tree-connector-spouse" : ""}`}
             />
           ))}
-
-          {/* Render family cards */}
-          {nodes.map((node) => {
-            const age = getAge(node.birthDate, node.deathDate, node.isDeceased);
-            const isSelected = selectedPersonId === node.id;
-            const highlighted = isMatch(node);
-            const initial = node.name.trim().split(" ").pop().charAt(0);
-
-            return (
-              <foreignObject
-                key={node.id}
-                x={node.x}
-                y={node.y}
-                width={node.width}
-                height={node.height}
-                className="node-foreign-object"
-              >
-                <div
-                  className={`member-card glass glass-hover ${node.gender} ${
-                    node.isDeceased ? "deceased" : ""
-                  } ${isSelected ? "selected" : ""} ${highlighted ? "animate-scale-up" : ""}`}
-                  style={highlighted ? { borderColor: "var(--color-brand-accent)", borderWidth: "2.5px", boxShadow: "0 0 10px rgba(220, 53, 69, 0.5)" } : {}}
-                  onClick={() => onSelectPerson(node.id)}
-                >
-                  {/* Deceased Ribbon Indicator */}
-                  {node.isDeceased && <div className="deceased-ribbon" title="Đã qua đời" />}
-
-                  {/* Profile Avatar */}
-                  <div className="card-avatar-wrapper">
-                    {node.avatar ? (
-                      <img src={node.avatar} alt={node.name} className="card-avatar" />
-                    ) : (
-                      <div className="card-avatar">
-                        {initial}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Card Details */}
-                  <div className="card-details">
-                    <h4 className="card-name" title={node.name}>{node.name}</h4>
-                    <span className="card-meta">
-                      {node.isDeceased ? (
-                        <>🪦 Hưởng thọ {age} tuổi</>
-                      ) : (
-                        <>🎂 {age ? `${age} tuổi` : "Chưa rõ tuổi"}</>
-                      )}
-                    </span>
-                    <span className="card-gen">Đời {node.generation}</span>
-                  </div>
-                </div>
-              </foreignObject>
-            );
-          })}
         </g>
       </svg>
+
+      {/* HTML Cards Layer (Overlay matching the SVG transform) */}
+      <div
+        className="tree-html-nodes-container"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: "0 0",
+          pointerEvents: "none"
+        }}
+      >
+        {nodes.map((node) => {
+          const age = getAge(node.birthDate, node.deathDate, node.isDeceased);
+          const isSelected = selectedPersonId === node.id;
+          const highlighted = isMatch(node);
+          const initial = node.name.trim().split(" ").pop().charAt(0);
+
+          return (
+            <div
+              key={node.id}
+              style={{
+                position: "absolute",
+                left: `${node.x}px`,
+                top: `${node.y}px`,
+                width: `${node.width}px`,
+                height: `${node.height}px`,
+                pointerEvents: "auto"
+              }}
+            >
+              <div
+                className={`member-card glass glass-hover ${node.gender} ${
+                  node.isDeceased ? "deceased" : ""
+                } ${isSelected ? "selected" : ""} ${highlighted ? "animate-scale-up" : ""}`}
+                style={highlighted ? { borderColor: "var(--color-brand-accent)", borderWidth: "2.5px", boxShadow: "0 0 10px rgba(220, 53, 69, 0.5)" } : {}}
+                onClick={() => onSelectPerson(node.id)}
+              >
+                {/* Deceased Ribbon Indicator */}
+                {node.isDeceased && <div className="deceased-ribbon" title="Đã qua đời" />}
+
+                {/* Profile Avatar */}
+                <div className="card-avatar-wrapper">
+                  {node.avatar ? (
+                    <img src={node.avatar} alt={node.name} className="card-avatar" />
+                  ) : (
+                    <div className="card-avatar">
+                      {initial}
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Details */}
+                <div className="card-details">
+                  <h4 className="card-name" title={node.name}>{node.name}</h4>
+                  <span className="card-meta">
+                    {node.isDeceased ? (
+                      <>🪦 Hưởng thọ {age} tuổi</>
+                    ) : (
+                      <>🎂 {age ? `${age} tuổi` : "Chưa rõ tuổi"}</>
+                    )}
+                  </span>
+                  <span className="card-gen">Đời {node.generation}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
