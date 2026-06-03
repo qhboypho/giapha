@@ -858,6 +858,11 @@
   flex: 1;
 }
 
+.mobile-drawer-body .btn {
+  flex: none !important;
+  height: 44px;
+}
+
 .mobile-card-list {
   display: none;
   flex-direction: column;
@@ -1010,8 +1015,8 @@
   }
   
   .zoom-controls {
-    bottom: 16px;
-    left: 16px;
+    bottom: calc(40px + env(safe-area-inset-bottom));
+    left: calc(20px + env(safe-area-inset-left));
   }
 
   .sidebar-backdrop {
