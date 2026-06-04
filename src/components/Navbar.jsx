@@ -5,8 +5,10 @@ import {
   CalendarDays,
   Home,
   LogOut,
+  Moon,
   Network,
   Search,
+  Sun,
   Users
 } from "lucide-react";
 import avatarTinh from "../assets/avatar_tinh.png";
@@ -96,8 +98,12 @@ export default function Navbar({
         </button>
 
         {/* Theme Switcher */}
-        <button className="btn-icon" onClick={toggleTheme} title="Đổi giao diện">
-          <span className={theme === "light" ? "theme-mark theme-dark" : "theme-mark theme-light"} aria-hidden="true" />
+        <button className="btn-icon" onClick={toggleTheme} title={theme === "light" ? "Chuyển sang giao diện tối" : "Chuyển sang giao diện sáng"}>
+          {theme === "light" ? (
+            <Moon aria-hidden="true" strokeWidth={2.2} size={18} />
+          ) : (
+            <Sun aria-hidden="true" strokeWidth={2.2} size={18} />
+          )}
         </button>
 
         {/* User login / logout */}
@@ -217,8 +223,9 @@ export default function Navbar({
                 onClick={() => {
                   toggleTheme();
                 }}
-                style={{ width: "100%", justifyContent: "center" }}
+                style={{ width: "100%", justifyContent: "center", gap: "8px" }}
               >
+                {theme === "light" ? <Moon size={16} strokeWidth={2.2} /> : <Sun size={16} strokeWidth={2.2} />}
                 Giao diện: {theme === "light" ? "Tối" : "Sáng"}
               </button>
 

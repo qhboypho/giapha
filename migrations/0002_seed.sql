@@ -15,55 +15,51 @@ INSERT INTO users (username, password, role, fullName) VALUES
 INSERT INTO settings (key, value) VALUES
 ('private_mode', 'true');
 
--- 4. Insert Trần Công family members (Real data from diagram, 3 generations, 31 members)
+-- 4. Insert Trần Công family members (45 members)
 INSERT INTO members (id, name, gender, generation, isDeceased, birthDate, deathDate, birthPlace, restingPlace, occupation, bio, phone, address, spouseIds, fatherId, motherId) VALUES
--- Generation 1 (Patriarch & Matriarch)
-('g1_1', 'Trần Công Kỳ', 'nam', 1, 1, NULL, '1936-06-04', '', '', 'Thủy tổ chi ngành', 'Tạ thế ngày 4-6-1936. Có 5 người con (2 trai, 3 gái).', '', '', '["g1_2"]', NULL, NULL),
-('g1_2', 'Trần Thị Hiền', 'nu', 1, 1, NULL, '1959-03-20', '', '', 'Matriarch', 'Tạ thế ngày 20-3-1959.', '', '', '["g1_1"]', NULL, NULL),
-
--- Generation 2 (Children of Gen 1)
-('g2_1', 'Trần Thị Mùi', 'nu', 2, 1, NULL, NULL, '', '', '', 'Có 5 người con.', '', '', '["g2_2"]', 'g1_1', 'g1_2'),
-('g2_2', 'Trần Sỹ Pha', 'nam', 2, 1, NULL, NULL, 'Làng Mai', '', '', 'Chồng cụ Trần Thị Mùi.', '', '', '["g2_1"]', NULL, NULL),
-
-('g2_3', 'Trần Thị Sên', 'nu', 2, 1, NULL, NULL, '', '', '', 'Có 2 người con gái.', '', '', '["g2_4"]', 'g1_1', 'g1_2'),
-('g2_4', 'Trần Đình Bảng', 'nam', 2, 1, NULL, NULL, 'Cùng làng', '', '', 'Chồng cụ Trần Thị Sên.', '', '', '["g2_3"]', NULL, NULL),
-
-('g2_5', 'Trần Công Nghiêm', 'nam', 2, 1, NULL, '1980-02-02', '', '', '', 'Tạ thế ngày 2-2-1980. Có 3 con trai và 4 con gái.', '', '', '["g2_6"]', 'g1_1', 'g1_2'),
-('g2_6', 'Trần Thị Viết', 'nu', 2, 1, NULL, NULL, '', '', '', 'Vợ cụ Trần Công Nghiêm.', '', '', '["g2_5"]', NULL, NULL),
-
-('g2_7', 'Trần Thị Kỷ', 'nu', 2, 1, NULL, NULL, '', '', '', 'Có 6 người con (2 trai, 4 gái).', '', '', '["g2_8"]', 'g1_1', 'g1_2'),
-('g2_8', 'Đặng Hữu Liên', 'nam', 2, 1, NULL, NULL, 'Làng Mỹ', '', '', 'Chồng cụ Trần Thị Kỷ.', '', '', '["g2_7"]', NULL, NULL),
-
-('g2_9', 'Trần Công Kỷ', 'nam', 2, 1, NULL, NULL, '', '', '', 'Có 2 người con (1 trai, 1 gái).', '', '', '["g2_10"]', 'g1_1', 'g1_2'),
-('g2_10', 'Nguyễn Thị Khoa', 'nu', 2, 1, NULL, NULL, '', '', '', 'Vợ cụ Trần Công Kỷ.', '', '', '["g2_9"]', NULL, NULL),
-
--- Generation 3 (Children of Trần Công Nghiêm)
-('g3_1', 'Trần Thị Tý', 'nu', 3, 1, '1928-01-01', NULL, '', '', '', 'Sinh năm 1928. Có 3 trai và 1 gái.', '', '', '["g3_2"]', 'g2_5', 'g2_6'),
-('g3_2', 'Trần Văn Tiềm', 'nam', 3, 1, NULL, NULL, '', '', '', 'Chồng bà Trần Thị Tý.', '', '', '["g3_1"]', NULL, NULL),
-
-('g3_3', 'Trần Thị Vàng', 'nu', 3, 1, '1930-01-01', '1959-03-02', '', '', '', 'Sinh năm 1930. Tạ thế ngày 2-3-1959. Chưa chồng (Nhận 1 con gái).', '', '', '[]', 'g2_5', 'g2_6'),
-
-('g3_4', 'Trần Thị Hường', 'nu', 3, 1, '1932-01-01', NULL, '', '', '', 'Sinh năm 1932. Có 4 người con (3 trai, 1 gái).', '', '', '["g3_5"]', 'g2_5', 'g2_6'),
-('g3_5', 'Trần Văn Lễ', 'nam', 3, 1, NULL, NULL, '', '', '', 'Chồng bà Trần Thị Hường.', '', '', '["g3_4"]', NULL, NULL),
-
-('g3_6', 'Trần Thị Oan', 'nu', 3, 1, '1935-01-01', NULL, '', '', '', 'Sinh năm 1935. Có 4 người con (3 trai, 1 gái).', '', '', '["g3_7"]', 'g2_5', 'g2_6'),
-('g3_7', 'Trần Nhật Chước', 'nam', 3, 1, NULL, NULL, '', '', '', 'Chồng bà Trần Thị Oan.', '', '', '["g3_6"]', NULL, NULL),
-
-('g3_8', 'Trần Công Huê', 'nam', 3, 1, '1938-01-01', '1992-05-21', '', '', '', 'Sinh năm 1938. Tạ thế ngày 21-5-1992. Có 3 người con (1 trai, 2 gái).', '', '', '["g3_9"]', 'g2_5', 'g2_6'),
-('g3_9', 'Trần Thị Thức', 'nu', 3, 1, NULL, NULL, '', '', '', 'Vợ ông Trần Công Huê.', '', '', '["g3_8"]', NULL, NULL),
-
-('g3_10', 'Trần Công Bảy', 'nam', 3, 1, '1941-01-01', NULL, '', '', '', 'Sinh năm 1941. Có 5 người con (3 trai, 2 gái).', '', '', '["g3_11"]', 'g2_5', 'g2_6'),
-('g3_11', 'Trần Thị Thực', 'nu', 3, 1, NULL, NULL, '', '', '', 'Vợ ông Trần Công Bảy.', '', '', '["g3_10"]', NULL, NULL),
-
-('g3_12', 'Trần Công Tám', 'nam', 3, 0, '1944-01-01', NULL, '', '', '', 'Sinh năm 1944. Có 3 người con (1 trai, 2 gái).', '', '', '["g3_13"]', 'g2_5', 'g2_6'),
-('g3_13', 'Vợ Trần Công Tám', 'nu', 3, 0, NULL, NULL, '', '', '', 'Vợ ông Trần Công Tám.', '', '', '["g3_12"]', NULL, NULL),
-
--- Generation 3 (Children of Trần Công Kỷ)
-('g3_14', 'Trần Thị Hoa', 'nu', 3, 1, '1932-01-01', NULL, '', '', '', 'Sinh năm 1932. Có 5 người con (4 trai, 1 gái).', '', '', '["g3_15"]', 'g2_9', 'g2_10'),
-('g3_15', 'Trần Văn Tăng', 'nam', 3, 1, NULL, NULL, '', '', '', 'Chồng bà Trần Thị Hoa.', '', '', '["g3_14"]', NULL, NULL),
-
-('g3_16', 'Trần Thị Xuân', 'nu', 3, 1, '1935-01-01', NULL, '', '', '', 'Sinh năm 1935. Có 3 người con (1 trai, 2 gái).', '', '', '["g3_17"]', 'g2_9', 'g2_10'),
-('g3_17', 'Trần Văn Thắng', 'nam', 3, 1, NULL, NULL, '', '', '', 'Chồng bà Trần Thị Xuân.', '', '', '["g3_16"]', NULL, NULL),
-
-('g3_18', 'Trần Công Mợi', 'nam', 3, 1, '1937-01-01', NULL, '', '', '', 'Sinh năm 1937. Có 8 người con (3 trai, 5 gái).', '', '', '["g3_19"]', 'g2_9', 'g2_10'),
-('g3_19', 'Vợ Trần Công Mợi', 'nu', 3, 1, NULL, NULL, '', '', '', 'Vợ ông Trần Công Mợi.', '', '', '["g3_18"]', NULL, NULL);
+('g1_1', 'Trần Công Kỳ', 'nam', 1, 1, NULL, '1938-06-06', 'Mỹ Thắng - Nam Đinh', 'Nghĩa Trang Làng Sắc', 'Làm nông', 'Có 5 người con (2 trai, 3 gái).', '', '', '["g1_2"]', NULL, NULL),
+('g1_2', 'Trần Thị Hiến', 'nu', 1, 1, NULL, '1938-03-29', 'Mỹ Thắng - Nam Định', '', 'Làm nông', 'Có 5 người con (2 trai, 3 gái).', '', '', '["g1_1"]', NULL, NULL),
+('g2_1', 'Trần Thị Nụ', 'nu', 2, 1, NULL, NULL, '', '', '', 'Không có thông tin', '', '', '["g2_2"]', 'g1_1', 'g1_2'),
+('g2_10', 'Nguyễn Thị Khoa', 'nu', 2, 1, NULL, NULL, 'Nam Định', '', 'Làm nông', 'Có 3 người con (1 trai, 2 gái).', '', '', '["g2_9"]', NULL, NULL),
+('g2_2', 'Trần Sỹ Phu', 'nam', 2, 1, NULL, NULL, 'Làng Mai - Mỹ Thắng', '', '', 'Không có thông tin', '', '', '["g2_1"]', NULL, NULL),
+('g2_3', 'Trần Thị Sen', 'nu', 2, 1, NULL, NULL, '', '', 'Làm Nông', 'Có 2 người con trai', '', '', '["g2_4"]', 'g1_1', 'g1_2'),
+('g2_4', 'Trần Đình Bảng', 'nam', 2, 1, NULL, NULL, 'Cùng làng', '', 'Làm Nông', 'Có 2 người con trai. 2 ông bà cùng làng', '', '', '["g2_3"]', NULL, NULL),
+('g2_5', 'Trần Công Nghệch', 'nam', 2, 1, NULL, '1966-02-02', 'Nam Định', '', '', 'Có 3 con trai và 4 con gái.', '', '', '["g2_6"]', 'g1_1', 'g1_2'),
+('g2_6', 'Trần Thị Vân', 'nu', 2, 1, NULL, NULL, 'Nam Định', '', 'Làm nông', 'Có 3 con trai và 4 con gái
+Mất : 30-9-không rõ', '', '', '["g2_5"]', NULL, NULL),
+('g2_7', 'Trần Thị Kịt', 'nu', 2, 1, NULL, NULL, 'Nam Định', '', 'Làm nông', 'Có 8 người con (4 trai, 4 gái).', '', '', '["g2_8"]', 'g1_1', 'g1_2'),
+('g2_8', 'Đặng Hữu Liên', 'nam', 2, 1, NULL, NULL, 'Làng Mỹ', '', '', 'Có 8 người con (4 trai, 4 gái).', '', '', '["g2_7"]', NULL, NULL),
+('g2_9', 'Trần Công Kế', 'nam', 2, 1, NULL, NULL, 'Nam Định', '', 'Làm nông', 'Có 3 người con (1 trai, 2 gái).', '', '', '["g2_10"]', 'g1_1', 'g1_2'),
+('g3_1', 'Trần Thị Vẻ', 'nu', 3, 1, '1920-01-01', NULL, 'Nam Định', '', 'Làm nông', 'Có 4 người con (3 trai và 1 gái)', '', '', '["g3_2"]', 'g2_5', 'g2_6'),
+('g3_10', 'Trần Công Bảy', 'nam', 3, 1, '1931-01-01', '1999-11-16', 'Mỹ Thắng - Nam Định', 'Nghĩa Trang Làng Sắc', 'Làm nông', 'Có 8 người con (6 trai, 2 gái).', '', '', '["g3_11"]', 'g2_5', 'g2_6'),
+('g3_11', 'Trần Thị Thực', 'nu', 3, 1, '1929-01-01', '1998-12-29', 'Nam Định', 'Nghĩa Trang Làng Sắc', 'Làm nông', 'Có 8 người con (6 trai và 2 gái)', '', '', '["g3_10"]', NULL, NULL),
+('g3_12', 'Trần Công Tám', 'nam', 3, 0, '1944-01-01', NULL, 'Nam Định', '', '', 'Chưa có thông tin', '', '', '["g3_13"]', 'g2_5', 'g2_6'),
+('g3_13', 'Vợ Trần Công Tám', 'nu', 3, 0, NULL, NULL, 'Nam Định', '', '', 'Chưa có thông tin', '', '', '["g3_12"]', NULL, NULL),
+('g3_14', 'Trần Thị Vân', 'nu', 3, 1, '1932-01-01', NULL, '', '', '', 'Có 8 người con (4 trai, 4 gái).', '', '', '["g3_15"]', 'g2_9', 'g2_10'),
+('g3_15', 'Trần Văn Tòng', 'nam', 3, 1, NULL, NULL, 'Xóm 7', '', '', 'Có 8 người con (4 trai và 4 gái)', '', '', '["g3_14"]', NULL, NULL),
+('g3_16', 'Trần Thị Xuân', 'nu', 3, 1, NULL, NULL, 'Nam Định', '', 'Làm nông', 'Có 3 người con (1 trai và 2 gái)', '', '', '["g3_17"]', 'g2_9', 'g2_10'),
+('g3_17', 'Trần Văn Thăng', 'nam', 3, 1, NULL, NULL, 'Xóm Thát Đông - Mỹ Thắng - Nam Định', '', 'Làm nông', 'Có 3 người con (1 trai và 2 gái)', '', '', '["g3_16"]', NULL, NULL),
+('g3_18', 'Trần Công Mùi', 'nu', 3, 1, NULL, NULL, 'Nam Định', '', 'Làm nông', 'Có 5 người con (2 trai và 3 gái)', '', '', '["g3_19"]', 'g2_9', 'g2_10'),
+('g3_19', 'Vợ Trần Công Mùi', 'nu', 3, 1, NULL, NULL, '', '', '', 'Có 5 người con (2 trai và 3 gái)', '', '', '["g3_18"]', NULL, NULL),
+('g3_2', 'Trần Văn Tiềm', 'nam', 3, 1, NULL, NULL, 'Làng Thát Đoài-Nam Định', '', 'Làm nông', 'Có 4 người con (3 trai và 1 gái)', '', '', '["g3_1"]', NULL, NULL),
+('g3_3', 'Trần Thị Vang', 'nu', 3, 1, '1922-01-01', '1988-02-02', 'Xóm 10 - Mỹ Thắng-Làng Sắc-Nam Định', '', 'Làm nông', 'Chưa có thông tin', '', '', '[]', 'g2_5', 'g2_6'),
+('g3_4', 'Trần Thị Vuông', 'nu', 3, 1, '1924-01-01', NULL, 'Nam Định', '', 'Làm nông', 'Có 6 người con (3 trai và 3 gái)', '', '', '["g3_5"]', 'g2_5', 'g2_6'),
+('g3_5', 'Trần Văn Lễ', 'nam', 3, 1, NULL, NULL, 'Làng Thát Đoài-Mỹ Thắng', '', 'Làm nông', 'Có 6 người con (3 trai và 3 gái)', '', '', '["g3_4"]', NULL, NULL),
+('g3_6', 'Trần Thị Tròn', 'nu', 3, 1, '1926-01-01', NULL, 'Mỹ Thắng-Nam ĐỊnh', '', 'Làm nông', 'Có 4 người con (3 trai, 1 gái).', '', '', '["g3_7"]', 'g2_5', 'g2_6'),
+('g3_7', 'Trần Nhất Chức', 'nam', 3, 1, NULL, NULL, 'Xóm9-Mỹ Thắng', '', 'Làm nông', 'Có 4 người con (3 trai và 1 gái).', '', '', '["g3_6"]', NULL, NULL),
+('g3_8', 'Trần Công Húc', 'nam', 3, 1, '1929-01-01', '1992-03-21', 'Xóm 10 - Mỹ Thắng - Nam Định', 'Nghĩa Trang Làng Sắc', 'Chủ Tịch Xã, Làm nông', 'Có 9 người con (7 trai, 2 gái).', '', '', '["g3_9"]', 'g2_5', 'g2_6'),
+('g3_9', 'Trần Thị Thục', 'nu', 3, 1, '1927-01-01', '2001-07-12', 'Xóm 10 - Mỹ Thắng - Nam Định', 'Nghĩa Trang Làng Sắc', 'Làm nông', 'Có 9 người con (7 trái và 2 gái)', '', '', '["g3_8"]', NULL, NULL),
+('member_1780547929998', 'Trần Công Tích', 'nam', 4, 1, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', 'Nghĩa Trang Làng Sắc', '', 'Mất vì tai nạn giao thông', '', '', '["member_1780548037082"]', 'g3_8', NULL),
+('member_1780548037082', 'Trần Thị Tích', 'nu', 4, 0, NULL, NULL, 'Nam Định', '', 'Làm nông', 'Có 3 người con trai', '', 'Xóm 10 - Mỹ Tháng - Nam Định', '["member_1780547929998"]', 'g3_8', NULL),
+('member_1780548129414', 'Trần Công Vượng', 'nam', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', '', 'Có 6 người con (2 gái và 4 trai)', '', '', '["member_1780548212043"]', 'g3_8', 'g3_9'),
+('member_1780548212043', 'Trần Thị Yến', 'nu', 4, 0, NULL, NULL, 'Làng Bườn - Mỹ Thắng - Nam Định', '', 'Làm nông', 'Có 6 người con (2 gái và 4 trai)', '', '', '["member_1780548129414"]', 'g3_8', NULL),
+('member_1780548301974', 'Trần Công Bàng', 'nam', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Tháng - Nam Định', '', 'Tự Do, Đóng Lu', 'Có 3 người con (1 trai và 2 gái)', '', 'Xóm 10 - Mỹ Tháng - Nam Định', '["member_1780548401183"]', 'g3_8', 'g3_9'),
+('member_1780548401183', 'Trần Thị Vịnh', 'nu', 4, 0, NULL, NULL, 'Làng Kim - Mỹ Thắng', '', '', '', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780548301974"]', 'g3_8', NULL),
+('member_1780548559939', 'Trần Thị Năm', 'nu', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', 'Kinh Doanh', 'Có 3 người con trai', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780548608164"]', 'g3_8', 'g3_9'),
+('member_1780548608164', 'Trần Ngọc Lăng', 'nam', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', 'Kinh Doanh', 'Có 3 người con trai', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780548559939"]', 'g3_8', NULL),
+('member_1780548670690', 'Trần Công Tư', 'nam', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', 'Tự Do', 'Có 3 người con (2 trai và 1 gái)', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780548707359"]', 'g3_8', 'g3_9'),
+('member_1780548707359', 'Trần Thị Lý', 'nu', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', 'Tự Do', '', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780548670690"]', 'g3_8', NULL),
+('member_1780548760613', 'Trần Công Chiến ', 'nam', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', 'Tự Do', 'Có 2 người con trai', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780548795726"]', 'g3_8', 'g3_9'),
+('member_1780548795726', 'Trần Thị Hoa', 'nu', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', 'Tự Do', '', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780548760613"]', 'g3_8', NULL),
+('member_1780548967813', 'Trần Công Huấn', 'nam', 4, 0, '1968-12-04', NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', 'Kinh Doanh', 'Có 2 người con trai', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780549026325"]', 'g3_8', 'g3_9'),
+('member_1780549026325', 'Trần Thị Huế', 'nu', 4, 0, NULL, NULL, 'Xóm 10 - Mỹ Thắng - Nam Định', '', 'Kinh Doanh', 'Có 2 người con trai', '', 'Xóm 10 - Mỹ Thắng - Nam Định', '["member_1780548967813"]', 'g3_8', NULL);
