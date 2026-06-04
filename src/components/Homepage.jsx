@@ -22,27 +22,27 @@ import avatarTri from "../assets/avatar_tri.png";
 
 const people = [
   {
-    name: "Trần Công Tinh",
+    name: "Trần Công Kỳ",
     title: "Thủy tổ dòng họ",
-    years: "1240 - 1310",
+    years: "Tạ thế 1936",
     avatar: avatarTinh
   },
   {
-    name: "Trần Công Nghi",
-    title: "Khai quốc công thần",
-    years: "1265 - 1335",
+    name: "Trần Công Nghiêm",
+    title: "Cụ đời thứ hai",
+    years: "Tạ thế 1980",
     avatar: avatarNghi
   },
   {
-    name: "Trần Công Nghĩa",
-    title: "Triệu đại Trần",
-    years: "1270 - 1340",
+    name: "Trần Công Kỷ",
+    title: "Cụ đời thứ hai",
+    years: "Tạ thế",
     avatar: avatarNghia
   },
   {
-    name: "Trần Công Trị",
-    title: "Nhà nho, nhà giáo",
-    years: "1275 - 1345",
+    name: "Trần Công Huê",
+    title: "Ông đời thứ ba",
+    years: "1938 - 1992",
     avatar: avatarTri
   }
 ];
@@ -78,32 +78,31 @@ const features = [
 
 const events = [
   {
-    day: "15",
+    day: "04",
+    month: "Tháng 6",
+    title: "Giỗ Thủy tổ Trần Công Kỳ",
+    date: "Tạ thế ngày 04/06/1936"
+  },
+  {
+    day: "21",
     month: "Tháng 5",
-    title: "Giỗ Thủy tổ Trần Công Tinh",
-    date: "Thứ Năm, 15/05/2025 (18/04 AL)"
+    title: "Giỗ ông Trần Công Huê",
+    date: "Tạ thế ngày 21/05/1992"
   },
   {
     day: "02",
-    month: "Tháng 6",
-    title: "Giỗ Trần Công Nghi",
-    date: "Thứ Hai, 02/06/2025 (07/05 AL)"
-  },
-  {
-    day: "18",
-    month: "Tháng 6",
-    title: "Giỗ Trần Công Nghĩa",
-    date: "Thứ Tư, 18/06/2025 (23/05 AL)"
+    month: "Tháng 2",
+    title: "Giỗ cụ Trần Công Nghiêm",
+    date: "Tạ thế ngày 02/02/1980"
   }
 ];
 
 const history = [
-  ["1240", "Thủy tổ Trần Công Tinh đặt nền móng cho dòng họ Trần Công."],
-  ["1265", "Trần Công Nghi phò vua, có công lớn trong việc giữ yên bờ cõi."],
-  ["1300", "Các chi nhánh dần hình thành, phát triển tại nhiều vùng đất."],
-  ["1600", "Dòng họ phát triển hưng thịnh, nhiều người đỗ đạt, làm quan."],
-  ["1900", "Gìn giữ truyền thống, đoàn kết xây dựng quê hương."],
-  ["Hiện tại", "Cùng nhau kết nối, gìn giữ và phát triển cho mai sau."]
+  ["1936", "Thủy tổ Trần Công Kỳ tạ thế, gia tộc tiếp nối giữ gìn nề nếp gia quy."],
+  ["1959", "Cụ bà Trần Thị Hiền tạ thế, các chi họ lớn dần hình thành phát triển."],
+  ["1980", "Cụ Trần Công Nghiêm tạ thế, dòng họ lan tỏa đến nhiều vùng miền."],
+  ["1992", "Cụ Trần Công Huê tạ thế, các thế hệ sau giữ vững truyền thống."],
+  ["Hiện tại", "Con cháu sum vầy, cùng nhau kết nối và số hóa gia phả dòng họ."]
 ];
 
 const heritageIconMap = {
@@ -127,11 +126,11 @@ function HeritageIcon({ type }) {
 
 export default function Homepage({ onNavigate, members = [] }) {
   // Calculate dynamic stats from database data
-  const generations = members.length > 0 ? Math.max(...members.map(m => m.generation), 0) : 26;
-  const membersCount = members.length > 0 ? members.length : 1284;
+  const generations = members.length > 0 ? Math.max(...members.map(m => m.generation), 0) : 3;
+  const membersCount = members.length > 0 ? members.length : 31;
 
   // Branches count: children of generation 1 patriarchs/matriarchs who are heads of branches
-  let branchesCount = 8;
+  let branchesCount = 5;
   if (members.length > 0) {
     const minGen = Math.min(...members.map(m => m.generation), 1);
     const roots = members.filter(m => m.generation === minGen && !m.fatherId && !m.motherId);
@@ -141,7 +140,7 @@ export default function Homepage({ onNavigate, members = [] }) {
   }
 
   // Upcoming anniversaries: count deceased members whose death anniversary is in the next 30 days
-  let upcomingAnniversariesCount = 3;
+  let upcomingAnniversariesCount = 1;
   if (members.length > 0) {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -234,11 +233,11 @@ export default function Homepage({ onNavigate, members = [] }) {
           <span className="panel-cloud panel-cloud-right" aria-hidden="true" />
           <div className="mini-family-tree">
             <div className="tree-founder">
-              <img src={avatarTinh} alt="Trần Công Tinh" />
+              <img src={people[0].avatar} alt={people[0].name} />
               <div>
-                <span>Thủy tổ</span>
-                <strong>Trần Công Tinh</strong>
-                <small>1240 - 1310</small>
+                <span>{people[0].title}</span>
+                <strong>{people[0].name}</strong>
+                <small>{people[0].years}</small>
               </div>
             </div>
             <div className="tree-lines" aria-hidden="true">
@@ -256,7 +255,7 @@ export default function Homepage({ onNavigate, members = [] }) {
               ))}
             </div>
             <div className="branch-row">
-              {["Chi Nhất", "Chi Nhì", "Chi Ba", "Chi Tư", "Chi Năm", "Chi Sáu"].map((branch) => (
+              {["Chi cô Mùi", "Chi cô Sên", "Chi cụ Nghiêm", "Chi cô Kỷ", "Chi cụ Kỷ"].map((branch) => (
                 <button key={branch} onClick={() => onNavigate("tree")}>
                   <HeritageIcon type="branch" />
                   {branch}

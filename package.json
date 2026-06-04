@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "db:migrate:local": "wrangler d1 migrations apply giapha-tc-db --local",
     "db:seed": "wrangler d1 execute giapha-tc-db --local --file=./migrations/0002_seed.sql",
-    "dev:cf": "wrangler pages dev --proxy 5174 --d1 DB=giapha-tc-db"
+    "dev:cf": "wrangler pages dev --proxy 5174 --d1 DB=8733270f-4775-4736-835a-c46f14119798"
   },
   "dependencies": {
     "hono": "^4.12.23",
