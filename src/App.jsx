@@ -301,7 +301,7 @@ export default function App() {
           <>
             <div className="viewport-container">
               {activeView === "home" ? (
-                <Homepage onNavigate={setActiveView} />
+                <Homepage onNavigate={setActiveView} members={members} />
               ) : activeView === "tree" ? (
                 <TreeChart
                   members={members}

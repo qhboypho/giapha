@@ -47,12 +47,7 @@ const people = [
   }
 ];
 
-const stats = [
-  { value: "26", label: "Đời", note: "Lịch sử dòng họ", tone: "green", icon: "temple" },
-  { value: "1.284", label: "Thành viên", note: "Đã ghi danh", tone: "red", icon: "people" },
-  { value: "8", label: "Chi nhánh", note: "Đang kết nối", tone: "gold", icon: "branch" },
-  { value: "03", label: "Ngày giỗ sắp tới", note: "Trong 30 ngày tới", tone: "green", icon: "calendar" }
-];
+
 
 const features = [
   {
@@ -130,7 +125,62 @@ function HeritageIcon({ type }) {
   );
 }
 
-export default function Homepage({ onNavigate }) {
+export default function Homepage({ onNavigate, members = [] }) {
+  // Calculate dynamic stats from database data
+  const generations = members.length > 0 ? Math.max(...members.map(m => m.generation), 0) : 26;
+  const membersCount = members.length > 0 ? members.length : 1284;
+
+  // Branches count: children of generation 1 patriarchs/matriarchs who are heads of branches
+  let branchesCount = 8;
+  if (members.length > 0) {
+    const minGen = Math.min(...members.map(m => m.generation), 1);
+    const roots = members.filter(m => m.generation === minGen && !m.fatherId && !m.motherId);
+    const rootIds = roots.map(r => r.id);
+    const branchChildren = members.filter(m => rootIds.includes(m.fatherId) || rootIds.includes(m.motherId));
+    branchesCount = branchChildren.length > 0 ? branchChildren.length : 1;
+  }
+
+  // Upcoming anniversaries: count deceased members whose death anniversary is in the next 30 days
+  let upcomingAnniversariesCount = 3;
+  if (members.length > 0) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    let count = 0;
+    members.forEach(m => {
+      if (m.isDeceased && m.deathDate) {
+        const parts = m.deathDate.split('-');
+        if (parts.length >= 2) {
+          const month = parseInt(parts[parts.length - 2], 10) - 1; // 0-11
+          const day = parseInt(parts[parts.length - 1], 10);
+
+          const currentYear = today.getFullYear();
+          const annThisYear = new Date(currentYear, month, day);
+          const annNextYear = new Date(currentYear + 1, month, day);
+
+          // Normalize anniversary dates to midnight
+          const dateThisYear = new Date(annThisYear.getFullYear(), annThisYear.getMonth(), annThisYear.getDate());
+          const dateNextYear = new Date(annNextYear.getFullYear(), annNextYear.getMonth(), annNextYear.getDate());
+
+          const diffThisYear = (dateThisYear - today) / (1000 * 60 * 60 * 24);
+          const diffNextYear = (dateNextYear - today) / (1000 * 60 * 60 * 24);
+
+          if ((diffThisYear >= 0 && diffThisYear <= 30) || (diffNextYear >= 0 && diffNextYear <= 30)) {
+            count++;
+          }
+        }
+      }
+    });
+    upcomingAnniversariesCount = count;
+  }
+
+  const stats = [
+    { value: String(generations), label: "Đời", note: "Lịch sử dòng họ", tone: "green", icon: "temple" },
+    { value: membersCount.toLocaleString("vi-VN"), label: "Thành viên", note: "Đã ghi danh", tone: "red", icon: "people" },
+    { value: String(branchesCount), label: "Chi nhánh", note: "Đang kết nối", tone: "gold", icon: "branch" },
+    { value: String(upcomingAnniversariesCount).padStart(2, "0"), label: "Ngày giỗ sắp tới", note: "Trong 30 ngày tới", tone: "green", icon: "calendar" }
+  ];
+
   return (
     <main
       className="homepage-container"
