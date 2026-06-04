@@ -1285,16 +1285,16 @@
   --home-gold-soft: #ffe066;
   --home-green: #51cf66;
   --home-teal: #22b8cf;
-  --home-paper: #0a0604;
+  --home-paper: #0e0e0c;
   --home-ink: #f8f0e3;
   --home-muted: #bcaba0;
   --home-line: rgba(245, 192, 91, 0.15);
-  --home-panel: rgba(18, 12, 9, 0.65);
+  --home-panel: rgba(14, 14, 12, 0.65);
   --home-shadow: 0 16px 36px rgba(0, 0, 0, 0.65);
 
   background:
     var(--home-gold-clouds) right -7rem top 13.2rem / 520px auto no-repeat,
-    linear-gradient(rgba(10, 6, 4, 0.94), rgba(10, 6, 4, 0.94)),
+    linear-gradient(rgba(14, 14, 12, 0.94), rgba(14, 14, 12, 0.94)),
     var(--home-paper-bg) center / cover no-repeat,
     var(--home-paper);
 }
@@ -1322,7 +1322,7 @@
 
 [data-theme="dark"] .heritage-btn-secondary {
   color: #f5c05b;
-  background: rgba(22, 16, 12, 0.65);
+  background: rgba(14, 14, 12, 0.65);
   border-color: rgba(245, 192, 91, 0.3);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(12px);
@@ -1330,7 +1330,7 @@
 }
 
 [data-theme="dark"] .heritage-btn-secondary:hover {
-  background: rgba(35, 25, 19, 0.85);
+  background: rgba(14, 14, 12, 0.85);
   border-color: rgba(245, 192, 91, 0.45);
 }
 
@@ -1339,7 +1339,7 @@
 [data-theme="dark"] .stat-card,
 [data-theme="dark"] .feature-card,
 [data-theme="dark"] .home-panel {
-  background: rgba(18, 12, 9, 0.62) !important;
+  background: rgba(14, 14, 12, 0.62) !important;
   backdrop-filter: blur(24px) saturate(120%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(120%) !important;
   border: 1px solid rgba(245, 192, 91, 0.16) !important;
@@ -1350,7 +1350,7 @@
 
 [data-theme="dark"] .hero-tree-panel::before {
   background:
-    linear-gradient(180deg, rgba(18, 12, 9, 0.5) 0 44%, rgba(11, 7, 5, 0.2) 72%, rgba(45, 60, 50, 0.1)),
+    linear-gradient(180deg, rgba(14, 14, 12, 0.5) 0 44%, rgba(14, 14, 12, 0.2) 72%, rgba(45, 60, 50, 0.1)),
     var(--home-mountain-bg) center bottom 10% / 108% auto no-repeat,
     radial-gradient(circle at 12% 74%, rgba(84, 110, 92, 0.2), transparent 28%),
     radial-gradient(circle at 82% 76%, rgba(84, 110, 92, 0.15), transparent 25%);
@@ -1367,20 +1367,20 @@
 
 [data-theme="dark"] .panel-link {
   color: #f5c05b;
-  background: rgba(22, 16, 12, 0.75);
+  background: rgba(14, 14, 12, 0.75);
   border-color: rgba(245, 192, 91, 0.35);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
 [data-theme="dark"] .panel-link:hover {
-  background: rgba(35, 25, 19, 0.9);
+  background: rgba(14, 14, 12, 0.9);
   color: #ffe066;
 }
 
 [data-theme="dark"] .panel-mini-icon {
   color: #f5c05b;
-  background: rgba(22, 16, 12, 0.7);
+  background: rgba(14, 14, 12, 0.7);
   border-color: rgba(245, 192, 91, 0.25);
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.04), 0 3px 7px rgba(0, 0, 0, 0.4);
 }
@@ -1395,7 +1395,7 @@
 [data-theme="dark"] .stat-red .stat-number { color: #ff6b6b; }
 
 [data-theme="dark"] .feature-medallion {
-  box-shadow: inset 0 0 0 3px rgba(18, 12, 9, 0.45), 0 8px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 0 3px rgba(14, 14, 12, 0.45), 0 8px 12px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .feature-desc {
@@ -1416,19 +1416,19 @@
 /* Glassmorphism Notable Cards */
 [data-theme="dark"] .notable-card {
   border-color: rgba(245, 192, 91, 0.15) !important;
-  background: rgba(22, 16, 12, 0.5) !important;
+  background: rgba(14, 14, 12, 0.5) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
 }
 
 [data-theme="dark"] .notable-card:hover {
   border-color: rgba(245, 192, 91, 0.35) !important;
-  background: rgba(35, 25, 19, 0.65) !important;
+  background: rgba(14, 14, 12, 0.65) !important;
 }
 
 [data-theme="dark"] .notable-avatar {
   border-color: rgba(245, 192, 91, 0.2);
-  background: #120c09;
+  background: #0e0e0c;
 }
 
 [data-theme="dark"] .anniversary-item {
@@ -1444,14 +1444,14 @@
 [data-theme="dark"] .btn-view-more-events {
   border-color: rgba(245, 192, 91, 0.25);
   color: #f5c05b;
-  background: rgba(22, 16, 12, 0.65);
+  background: rgba(14, 14, 12, 0.65);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
 [data-theme="dark"] .btn-item-action:hover,
 [data-theme="dark"] .btn-view-more-events:hover {
-  background: rgba(35, 25, 19, 0.85);
+  background: rgba(14, 14, 12, 0.85);
   color: #ffe066;
 }
 
@@ -1460,9 +1460,9 @@
 }
 
 [data-theme="dark"] .timeline-node::before {
-  background: #120c09;
+  background: #0e0e0c;
   border-color: var(--home-gold);
-  box-shadow: 0 0 0 2px rgba(18, 12, 9, 0.9);
+  box-shadow: 0 0 0 2px rgba(14, 14, 12, 0.9);
 }
 
 [data-theme="dark"] .timeline-node strong {
@@ -1476,7 +1476,7 @@
 /* Glassmorphism Mini Tree nodes */
 [data-theme="dark"] .tree-founder,
 [data-theme="dark"] .tree-child {
-  background: rgba(13, 9, 7, 0.85) !important;
+  background: rgba(14, 14, 12, 0.85) !important;
   border: 1.2px solid rgba(245, 192, 91, 0.28) !important;
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
@@ -1492,7 +1492,7 @@
 [data-theme="dark"] .tree-child-landscape {
   border-color: rgba(124, 168, 138, 0.35);
   background:
-    linear-gradient(rgba(18, 12, 9, 0.7), rgba(18, 12, 9, 0.7)),
+    linear-gradient(rgba(14, 14, 12, 0.7), rgba(14, 14, 12, 0.7)),
     var(--home-mountain-bg) center 70% / 260px auto no-repeat;
   box-shadow:
     inset 0 0 0 2px rgba(255, 249, 232, 0.04),
@@ -1512,5 +1512,6 @@
 [data-theme="dark"] .branch-row .heritage-icon {
   color: #e2b05c;
 }
+
 
 
