@@ -1,4 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import {
+  Bell,
+  BookOpenText,
+  CalendarDays,
+  Home,
+  LogOut,
+  Network,
+  Search,
+  Users
+} from "lucide-react";
+import avatarTinh from "../assets/avatar_tinh.png";
 
 export default function Navbar({
   searchQuery,
@@ -23,70 +34,70 @@ export default function Navbar({
   return (
     <nav className="navbar glass">
       <div className="nav-brand">
-        <span className="logo-icon">🌳</span>
+        <span className="logo-icon">陳</span>
         <span className="logo-text">Gia Phả Họ Trần Công</span>
       </div>
 
       {/* Desktop Navigation (Hidden on Mobile) */}
       <div className="nav-actions desktop-nav">
-        {/* Search bar */}
-        <div className="search-box">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Tìm kiếm thành viên..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
         {/* View toggles */}
         <div className="btn-group">
           <button
             className={`btn-tab ${activeView === "home" ? "active" : ""}`}
             onClick={() => setActiveView("home")}
           >
-            🏠 Trang chủ
+            <Home className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
+            Trang chủ
           </button>
           <button
             className={`btn-tab ${activeView === "tree" ? "active" : ""}`}
             onClick={() => setActiveView("tree")}
           >
-            🌿 Cây gia phả
+            <Network className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
+            Cây gia phả
+          </button>
+          <button
+            className={`btn-tab ${activeView === "generations" ? "active" : ""}`}
+            onClick={() => setActiveView("tree")}
+          >
+            <BookOpenText className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
+            Các đời
+          </button>
+          <button
+            className={`btn-tab ${activeView === "anniversary" ? "active" : ""}`}
+            onClick={() => setActiveView("tree")}
+          >
+            <CalendarDays className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
+            Ngày giỗ
           </button>
           <button
             className={`btn-tab ${activeView === "list" ? "active" : ""}`}
             onClick={() => setActiveView("list")}
           >
-            📋 Danh sách
+            <Users className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
+            Thành viên
           </button>
         </div>
 
-        {/* Admin only action: Add Member */}
-        {(currentUser?.role === "admin" || currentUser?.role === "editor") && (
-          <button className="btn btn-primary" onClick={onAddMember} style={{ flex: "none", borderRadius: "20px", fontSize: "0.85rem" }}>
-            ➕ Thêm thành viên
-          </button>
-        )}
+        {/* Search bar */}
+        <div className="search-box">
+          <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Tìm kiếm thành viên, đời, sự kiện..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
 
-        {/* Security / Privacy Toggle (Admin only) */}
-        {currentUser?.role === "admin" && (
-          <button 
-            className="btn btn-secondary tooltip-container tooltip-bottom" 
-            onClick={() => setIsPrivateMode(!isPrivateMode)}
-            style={{ flex: "none", borderRadius: "20px", fontSize: "0.85rem" }}
-          >
-            {isPrivateMode ? "🔒 Riêng tư" : "🔓 Công khai"}
-            <span className="tooltip-text">
-              {isPrivateMode ? "Chỉ thành viên đăng nhập mới xem được" : "Mọi người đều có thể xem"}
-            </span>
-          </button>
-        )}
+        <button className="btn-bell" aria-label="Thông báo" type="button">
+          <Bell aria-hidden="true" strokeWidth={2.2} />
+        </button>
 
         {/* Theme Switcher */}
         <button className="btn-icon" onClick={toggleTheme} title="Đổi giao diện">
-          {theme === "light" ? "🌙" : "☀️"}
+          <span className={theme === "light" ? "theme-mark theme-dark" : "theme-mark theme-light"} aria-hidden="true" />
         </button>
 
         {/* User login / logout */}
@@ -94,10 +105,10 @@ export default function Navbar({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div className="user-badge" style={{ cursor: "default" }}>
               <div className="user-avatar">
-                {currentUser.username.substring(0, 1).toUpperCase()}
+                <img src={avatarTinh} alt="" />
               </div>
-              <span className="user-role" style={{ textTransform: "capitalize" }}>
-                {currentUser.role}
+              <span className="user-role">
+                {currentUser.role === "admin" ? "Trần Công Minh" : currentUser.fullName || currentUser.displayName || currentUser.username}
               </span>
             </div>
             <button 
@@ -105,17 +116,13 @@ export default function Navbar({
               onClick={onLogout} 
               aria-label="Đăng xuất"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
+              <LogOut aria-hidden="true" strokeWidth={2.3} />
               <span className="tooltip-text">Đăng xuất</span>
             </button>
           </div>
         ) : (
           <button className="btn btn-secondary" onClick={() => setIsLoginModalOpen(true)} style={{ flex: "none", borderRadius: "20px" }}>
-            🔑 Đăng nhập
+            Đăng nhập
           </button>
         )}
       </div>
@@ -129,27 +136,27 @@ export default function Navbar({
             onClick={() => setActiveView("home")}
             style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
           >
-            🏠 Chủ
+            Chủ
           </button>
           <button
             className={`btn-tab ${activeView === "tree" ? "active" : ""}`}
             onClick={() => setActiveView("tree")}
             style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
           >
-            🌳 Cây
+            Cây
           </button>
           <button
             className={`btn-tab ${activeView === "list" ? "active" : ""}`}
             onClick={() => setActiveView("list")}
             style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
           >
-            📋 Bảng
+            Bảng
           </button>
         </div>
 
         {/* Hamburger Menu button */}
         <button className="hamburger-btn" onClick={toggleMobileMenu} aria-label="Toggle menu">
-          ☰
+          <span aria-hidden="true">☰</span>
         </button>
       </div>
 
@@ -161,13 +168,13 @@ export default function Navbar({
             <div className="mobile-drawer-header">
               <h3>Menu tiện ích</h3>
               <button className="sidebar-close" onClick={() => setIsMobileMenuOpen(false)}>
-                ❌
+                Đóng
               </button>
             </div>
             <div className="mobile-drawer-body">
               {/* Mobile Search */}
               <div className="search-box" style={{ width: "100%" }}>
-                <span className="search-icon">🔍</span>
+                <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
                 <input
                   type="text"
                   className="search-input"
@@ -187,7 +194,7 @@ export default function Navbar({
                   }}
                   style={{ width: "100%", justifyContent: "center" }}
                 >
-                  ➕ Thêm thành viên
+                  Thêm thành viên
                 </button>
               )}
 
@@ -200,7 +207,7 @@ export default function Navbar({
                   }}
                   style={{ width: "100%", justifyContent: "center" }}
                 >
-                  {isPrivateMode ? "🔒 Riêng tư" : "🔓 Công khai"}
+                  {isPrivateMode ? "Riêng tư" : "Công khai"}
                 </button>
               )}
 
@@ -212,7 +219,7 @@ export default function Navbar({
                 }}
                 style={{ width: "100%", justifyContent: "center" }}
               >
-                Giao diện: {theme === "light" ? "🌙 Tối" : "☀️ Sáng"}
+                Giao diện: {theme === "light" ? "Tối" : "Sáng"}
               </button>
 
               <hr style={{ border: "none", borderTop: "1px solid var(--border-card)", margin: "8px 0" }} />
@@ -227,11 +234,7 @@ export default function Navbar({
                   }}
                   style={{ width: "100%", justifyContent: "center", color: "var(--color-brand-accent)", fontWeight: 700, gap: "8px" }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                  </svg>
+                  <LogOut aria-hidden="true" strokeWidth={2.3} />
                   Đăng xuất ({currentUser.role})
                 </div>
               ) : (
@@ -243,7 +246,7 @@ export default function Navbar({
                   }}
                   style={{ width: "100%", justifyContent: "center", fontWeight: 700 }}
                 >
-                  🔑 Đăng nhập
+                  Đăng nhập
                 </button>
               )}
             </div>

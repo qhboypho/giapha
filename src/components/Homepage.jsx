@@ -1,330 +1,337 @@
-import React from "react";
 import "./Homepage.css";
-import lotusPainting from "../assets/lotus_painting.png";
+import {
+  CalendarDays,
+  FileText,
+  Images,
+  Landmark,
+  Network,
+  TreeDeciduous,
+  Users
+} from "lucide-react";
+import paperBg from "../assets/homepage-design/paper-bg.png";
+import mountainBg from "../assets/homepage-design/mountain-bg-cutout.png";
+import lotusWatercolor from "../assets/homepage-design/lotus-watercolor-cutout.png";
+import pineWatercolor from "../assets/homepage-design/pine-watercolor-cutout.png";
+import goldClouds from "../assets/homepage-design/gold-clouds-cutout.png";
+import goldWavesLotus from "../assets/homepage-design/gold-waves-lotus-cutout.png";
+import goldBorders from "../assets/homepage-design/gold-borders-cutout.png";
 import avatarTinh from "../assets/avatar_tinh.png";
 import avatarNghi from "../assets/avatar_nghi.png";
 import avatarNghia from "../assets/avatar_nghia.png";
 import avatarTri from "../assets/avatar_tri.png";
 
+const people = [
+  {
+    name: "Trần Công Tinh",
+    title: "Thủy tổ dòng họ",
+    years: "1240 - 1310",
+    avatar: avatarTinh
+  },
+  {
+    name: "Trần Công Nghi",
+    title: "Khai quốc công thần",
+    years: "1265 - 1335",
+    avatar: avatarNghi
+  },
+  {
+    name: "Trần Công Nghĩa",
+    title: "Triệu đại Trần",
+    years: "1270 - 1340",
+    avatar: avatarNghia
+  },
+  {
+    name: "Trần Công Trị",
+    title: "Nhà nho, nhà giáo",
+    years: "1275 - 1345",
+    avatar: avatarTri
+  }
+];
+
+const stats = [
+  { value: "26", label: "Đời", note: "Lịch sử dòng họ", tone: "green", icon: "temple" },
+  { value: "1.284", label: "Thành viên", note: "Đã ghi danh", tone: "red", icon: "people" },
+  { value: "8", label: "Chi nhánh", note: "Đang kết nối", tone: "gold", icon: "branch" },
+  { value: "03", label: "Ngày giỗ sắp tới", note: "Trong 30 ngày tới", tone: "green", icon: "calendar" }
+];
+
+const features = [
+  {
+    title: "Cây phả hệ",
+    text: "Khám phá sơ đồ gia phả trực quan, dễ dàng theo dõi các đời.",
+    icon: "tree",
+    tone: "green"
+  },
+  {
+    title: "Hồ sơ tổ tiên",
+    text: "Lưu giữ thông tin, tiểu sử của các bậc tiền nhân.",
+    icon: "record",
+    tone: "gold"
+  },
+  {
+    title: "Ngày giỗ & sự kiện",
+    text: "Quản lý ngày giỗ, sự kiện quan trọng của dòng họ.",
+    icon: "calendar",
+    tone: "red"
+  },
+  {
+    title: "Ký ức gia đình",
+    text: "Lưu giữ hình ảnh, kỷ vật và câu chuyện gia đình.",
+    icon: "memory",
+    tone: "teal"
+  }
+];
+
+const events = [
+  {
+    day: "15",
+    month: "Tháng 5",
+    title: "Giỗ Thủy tổ Trần Công Tinh",
+    date: "Thứ Năm, 15/05/2025 (18/04 AL)"
+  },
+  {
+    day: "02",
+    month: "Tháng 6",
+    title: "Giỗ Trần Công Nghi",
+    date: "Thứ Hai, 02/06/2025 (07/05 AL)"
+  },
+  {
+    day: "18",
+    month: "Tháng 6",
+    title: "Giỗ Trần Công Nghĩa",
+    date: "Thứ Tư, 18/06/2025 (23/05 AL)"
+  }
+];
+
+const history = [
+  ["1240", "Thủy tổ Trần Công Tinh đặt nền móng cho dòng họ Trần Công."],
+  ["1265", "Trần Công Nghi phò vua, có công lớn trong việc giữ yên bờ cõi."],
+  ["1300", "Các chi nhánh dần hình thành, phát triển tại nhiều vùng đất."],
+  ["1600", "Dòng họ phát triển hưng thịnh, nhiều người đỗ đạt, làm quan."],
+  ["1900", "Gìn giữ truyền thống, đoàn kết xây dựng quê hương."],
+  ["Hiện tại", "Cùng nhau kết nối, gìn giữ và phát triển cho mai sau."]
+];
+
+const heritageIconMap = {
+  temple: Landmark,
+  people: Users,
+  branch: Network,
+  calendar: CalendarDays,
+  tree: TreeDeciduous,
+  record: FileText,
+  memory: Images
+};
+
+function HeritageIcon({ type }) {
+  const Icon = heritageIconMap[type] || Network;
+  return (
+    <span className={`heritage-icon heritage-icon-${type}`} aria-hidden="true">
+      <Icon strokeWidth={2.15} />
+    </span>
+  );
+}
+
 export default function Homepage({ onNavigate }) {
   return (
-    <div className="homepage-container">
-      {/* 1. Hero Section */}
-      <header className="homepage-hero">
-        <div className="hero-content">
-          <div className="hero-text-side">
-            <h1 className="hero-title serif">
-              Lưu giữ cội nguồn <br />
-              <span className="hero-title-sub">– Kết nối muôn đời con cháu</span>
-            </h1>
-            <p className="hero-description">
-              Gia phả là sợi dây thiêng liêng kết nối quá khứ – hiện tại – tương lai.
-              Cùng nhau gìn giữ cội nguồn, vun đắp truyền thống cho muôn đời con cháu.
-            </p>
-            <div className="hero-cta-buttons">
-              <button
-                id="btn-explore-tree"
-                className="btn btn-primary btn-cta"
-                onClick={() => onNavigate("tree")}
-              >
-                🌳 Khám phá gia phả
-              </button>
-              <button
-                id="btn-find-relative"
-                className="btn btn-outline btn-cta-outline"
-                onClick={() => onNavigate("list")}
-              >
-                👥 Tìm người thân
-              </button>
-            </div>
-            <div className="hero-left-art">
-              <img src={lotusPainting} alt="Tranh hoa sen màu nước" className="lotus-art-img" />
-            </div>
+    <main
+      className="homepage-container"
+      style={{
+        "--home-paper-bg": `url(${paperBg})`,
+        "--home-mountain-bg": `url(${mountainBg})`,
+        "--home-gold-clouds": `url(${goldClouds})`,
+        "--home-gold-waves-lotus": `url(${goldWavesLotus})`,
+        "--home-gold-borders": `url(${goldBorders})`
+      }}
+    >
+      <section className="home-hero">
+        <img
+          src={lotusWatercolor}
+          alt="Hoa sen màu nước"
+          className="hero-lotus-art"
+        />
+        <div className="home-hero-copy">
+          <span className="hero-cloud-mark" aria-hidden="true" />
+          <h1 className="hero-title serif">
+            Lưu giữ cội nguồn
+            <span>- Kết nối muôn đời con cháu</span>
+          </h1>
+          <span className="hero-divider" aria-hidden="true" />
+          <p className="hero-description">
+            Gia phả là sợi dây thiêng liêng kết nối quá khứ, hiện tại và tương lai.
+            Cùng nhau gìn giữ cội nguồn, vun đắp truyền thống cho muôn đời con cháu.
+          </p>
+          <div className="hero-cta-buttons">
+            <button className="heritage-btn heritage-btn-primary" onClick={() => onNavigate("tree")}>
+              <HeritageIcon type="branch" />
+              Khám phá gia phả
+            </button>
+            <button className="heritage-btn heritage-btn-secondary" onClick={() => onNavigate("list")}>
+              <HeritageIcon type="people" />
+              Tìm người thân
+            </button>
           </div>
+        </div>
 
-          <div className="hero-tree-preview-side">
-            <div className="tree-preview-card glass">
-              <div className="tree-preview-header">
-                <span className="tree-preview-tag">🌿 Cây gia phả dòng chính</span>
-                <button
-                  id="btn-view-full-tree"
-                  className="btn-link"
-                  onClick={() => onNavigate("tree")}
-                >
-                  Xem toàn bộ cây phả &rarr;
+        <aside className="hero-tree-panel">
+          <div className="panel-heading">
+            <strong>Cây gia phả dòng chính</strong>
+            <button className="panel-link" onClick={() => onNavigate("tree")}>
+              Xem toàn bộ cây phả
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+          <img src={pineWatercolor} alt="" className="pine-art" aria-hidden="true" />
+          <span className="panel-cloud panel-cloud-left" aria-hidden="true" />
+          <span className="panel-cloud panel-cloud-right" aria-hidden="true" />
+          <div className="mini-family-tree">
+            <div className="tree-founder">
+              <img src={avatarTinh} alt="Trần Công Tinh" />
+              <div>
+                <span>Thủy tổ</span>
+                <strong>Trần Công Tinh</strong>
+                <small>1240 - 1310</small>
+              </div>
+            </div>
+            <div className="tree-lines" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="tree-children">
+              {people.slice(1).map((person) => (
+                <div className="tree-child" key={person.name}>
+                  <span className="tree-child-landscape" aria-hidden="true" />
+                  <strong>{person.name}</strong>
+                  <small>{person.years}</small>
+                </div>
+              ))}
+            </div>
+            <div className="branch-row">
+              {["Chi Nhất", "Chi Nhì", "Chi Ba", "Chi Tư", "Chi Năm", "Chi Sáu"].map((branch) => (
+                <button key={branch} onClick={() => onNavigate("tree")}>
+                  <HeritageIcon type="branch" />
+                  {branch}
                 </button>
-              </div>
-
-              {/* Mini Tree Diagram */}
-              <div className="mini-tree-visual">
-                {/* Level 1: Thủy tổ */}
-                <div className="mini-tree-row">
-                  <div className="mini-node root-node">
-                    <img src={avatarTinh} alt="Trần Công Tinh" className="mini-avatar" />
-                    <div className="mini-node-info">
-                      <span className="mini-node-role">Thủy tổ</span>
-                      <h4 className="mini-node-name">Trần Công Tinh</h4>
-                      <span className="mini-node-years">1240 - 1310</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Connectors Layer */}
-                <div className="mini-connectors">
-                  <svg width="100%" height="40" viewBox="0 0 300 40" fill="none" className="mini-svg-lines">
-                    <path d="M150 0 V15 H50 V40 M150 15 V40 M150 15 H250 V40" stroke="var(--heritage-gold)" strokeWidth="1.5" />
-                  </svg>
-                </div>
-
-                {/* Level 2: 3 Sons */}
-                <div className="mini-tree-row row-sons">
-                  <div className="mini-node">
-                    <img src={avatarNghi} alt="Trần Công Nghi" className="mini-avatar" />
-                    <div className="mini-node-info">
-                      <h5 className="mini-node-name">Trần Công Nghi</h5>
-                      <span className="mini-node-years">1265 - 1335</span>
-                    </div>
-                  </div>
-                  <div className="mini-node active-branch">
-                    <img src={avatarNghia} alt="Trần Công Nghĩa" className="mini-avatar" />
-                    <div className="mini-node-info">
-                      <h5 className="mini-node-name">Trần Công Nghĩa</h5>
-                      <span className="mini-node-years">1270 - 1340</span>
-                    </div>
-                  </div>
-                  <div className="mini-node">
-                    <img src={avatarTri} alt="Trần Công Trị" className="mini-avatar" />
-                    <div className="mini-node-info">
-                      <h5 className="mini-node-name">Trần Công Trị</h5>
-                      <span className="mini-node-years">1275 - 1345</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Branch shortcuts */}
-              <div className="tree-preview-branches">
-                <span className="branch-item" onClick={() => onNavigate("tree")}>Chi Nhất</span>
-                <span className="branch-item" onClick={() => onNavigate("tree")}>Chi Nhị</span>
-                <span className="branch-item active" onClick={() => onNavigate("tree")}>Chi Ba</span>
-                <span className="branch-item" onClick={() => onNavigate("tree")}>Chi Tư</span>
-                <span className="branch-item" onClick={() => onNavigate("tree")}>Chi Năm</span>
-                <span className="branch-item" onClick={() => onNavigate("tree")}>Chi Sáu</span>
-              </div>
-              <div className="carousel-dots">
-                <span className="dot"></span>
-                <span className="dot active"></span>
-                <span className="dot"></span>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-      </header>
-
-      {/* 2. Stats Grid Section */}
-      <section className="homepage-stats-row">
-        <div className="stat-card glass">
-          <div className="stat-icon-wrapper">
-            <span className="stat-icon">🏛️</span>
+          <div className="hero-dots" aria-hidden="true">
+            <span className="active" />
+            <span />
+            <span />
+            <span />
           </div>
-          <div className="stat-details">
-            <h3 className="stat-number">26 Đời</h3>
-            <span className="stat-label">Lịch sử dòng họ</span>
-          </div>
-        </div>
-        <div className="stat-card glass">
-          <div className="stat-icon-wrapper">
-            <span className="stat-icon">👥</span>
-          </div>
-          <div className="stat-details">
-            <h3 className="stat-number">1.284</h3>
-            <span className="stat-label">Thành viên ghi danh</span>
-          </div>
-        </div>
-        <div className="stat-card glass">
-          <div className="stat-icon-wrapper">
-            <span className="stat-icon">🌿</span>
-          </div>
-          <div className="stat-details">
-            <h3 className="stat-number">8</h3>
-            <span className="stat-label">Chi nhánh kết nối</span>
-          </div>
-        </div>
-        <div className="stat-card glass">
-          <div className="stat-icon-wrapper">
-            <span className="stat-icon">📅</span>
-          </div>
-          <div className="stat-details">
-            <h3 className="stat-number">03</h3>
-            <span className="stat-label">Ngày giỗ sắp tới (30 ngày)</span>
-          </div>
-        </div>
+        </aside>
       </section>
 
-      {/* 3. Feature Link Cards */}
-      <section className="homepage-features-section">
-        <div className="feature-card glass glass-hover" onClick={() => onNavigate("tree")}>
-          <div className="feature-icon">🌳</div>
-          <h3 className="feature-title serif">Cây phả hệ</h3>
-          <p className="feature-desc">Khám phá sơ đồ gia phả trực quan, dễ dàng theo dõi các thế hệ đời con cháu.</p>
-          <span className="feature-link">Xem chi tiết &rarr;</span>
-        </div>
-        <div className="feature-card glass glass-hover" onClick={() => onNavigate("tree")}>
-          <div className="feature-icon">📜</div>
-          <h3 className="feature-title serif">Hồ sơ tổ tiên</h3>
-          <p className="feature-desc">Lưu giữ thông tin, tiểu sử quý giá và hình ảnh truyền thống của tiền nhân.</p>
-          <span className="feature-link">Xem chi tiết &rarr;</span>
-        </div>
-        <div className="feature-card glass glass-hover" onClick={() => onNavigate("tree")}>
-          <div className="feature-icon">📅</div>
-          <h3 className="feature-title serif">Ngày giỗ & sự kiện</h3>
-          <p className="feature-desc">Quản lý lịch cúng giỗ, lễ họ, họp họ và các cột mốc quan trọng âm dương.</p>
-          <span className="feature-link">Xem chi tiết &rarr;</span>
-        </div>
-        <div className="feature-card glass glass-hover" onClick={() => onNavigate("tree")}>
-          <div className="feature-icon">🖼️</div>
-          <h3 className="feature-title serif">Ký ức gia đình</h3>
-          <p className="feature-desc">Nơi lưu giữ album ảnh gia đình, các câu chuyện truyền đời đầy ý nghĩa.</p>
-          <span className="feature-link">Xem chi tiết &rarr;</span>
-        </div>
+      <section className="homepage-stats-row" aria-label="Thống kê dòng họ">
+        {stats.map((stat) => (
+          <article className={`stat-card stat-${stat.tone}`} key={stat.label}>
+            <div className="stat-icon-wrapper">
+              <HeritageIcon type={stat.icon} />
+            </div>
+            <div className="stat-details">
+              <div>
+                <strong className="stat-number">{stat.value}</strong>
+                <span className="stat-label">{stat.label}</span>
+              </div>
+              <span className="stat-note">{stat.note}</span>
+            </div>
+          </article>
+        ))}
       </section>
 
-      {/* 4. Bottom Grid (3 Columns) */}
+      <section className="homepage-features-section" aria-label="Lối vào nhanh">
+        {features.map((feature) => (
+          <button
+            className={`feature-card feature-${feature.tone}`}
+            key={feature.title}
+            onClick={() => onNavigate(feature.title === "Cây phả hệ" ? "tree" : "list")}
+          >
+            <span className="feature-medallion">
+              <HeritageIcon type={feature.icon} />
+            </span>
+            <span className="feature-body">
+              <strong className="feature-title serif">{feature.title}</strong>
+              <span className="feature-desc">{feature.text}</span>
+              <span className="feature-link">Xem chi tiết <span aria-hidden="true">→</span></span>
+            </span>
+          </button>
+        ))}
+      </section>
+
       <section className="homepage-bottom-grid">
-        {/* Column 1: Danh nhân tiêu biểu */}
-        <div className="grid-column column-notables">
+        <article className="home-panel panel-notables">
           <div className="column-header-row">
-            <h3 className="column-title serif">🏆 Danh nhân tiêu biểu</h3>
-            <span className="column-more-link" onClick={() => onNavigate("tree")}>Xem tất cả &rarr;</span>
+            <h2 className="column-title serif">
+              <span className="header-mark" aria-hidden="true" />
+              Danh nhân tiêu biểu
+            </h2>
+            <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem tất cả <span aria-hidden="true">→</span></button>
           </div>
           <div className="notables-list">
-            <div className="notable-card">
-              <img src={avatarTinh} alt="Trần Công Tinh" className="notable-avatar" />
-              <div className="notable-info">
-                <h4 className="notable-name">Trần Công Tinh</h4>
-                <span className="notable-title">Thủy tổ dòng họ (1240 - 1310)</span>
-              </div>
-            </div>
-            <div className="notable-card">
-              <img src={avatarNghi} alt="Trần Công Nghi" className="notable-avatar" />
-              <div className="notable-info">
-                <h4 className="notable-name">Trần Công Nghi</h4>
-                <span className="notable-title">Khai quốc công thần (1265 - 1335)</span>
-              </div>
-            </div>
-            <div className="notable-card">
-              <img src={avatarNghia} alt="Trần Công Nghĩa" className="notable-avatar" />
-              <div className="notable-info">
-                <h4 className="notable-name">Trần Công Nghĩa</h4>
-                <span className="notable-title">Triệu đại Trần (1270 - 1340)</span>
-              </div>
-            </div>
-            <div className="notable-card">
-              <img src={avatarTri} alt="Trần Công Trị" className="notable-avatar" />
-              <div className="notable-info">
-                <h4 className="notable-name">Trần Công Trị</h4>
-                <span className="notable-title">Nhà nho, nhà giáo (1275 - 1345)</span>
-              </div>
-            </div>
+            {people.map((person) => (
+              <button className="notable-card" key={person.name} onClick={() => onNavigate("tree")}>
+                <img src={person.avatar} alt={person.name} className="notable-avatar" />
+                <strong className="notable-name">{person.name}</strong>
+                <span className="notable-title">{person.title}</span>
+                <span className="notable-years">({person.years})</span>
+              </button>
+            ))}
           </div>
-        </div>
+        </article>
 
-        {/* Column 2: Ngày giỗ sắp tới */}
-        <div className="grid-column column-anniversaries">
+        <article className="home-panel panel-events">
           <div className="column-header-row">
-            <h3 className="column-title serif">📅 Ngày giỗ sắp tới</h3>
-            <span className="column-more-link" onClick={() => onNavigate("tree")}>Xem lịch đầy đủ &rarr;</span>
+            <h2 className="column-title serif">
+              <span className="header-mark calendar-mark" aria-hidden="true" />
+              Ngày giỗ sắp tới
+            </h2>
+            <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem lịch đầy đủ <span aria-hidden="true">→</span></button>
           </div>
           <div className="anniversaries-list">
-            <div className="anniversary-item">
-              <div className="anniversary-date-box">
-                <span className="date-day">15</span>
-                <span className="date-month">Tháng 5</span>
+            {events.map((event) => (
+              <div className="anniversary-item" key={event.title}>
+                <div className="anniversary-date-box">
+                  <strong>{event.day}</strong>
+                  <span>{event.month}</span>
+                </div>
+                <div className="anniversary-details">
+                  <strong>{event.title}</strong>
+                  <span>{event.date}</span>
+                  <small>Từ đường họ Trần Công</small>
+                </div>
+                <button className="btn-item-action" onClick={() => onNavigate("tree")}>Xem chi tiết</button>
               </div>
-              <div className="anniversary-details">
-                <h4 className="anniversary-title">Giỗ Thủy tổ Trần Công Tinh</h4>
-                <span className="anniversary-time">Thứ Năm, 15/05/2025 (18/04 Âm Lịch)</span>
-                <span className="anniversary-loc">📍 Từ đường họ Trần Công</span>
-              </div>
-              <button className="btn-item-action" onClick={() => onNavigate("tree")}>Xem chi tiết</button>
-            </div>
-
-            <div className="anniversary-item">
-              <div className="anniversary-date-box">
-                <span className="date-day">02</span>
-                <span className="date-month">Tháng 6</span>
-              </div>
-              <div className="anniversary-details">
-                <h4 className="anniversary-title">Giỗ Trần Công Nghi</h4>
-                <span className="anniversary-time">Thứ Hai, 02/06/2025 (07/05 Âm Lịch)</span>
-                <span className="anniversary-loc">📍 Từ đường họ Trần Công</span>
-              </div>
-              <button className="btn-item-action" onClick={() => onNavigate("tree")}>Xem chi tiết</button>
-            </div>
-
-            <div className="anniversary-item">
-              <div className="anniversary-date-box">
-                <span className="date-day">18</span>
-                <span className="date-month">Tháng 6</span>
-              </div>
-              <div className="anniversary-details">
-                <h4 className="anniversary-title">Giỗ Trần Công Nghĩa</h4>
-                <span className="anniversary-time">Thứ Tư, 18/06/2025 (23/05 Âm Lịch)</span>
-                <span className="anniversary-loc">📍 Từ đường họ Trần Công</span>
-              </div>
-              <button className="btn-item-action" onClick={() => onNavigate("tree")}>Xem chi tiết</button>
-            </div>
+            ))}
           </div>
-          <button className="btn-view-more-events" onClick={() => onNavigate("tree")}>
-            Xem thêm sự kiện &rarr;
-          </button>
-        </div>
+          <button className="btn-view-more-events" onClick={() => onNavigate("tree")}>Xem thêm sự kiện <span aria-hidden="true">→</span></button>
+        </article>
 
-        {/* Column 3: Lịch sử dòng họ */}
-        <div className="grid-column column-timeline">
+        <article className="home-panel panel-history">
           <div className="column-header-row">
-            <h3 className="column-title serif">📜 Lịch sử dòng họ</h3>
-            <span className="column-more-link" onClick={() => onNavigate("tree")}>Xem toàn bộ &rarr;</span>
+            <h2 className="column-title serif">
+              <span className="header-mark record-mark" aria-hidden="true" />
+              Lịch sử dòng họ
+            </h2>
+            <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem toàn bộ <span aria-hidden="true">→</span></button>
           </div>
           <div className="history-timeline">
-            <div className="timeline-node">
-              <span className="timeline-year">1240</span>
-              <p className="timeline-desc">Thủy tổ Trần Công Tinh đặt nền móng lập nghiệp cho dòng họ Trần Công.</p>
-            </div>
-            <div className="timeline-node">
-              <span className="timeline-year">1265</span>
-              <p className="timeline-desc">Trần Công Nghi phò vua, lập công lớn trong việc giữ yên bờ cõi phía Nam.</p>
-            </div>
-            <div className="timeline-node">
-              <span className="timeline-year">1300</span>
-              <p className="timeline-desc">Các chi nhánh con cháu bắt đầu tách lập hương hỏa, di cư lập nghiệp ở các vùng miền.</p>
-            </div>
-            <div className="timeline-node">
-              <span className="timeline-year">1600</span>
-              <p className="timeline-desc">Dòng họ phát triển hưng thịnh, nhiều người đỗ đạt bảng vàng khoa cử làm quan lớn triều đình.</p>
-            </div>
-            <div className="timeline-node">
-              <span className="timeline-year">1900</span>
-              <p className="timeline-desc">Gìn giữ truyền thống yêu nước, đoàn kết đóng góp xây dựng quê hương xứ sở từ đường họ.</p>
-            </div>
-            <div className="timeline-node active">
-              <span className="timeline-year">Hiện tại</span>
-              <p className="timeline-desc">Con cháu cùng nhau kết nối phả hệ số, gìn giữ nguồn cội và phát triển cho các thế hệ tương lai.</p>
-            </div>
+            {history.map(([year, text]) => (
+              <div className="timeline-node" key={year}>
+                <strong>{year}</strong>
+                <span>{text}</span>
+              </div>
+            ))}
           </div>
-        </div>
+        </article>
       </section>
 
-      {/* 5. Traditional Footer Bar */}
       <footer className="traditional-footer">
-        <div className="footer-crest-decor">
-          <span className="footer-crest-icon">🏵️</span>
-        </div>
-        <p className="footer-quote font-quote">
-          “Cội nguồn là nơi bắt đầu – Ký ức là sợi dây – Tương lai là nơi tiếp nối. <br />
-          Nguyện cùng nhau gìn giữ, để dòng họ Trần Công mãi bền vững và tỏa sáng.”
+        <p className="footer-quote serif">
+          Cội nguồn là nơi bắt đầu - Ký ức là sợi dây - Tương lai là nơi tiếp nối.
+          <span>Nguyện cùng nhau gìn giữ, để dòng họ Trần Công mãi bền vững và tỏa sáng.</span>
         </p>
       </footer>
-    </div>
+    </main>
   );
 }
