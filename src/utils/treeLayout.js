@@ -42,12 +42,6 @@ export const buildLayout = (members) => {
       (m.motherId && parentIds.includes(m.motherId))
     );
 
-    // Sort children by birth date to keep order consistent
-    children.sort((a, b) => {
-      if (!a.birthDate) return 1;
-      if (!b.birthDate) return -1;
-      return new Date(a.birthDate) - new Date(b.birthDate);
-    });
 
     const childUnits = children
       .map(child => buildUnit(child))
@@ -166,7 +160,8 @@ export const buildLayout = (members) => {
       x: unit.x,
       y: unit.y,
       width: CARD_WIDTH,
-      height: CARD_HEIGHT
+      height: CARD_HEIGHT,
+      isSpouse: false
     });
 
     let parentConnectorX = unit.x + CARD_WIDTH / 2;
@@ -179,7 +174,8 @@ export const buildLayout = (members) => {
         x: spouseX,
         y: unit.y,
         width: CARD_WIDTH,
-        height: CARD_HEIGHT
+        height: CARD_HEIGHT,
+        isSpouse: true
       });
 
       // Spouse connection line (horizontal dash)

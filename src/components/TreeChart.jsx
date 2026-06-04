@@ -180,7 +180,9 @@ export default function TreeChart({
               <div
                 className={`member-card glass glass-hover ${node.gender} ${
                   node.isDeceased ? "deceased" : ""
-                } ${isSelected ? "selected" : ""} ${highlighted ? "animate-scale-up" : ""}`}
+                } ${isSelected ? "selected" : ""} ${highlighted ? "animate-scale-up" : ""} ${
+                  node.isSpouse ? "spouse-card" : "blood-card"
+                }`}
                 style={highlighted ? { borderColor: "var(--color-brand-accent)", borderWidth: "2.5px", boxShadow: "0 0 10px rgba(220, 53, 69, 0.5)" } : {}}
                 onClick={() => onSelectPerson(node.id)}
               >

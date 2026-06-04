@@ -386,8 +386,28 @@
 }
 
 .member-card.selected {
-  box-shadow: 0 0 0 3px var(--color-brand-primary);
+  box-shadow: 0 0 0 3px var(--color-brand-primary) !important;
   transform: scale(1.03);
+  opacity: 1 !important;
+}
+
+/* Highlight blood descendants */
+.member-card.blood-card {
+  border-width: 2.2px;
+  box-shadow: var(--shadow-sm), 0 0 10px rgba(191, 158, 85, 0.25);
+  opacity: 1;
+}
+
+/* Subdue spouses */
+.member-card.spouse-card {
+  opacity: 0.78;
+  border-width: 1.2px;
+  box-shadow: var(--shadow-sm);
+  transition: opacity var(--transition-fast), transform var(--transition-fast), border var(--transition-fast);
+}
+
+.member-card.spouse-card:hover {
+  opacity: 0.95;
 }
 
 .card-avatar-wrapper {
