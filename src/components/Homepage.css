@@ -1094,14 +1094,6 @@
     grid-template-columns: 165px minmax(320px, 0.56fr) minmax(410px, 0.64fr);
     gap: 1.4rem;
   }
-
-  .homepage-bottom-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .panel-history {
-    grid-column: 1 / -1;
-  }
 }
 
 @media (max-width: 1024px) {
@@ -1132,6 +1124,14 @@
   .homepage-stats-row,
   .homepage-features-section {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .homepage-bottom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .panel-history {
+    grid-column: 1 / -1;
   }
 
   .traditional-footer {
