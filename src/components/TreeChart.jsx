@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
+import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { buildLayout } from "../utils/treeLayout";
 import { getAge } from "../utils/mockData";
 
@@ -16,7 +17,7 @@ export default function TreeChart({
   const containerRef = useRef(null);
 
   // Compute the family tree layout
-  const { nodes, links, width, height } = buildLayout(members);
+  const { nodes, links, width } = buildLayout(members);
 
   // Center the layout on load
   useEffect(() => {
@@ -25,7 +26,7 @@ export default function TreeChart({
       const xOffset = (containerWidth - width * zoom) / 2;
       setPan({ x: Math.max(20, xOffset), y: 30 });
     }
-  }, [width]);
+  }, [width, zoom]);
 
   // Handle Dragging / Panning
   const handleMouseDown = (e) => {
@@ -163,8 +164,6 @@ export default function TreeChart({
           const age = getAge(node.birthDate, node.deathDate, node.isDeceased);
           const isSelected = selectedPersonId === node.id;
           const highlighted = isMatch(node);
-          const initial = node.name.trim().split(" ").pop().charAt(0);
-
           return (
             <div
               key={node.id}
@@ -194,8 +193,8 @@ export default function TreeChart({
                   {node.avatar ? (
                     <img src={node.avatar} alt={node.name} className="card-avatar" />
                   ) : (
-                    <div className="card-avatar">
-                      {initial}
+                    <div className="card-avatar generated-avatar" style={getAvatarStyle(node)}>
+                      {getAvatarInitials(node.name)}
                     </div>
                   )}
                 </div>

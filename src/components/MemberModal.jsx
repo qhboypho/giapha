@@ -1,6 +1,61 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
+import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 
 const memberVal = (val) => val === undefined || val === null ? "" : val;
+
+const createEmptyFormData = () => ({
+  name: "",
+  gender: "nam",
+  generation: 1,
+  isDeceased: false,
+  birthDate: "",
+  deathDate: "",
+  birthPlace: "",
+  restingPlace: "",
+  occupation: "",
+  bio: "",
+  phone: "",
+  address: "",
+  fatherId: "",
+  motherId: "",
+  spouseIds: [],
+  isFeatured: false,
+  avatar: ""
+});
+
+const createInitialFormData = (editPerson, addRelativeOf) => {
+  if (editPerson) {
+    return {
+      ...editPerson,
+      birthDate: editPerson.birthDate || "",
+      deathDate: editPerson.deathDate || "",
+      birthPlace: editPerson.birthPlace || "",
+      restingPlace: editPerson.restingPlace || "",
+      occupation: memberVal(editPerson.occupation),
+      bio: memberVal(editPerson.bio),
+      phone: memberVal(editPerson.phone),
+      address: memberVal(editPerson.address),
+      fatherId: editPerson.fatherId || "",
+      motherId: editPerson.motherId || "",
+      spouseIds: editPerson.spouseIds || [],
+      isFeatured: Boolean(editPerson.isFeatured),
+      avatar: editPerson.avatar || ""
+    };
+  }
+
+  if (addRelativeOf) {
+    const target = addRelativeOf;
+
+    return {
+      ...createEmptyFormData(),
+      generation: Math.max(1, target.generation + 1),
+      fatherId: target.gender === "nam" ? target.id : "",
+      motherId: target.gender === "nu" ? target.id : ""
+    };
+  }
+
+  return createEmptyFormData();
+};
 
 export default function MemberModal({
   isOpen,
@@ -10,89 +65,7 @@ export default function MemberModal({
   addRelativeOf,
   members
 }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    gender: "nam",
-    generation: 1,
-    isDeceased: false,
-    birthDate: "",
-    deathDate: "",
-    birthPlace: "",
-    restingPlace: "",
-    occupation: "",
-    bio: "",
-    phone: "",
-    address: "",
-    fatherId: "",
-    motherId: "",
-    spouseIds: [],
-    avatar: ""
-  });
-
-  // Populate form based on edit mode or adding relative mode
-  useEffect(() => {
-    if (editPerson) {
-      setFormData({
-        ...editPerson,
-        birthDate: editPerson.birthDate || "",
-        deathDate: editPerson.deathDate || "",
-        birthPlace: editPerson.birthPlace || "",
-        restingPlace: editPerson.restingPlace || "",
-        occupation: memberVal(editPerson.occupation),
-        bio: memberVal(editPerson.bio),
-        phone: memberVal(editPerson.phone),
-        address: memberVal(editPerson.address),
-        fatherId: editPerson.fatherId || "",
-        motherId: editPerson.motherId || "",
-        spouseIds: editPerson.spouseIds || [],
-        avatar: editPerson.avatar || ""
-      });
-    } else if (addRelativeOf) {
-      // Adding a relative of someone
-      // Default to empty form but pre-fill generations and connections if logical
-      const target = addRelativeOf;
-      const isParentNode = false; // We can let user choose or default to child
-
-      setFormData({
-        name: "",
-        gender: "nam",
-        generation: Math.max(1, target.generation + 1), // Default child gen
-        isDeceased: false,
-        birthDate: "",
-        deathDate: "",
-        birthPlace: "",
-        restingPlace: "",
-        occupation: "",
-        bio: "",
-        phone: "",
-        address: "",
-        fatherId: target.gender === "nam" ? target.id : "",
-        motherId: target.gender === "nu" ? target.id : "",
-        spouseIds: [],
-        avatar: ""
-      });
-    } else {
-      // Complete fresh form
-      setFormData({
-        name: "",
-        gender: "nam",
-        generation: 1,
-        isDeceased: false,
-        birthDate: "",
-        deathDate: "",
-        birthPlace: "",
-        restingPlace: "",
-        occupation: "",
-        bio: "",
-        phone: "",
-        address: "",
-        fatherId: "",
-        motherId: "",
-        spouseIds: [],
-        avatar: ""
-      });
-    }
-  }, [editPerson, addRelativeOf, isOpen]);
+  const [formData, setFormData] = useState(() => createInitialFormData(editPerson, addRelativeOf));
 
   if (!isOpen) return null;
 
@@ -171,13 +144,18 @@ export default function MemberModal({
             {/* Avatar Uploader */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
               <div
-                className={`profile-avatar ${formData.isDeceased ? "deceased" : ""}`}
-                style={{ width: "80px", height: "80px", fontSize: "2rem" }}
+                className={`profile-avatar ${formData.isDeceased ? "deceased" : ""} ${formData.avatar ? "" : "generated-avatar"}`}
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  fontSize: "1.35rem",
+                  ...(formData.avatar ? {} : getAvatarStyle(formData))
+                }}
               >
                 {formData.avatar ? (
                   <img src={formData.avatar} alt="Preview" className="profile-avatar" style={{ width: "80px", height: "80px", border: "none" }} />
                 ) : (
-                  formData.name ? formData.name.trim().split(" ").pop().charAt(0) : "👤"
+                  getAvatarInitials(formData.name)
                 )}
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
@@ -243,6 +221,18 @@ export default function MemberModal({
                     onChange={handleChange}
                   />
                   Đã qua đời (Đã mất)
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label className="form-checkbox">
+                  <input
+                    type="checkbox"
+                    name="isFeatured"
+                    checked={formData.isFeatured}
+                    onChange={handleChange}
+                  />
+                  Người tiêu biểu
                 </label>
               </div>
 

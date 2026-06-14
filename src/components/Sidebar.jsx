@@ -1,5 +1,6 @@
-import React from "react";
+import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getAge, getGenderLabel } from "../utils/mockData";
+import { sortMembersByBirthOrder } from "../utils/sortUtils";
 
 export default function Sidebar({
   personId,
@@ -23,9 +24,27 @@ export default function Sidebar({
   const spouses = members.filter((m) => person.spouseIds?.includes(m.id));
 
   // Children
-  const children = members.filter((m) => m.fatherId === person.id || m.motherId === person.id);
+  const children = sortMembersByBirthOrder(members.filter((m) => m.fatherId === person.id || m.motherId === person.id));
 
   const canEdit = currentUser?.role === "admin" || currentUser?.role === "editor";
+
+  const renderRelationAvatar = (member, className) => {
+    const classNames = `${className} ${member.isDeceased ? "deceased" : ""}`;
+
+    if (member.avatar) {
+      return <img src={member.avatar} alt="" className={classNames} aria-hidden="true" />;
+    }
+
+    return (
+      <div
+        className={`${classNames} generated-avatar`}
+        style={getAvatarStyle(member)}
+        aria-hidden="true"
+      >
+        {getAvatarInitials(member.name)}
+      </div>
+    );
+  };
 
   return (
     <aside className="sidebar glass">
@@ -40,7 +59,10 @@ export default function Sidebar({
       <div className="sidebar-body">
         {/* Profile Card Hero */}
         <div className="profile-hero animate-scale-up">
-          <div className={`profile-avatar ${person.isDeceased ? "deceased" : ""}`}>
+          <div
+            className={`profile-avatar ${person.isDeceased ? "deceased" : ""} ${person.avatar ? "" : "generated-avatar"}`}
+            style={person.avatar ? undefined : getAvatarStyle(person)}
+          >
             {person.avatar ? (
               <img
                 src={person.avatar}
@@ -49,7 +71,7 @@ export default function Sidebar({
                 style={{ border: "none" }}
               />
             ) : (
-              person.name.trim().split(" ").pop().charAt(0)
+              getAvatarInitials(person.name)
             )}
           </div>
           <h2 className="profile-name">{person.name}</h2>
@@ -153,10 +175,12 @@ export default function Sidebar({
                 <p className="info-label" style={{ fontSize: "0.75rem", marginBottom: "4px" }}>Cha mẹ:</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   {father && (
-                    <div className="relation-item" onClick={() => onSelectPerson(father.id)}>
-                      <div className={`relation-avatar ${father.isDeceased ? "deceased" : ""}`}>
-                        {father.name.substring(0, 1)}
-                      </div>
+                    <div 
+                      className="relation-item has-tooltip" 
+                      onClick={() => onSelectPerson(father.id)}
+                      data-tooltip={father.name}
+                    >
+                      {renderRelationAvatar(father, "relation-avatar")}
                       <div className="relation-details">
                         <span className="relation-name">{father.name}</span>
                         <span className="relation-role">Cha</span>
@@ -164,10 +188,12 @@ export default function Sidebar({
                     </div>
                   )}
                   {mother && (
-                    <div className="relation-item" onClick={() => onSelectPerson(mother.id)}>
-                      <div className={`relation-avatar ${mother.isDeceased ? "deceased" : ""}`}>
-                        {mother.name.substring(0, 1)}
-                      </div>
+                    <div 
+                      className="relation-item has-tooltip" 
+                      onClick={() => onSelectPerson(mother.id)}
+                      data-tooltip={mother.name}
+                    >
+                      {renderRelationAvatar(mother, "relation-avatar")}
                       <div className="relation-details">
                         <span className="relation-name">{mother.name}</span>
                         <span className="relation-role">Mẹ</span>
@@ -184,10 +210,13 @@ export default function Sidebar({
                 <p className="info-label" style={{ fontSize: "0.75rem", marginBottom: "4px" }}>Bạn đời:</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {spouses.map((spouse) => (
-                    <div key={spouse.id} className="relation-item" onClick={() => onSelectPerson(spouse.id)}>
-                      <div className={`relation-avatar ${spouse.isDeceased ? "deceased" : ""}`}>
-                        {spouse.name.substring(0, 1)}
-                      </div>
+                    <div 
+                      key={spouse.id} 
+                      className="relation-item has-tooltip" 
+                      onClick={() => onSelectPerson(spouse.id)}
+                      data-tooltip={spouse.name}
+                    >
+                      {renderRelationAvatar(spouse, "relation-avatar")}
                       <div className="relation-details">
                         <span className="relation-name">{spouse.name}</span>
                         <span className="relation-role">
@@ -208,10 +237,13 @@ export default function Sidebar({
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {children.map((child) => (
-                    <div key={child.id} className="relation-item" onClick={() => onSelectPerson(child.id)}>
-                      <div className={`relation-avatar ${child.isDeceased ? "deceased" : ""}`}>
-                        {child.name.substring(0, 1)}
-                      </div>
+                    <div 
+                      key={child.id} 
+                      className="relation-item has-tooltip" 
+                      onClick={() => onSelectPerson(child.id)}
+                      data-tooltip={child.name}
+                    >
+                      {renderRelationAvatar(child, "relation-avatar")}
                       <div className="relation-details">
                         <span className="relation-name">{child.name}</span>
                         <span className="relation-role">

@@ -3,6 +3,8 @@
  * Calculates coordinate positions for a family tree.
  * Uses a subtree width calculation and Centers parents over children.
  */
+import { sortMembersByBirthOrder } from "./sortUtils";
+
 
 const CARD_WIDTH = 210;
 const CARD_HEIGHT = 90;
@@ -13,7 +15,7 @@ const TOP_PADDING = 50;
 
 export const buildLayout = (members) => {
   // Find Gen 1 members (the roots/founders) who don't have parents in the database
-  const gen1List = members.filter(m => m.generation === 1 && !m.fatherId && !m.motherId);
+  const gen1List = sortMembersByBirthOrder(members.filter(m => m.generation === 1 && !m.fatherId && !m.motherId));
   
   if (gen1List.length === 0) return { nodes: [], links: [], width: 1000, height: 600 };
 
@@ -42,8 +44,9 @@ export const buildLayout = (members) => {
       (m.motherId && parentIds.includes(m.motherId))
     );
 
+    const sortedChildren = sortMembersByBirthOrder(children);
 
-    const childUnits = children
+    const childUnits = sortedChildren
       .map(child => buildUnit(child))
       .filter(unit => unit !== null);
 
@@ -142,7 +145,7 @@ export const buildLayout = (members) => {
     }
   };
 
-  roots.forEach((root, idx) => {
+  roots.forEach((root) => {
     assignCoords(root, currentStartX);
     currentStartX += root.subtreeWidth + CHILDREN_GAP * 2;
   });

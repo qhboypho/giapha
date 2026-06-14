@@ -1,5 +1,22 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getAge, getGenderLabel } from "../utils/mockData";
+
+function MemberListAvatar({ member, className }) {
+  if (member.avatar) {
+    return <img src={member.avatar} alt="" className={className} aria-hidden="true" />;
+  }
+
+  return (
+    <span
+      className={`${className} generated-avatar`}
+      style={getAvatarStyle(member)}
+      aria-hidden="true"
+    >
+      {getAvatarInitials(member.name)}
+    </span>
+  );
+}
 
 export default function MemberList({ members, onSelectPerson, searchQuery }) {
   const [filterGen, setFilterGen] = useState("");
@@ -127,7 +144,7 @@ export default function MemberList({ members, onSelectPerson, searchQuery }) {
                   return (
                     <tr key={member.id} onClick={() => onSelectPerson(member.id)}>
                       <td style={{ fontWeight: 600 }}>
-                        {member.gender === "nam" ? "👨 " : "👩 "}
+                        <MemberListAvatar member={member} className="table-avatar" />
                         {member.name}
                       </td>
                       <td>{getGenderLabel(member.gender)}</td>
@@ -163,7 +180,7 @@ export default function MemberList({ members, onSelectPerson, searchQuery }) {
                 >
                   <div className="mobile-card-header">
                     <span className="mobile-card-name">
-                      {member.gender === "nam" ? "👨 " : "👩 "}
+                      <MemberListAvatar member={member} className="mobile-list-avatar" />
                       {member.name}
                     </span>
                     <span className="mobile-card-gen">Đời {member.generation}</span>

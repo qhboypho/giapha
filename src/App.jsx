@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Homepage from "./components/Homepage";
 import TreeChart from "./components/TreeChart";
@@ -11,6 +11,7 @@ import "./App.css";
 export default function App() {
   // Family tree members from database
   const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Authenticated user state
   const [currentUser, setCurrentUser] = useState(null);
@@ -49,6 +50,7 @@ export default function App() {
   // Load user session, settings, and family tree data on mount
   useEffect(() => {
     const initApp = async () => {
+      setLoading(true);
       let user = null;
       let pMode = true;
 
@@ -89,6 +91,7 @@ export default function App() {
           console.error("Members fetch failed:", err);
         }
       }
+      setLoading(false);
     };
 
     initApp();
@@ -101,6 +104,13 @@ export default function App() {
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  const handleViewChange = (view) => {
+    if (view !== activeView && selectedPersonId) {
+      setSelectedPersonId(null);
+    }
+    setActiveView(view);
   };
 
   const handleLogin = async (user) => {
@@ -139,7 +149,7 @@ export default function App() {
       setMembers([]);
       setSelectedPersonId(null);
       showToast("Đã đăng xuất khỏi hệ thống.");
-    } catch (err) {
+    } catch {
       showToast("Lỗi kết nối máy chủ khi đăng xuất.");
     }
   };
@@ -170,12 +180,17 @@ export default function App() {
       } else {
         showToast(data.error || "Không thể cập nhật cấu hình bảo mật.");
       }
-    } catch (err) {
+    } catch {
       showToast("Lỗi kết nối máy chủ.");
     }
   };
 
   const handleSelectPerson = (id) => {
+    setSelectedPersonId(id);
+  };
+
+  const handleOpenPersonInTree = (id) => {
+    setActiveView("tree");
     setSelectedPersonId(id);
   };
 
@@ -249,7 +264,7 @@ export default function App() {
       } else {
         showToast(data.error || "Thao tác thất bại.");
       }
-    } catch (err) {
+    } catch {
       showToast("Lỗi kết nối tới máy chủ.");
     }
   };
@@ -264,7 +279,7 @@ export default function App() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         activeView={activeView}
-        setActiveView={setActiveView}
+        setActiveView={handleViewChange}
         currentUser={currentUser}
         setIsLoginModalOpen={setIsLoginModalOpen}
         onLogout={handleLogout}
@@ -301,7 +316,12 @@ export default function App() {
           <>
             <div className="viewport-container">
               {activeView === "home" ? (
-                <Homepage onNavigate={setActiveView} members={members} />
+                <Homepage
+                  onNavigate={handleViewChange}
+                  onOpenPerson={handleOpenPersonInTree}
+                  members={members}
+                  isLoading={loading}
+                />
               ) : activeView === "tree" ? (
                 <TreeChart
                   members={members}
@@ -344,14 +364,17 @@ export default function App() {
         onLogin={handleLogin}
       />
 
-      <MemberModal
-        isOpen={isMemberModalOpen}
-        onClose={() => setIsMemberModalOpen(false)}
-        onSubmit={handleMemberSubmit}
-        editPerson={editPerson}
-        addRelativeOf={addRelativeOf}
-        members={members}
-      />
+      {isMemberModalOpen && (
+        <MemberModal
+          key={editPerson?.id || addRelativeOf?.id || "new-member"}
+          isOpen={isMemberModalOpen}
+          onClose={() => setIsMemberModalOpen(false)}
+          onSubmit={handleMemberSubmit}
+          editPerson={editPerson}
+          addRelativeOf={addRelativeOf}
+          members={members}
+        />
+      )}
 
       {/* Toast Notification */}
       {toast && <div className="toast animate-slide-up">{toast}</div>}

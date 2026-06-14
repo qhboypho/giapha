@@ -2,7 +2,7 @@
 import { Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
-import { verifyPassword, timingSafeStringEqual, generateSecureToken } from '../helpers/auth';
+import { verifyPassword, generateSecureToken } from '../helpers/auth';
 
 const app = new Hono().basePath('/api');
 
@@ -185,6 +185,7 @@ app.get('/members', async (c) => {
     const formatted = results.map(row => ({
       ...row,
       isDeceased: row.isDeceased === 1,
+      isFeatured: row.isFeatured === 1,
       spouseIds: JSON.parse(row.spouseIds || '[]'),
       fatherId: row.fatherId || null,
       motherId: row.motherId || null
@@ -211,8 +212,8 @@ app.post('/members', async (c) => {
       INSERT INTO members (
         id, name, gender, generation, isDeceased, birthDate, deathDate,
         birthPlace, restingPlace, occupation, bio, phone, address,
-        avatar, spouseIds, fatherId, motherId
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        avatar, isFeatured, spouseIds, fatherId, motherId
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       data.name,
@@ -228,6 +229,7 @@ app.post('/members', async (c) => {
       data.phone || '',
       data.address || '',
       data.avatar || null,
+      data.isFeatured ? 1 : 0,
       JSON.stringify(data.spouseIds || []),
       data.fatherId || null,
       data.motherId || null
@@ -262,7 +264,7 @@ app.put('/members/:id', async (c) => {
       UPDATE members SET
         name = ?, gender = ?, generation = ?, isDeceased = ?, birthDate = ?, deathDate = ?,
         birthPlace = ?, restingPlace = ?, occupation = ?, bio = ?, phone = ?, address = ?,
-        avatar = ?, spouseIds = ?, fatherId = ?, motherId = ?, updatedAt = datetime('now')
+        avatar = ?, isFeatured = ?, spouseIds = ?, fatherId = ?, motherId = ?, updatedAt = datetime('now')
       WHERE id = ?
     `).bind(
       data.name,
@@ -278,6 +280,7 @@ app.put('/members/:id', async (c) => {
       data.phone || '',
       data.address || '',
       data.avatar || null,
+      data.isFeatured ? 1 : 0,
       JSON.stringify(data.spouseIds || []),
       data.fatherId || null,
       data.motherId || null,

@@ -11,7 +11,7 @@ import {
   Sun,
   Users
 } from "lucide-react";
-import avatarTinh from "../assets/avatar_tinh.png";
+import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 
 export default function Navbar({
   searchQuery,
@@ -28,6 +28,10 @@ export default function Navbar({
   onAddMember
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const userDisplayName = currentUser?.role === "admin"
+    ? "Trần Công Minh"
+    : currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
+  const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
@@ -110,11 +114,18 @@ export default function Navbar({
         {currentUser ? (
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div className="user-badge" style={{ cursor: "default" }}>
-              <div className="user-avatar">
-                <img src={avatarTinh} alt="" />
+              <div
+                className={`user-avatar ${userAvatar ? "" : "generated-avatar"}`}
+                style={userAvatar ? undefined : getAvatarStyle({ id: currentUser.id || currentUser.username, name: userDisplayName })}
+              >
+                {userAvatar ? (
+                  <img src={userAvatar} alt="" />
+                ) : (
+                  getAvatarInitials(userDisplayName)
+                )}
               </div>
               <span className="user-role">
-                {currentUser.role === "admin" ? "Trần Công Minh" : currentUser.fullName || currentUser.displayName || currentUser.username}
+                {userDisplayName}
               </span>
             </div>
             <button 

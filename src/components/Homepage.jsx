@@ -1,3 +1,7 @@
+import { useState, useRef } from "react";
+import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
+import { lunarToSolar, parseSolarDate, solarToLunar, toLocalDate } from "../utils/lunarCalendar";
+import { sortMembersByBirthOrder } from "../utils/sortUtils";
 import "./Homepage.css";
 import {
   CalendarDays,
@@ -9,45 +13,48 @@ import {
   Users
 } from "lucide-react";
 import paperBg from "../assets/homepage-design/paper-bg.png";
-import mountainBg from "../assets/homepage-design/mountain-bg-cutout.png";
+import mountainBg from "../assets/homepage-design/new-mountain-bg.png";
 import lotusWatercolor from "../assets/homepage-design/lotus-watercolor-cutout.png";
-import pineWatercolor from "../assets/homepage-design/pine-watercolor-cutout.png";
+import pineWatercolor from "../assets/homepage-design/new-pine-watercolor.png";
 import goldClouds from "../assets/homepage-design/gold-clouds-cutout.png";
 import goldWavesLotus from "../assets/homepage-design/gold-waves-lotus-cutout.png";
 import goldBorders from "../assets/homepage-design/gold-borders-cutout.png";
-import avatarTinh from "../assets/avatar_tinh.png";
-import avatarNghi from "../assets/avatar_nghi.png";
-import avatarNghia from "../assets/avatar_nghia.png";
-import avatarTri from "../assets/avatar_tri.png";
+import dongsonDrum from "../assets/homepage-design/dongson-drum.jpg";
 
-const people = [
-  {
-    name: "Trần Công Kỳ",
-    title: "Thủy tổ dòng họ",
-    years: "Tạ thế 1936",
-    avatar: avatarTinh
-  },
-  {
-    name: "Trần Công Nghiêm",
-    title: "Cụ đời thứ hai",
-    years: "Tạ thế 1980",
-    avatar: avatarNghi
-  },
-  {
-    name: "Trần Công Kỷ",
-    title: "Cụ đời thứ hai",
-    years: "Tạ thế",
-    avatar: avatarNghia
-  },
-  {
-    name: "Trần Công Huê",
-    title: "Ông đời thứ ba",
-    years: "1938 - 1992",
-    avatar: avatarTri
+// Static fallback removed
+
+const getYearsString = (member, options = {}) => {
+  if (!member.id) return member.years || "";
+  if (member.isDeceased) {
+    if (member.deathDate) {
+      const year = member.deathDate.split('-')[0];
+      return `Tạ thế ${year}`;
+    }
+    return options.hideUnknownDeceased ? "" : "Tạ thế";
+  } else {
+    if (member.birthDate) {
+      const year = member.birthDate.split('-')[0];
+      return `Sinh ${year}`;
+    }
+    return "Còn sống";
   }
-];
+};
 
+function MemberAvatar({ member, className = "" }) {
+  if (member?.avatar) {
+    return <img src={member.avatar} alt={member.name} className={className} />;
+  }
 
+  return (
+    <span
+      className={`${className} generated-avatar`}
+      style={getAvatarStyle(member)}
+      aria-label={member?.name || "Thành viên"}
+    >
+      {getAvatarInitials(member?.name)}
+    </span>
+  );
+}
 
 const features = [
   {
@@ -73,27 +80,6 @@ const features = [
     text: "Lưu giữ hình ảnh, kỷ vật và câu chuyện gia đình.",
     icon: "memory",
     tone: "teal"
-  }
-];
-
-const events = [
-  {
-    day: "04",
-    month: "Tháng 6",
-    title: "Giỗ Thủy tổ Trần Công Kỳ",
-    date: "Tạ thế ngày 04/06/1936"
-  },
-  {
-    day: "21",
-    month: "Tháng 5",
-    title: "Giỗ ông Trần Công Huê",
-    date: "Tạ thế ngày 21/05/1992"
-  },
-  {
-    day: "02",
-    month: "Tháng 2",
-    title: "Giỗ cụ Trần Công Nghiêm",
-    date: "Tạ thế ngày 02/02/1980"
   }
 ];
 
@@ -124,7 +110,84 @@ function HeritageIcon({ type }) {
   );
 }
 
-export default function Homepage({ onNavigate, members = [] }) {
+const formatDayMonth = (value) => String(value).padStart(2, "0");
+
+const formatSolarDate = (dateString) => {
+  const parsed = parseSolarDate(dateString);
+  if (!parsed) return "";
+  return `${formatDayMonth(parsed.day)}/${formatDayMonth(parsed.month)}/${parsed.year}`;
+};
+
+const buildAnniversaryTitle = (member) => {
+  if (member.generation <= 2) return `Giỗ cụ ${member.name}`;
+  return `Giỗ ${member.gender === "nu" ? "bà" : "ông"} ${member.name}`;
+};
+
+const getValidAnniversarySolarDate = (lunarDeath, lunarYear) => {
+  const exact = lunarToSolar(lunarDeath.day, lunarDeath.month, lunarYear, lunarDeath.leap);
+  if (exact) {
+    const back = solarToLunar(exact.day, exact.month, exact.year);
+    if (
+      back.day === lunarDeath.day &&
+      back.month === lunarDeath.month &&
+      back.leap === lunarDeath.leap
+    ) {
+      return toLocalDate(exact);
+    }
+  }
+
+  if (lunarDeath.leap) {
+    const fallback = lunarToSolar(lunarDeath.day, lunarDeath.month, lunarYear, false);
+    if (fallback) return toLocalDate(fallback);
+  }
+
+  return null;
+};
+
+const buildUpcomingAnniversaries = (members, now = new Date()) => {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  return members
+    .filter((member) => member.isDeceased && member.deathDate)
+    .map((member) => {
+      const deathSolar = parseSolarDate(member.deathDate);
+      if (!deathSolar) return null;
+
+      const lunarDeath = solarToLunar(deathSolar.day, deathSolar.month, deathSolar.year);
+      const currentLunarYear = solarToLunar(today.getDate(), today.getMonth() + 1, today.getFullYear()).year;
+      const candidates = [currentLunarYear, currentLunarYear + 1, currentLunarYear + 2]
+        .map((year) => getValidAnniversarySolarDate(lunarDeath, year))
+        .filter(Boolean)
+        .map((date) => ({
+          date,
+          daysUntil: Math.round((date - today) / (1000 * 60 * 60 * 24))
+        }))
+        .filter((candidate) => candidate.daysUntil >= 0)
+        .sort((a, b) => a.daysUntil - b.daysUntil);
+
+      if (candidates.length === 0) return null;
+      const next = candidates[0];
+
+      return {
+        member,
+        day: formatDayMonth(lunarDeath.day),
+        month: `Tháng ${lunarDeath.month}${lunarDeath.leap ? " nhuận" : ""}`,
+        title: buildAnniversaryTitle(member),
+        date: `Âm lịch ngày ${formatDayMonth(lunarDeath.day)}/${formatDayMonth(lunarDeath.month)}${lunarDeath.leap ? " nhuận" : ""}`,
+        note: `Tạ thế ngày ${formatSolarDate(member.deathDate)}`,
+        nextSolarDate: next.date,
+        daysUntil: next.daysUntil
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.daysUntil - b.daysUntil || a.member.generation - b.member.generation || a.member.name.localeCompare(b.member.name, "vi"));
+};
+
+export default function Homepage({ onNavigate, onOpenPerson, members = [], isLoading = false }) {
+  const now = new Date();
+  const currentLunarDate = solarToLunar(now.getDate(), now.getMonth() + 1, now.getFullYear());
+  const currentLunarDateLabel = `Hôm nay: ${formatDayMonth(currentLunarDate.day)}/${formatDayMonth(currentLunarDate.month)}${currentLunarDate.leap ? " nhuận" : ""}`;
+
   // Calculate dynamic stats from database data
   const generations = members.length > 0 ? Math.max(...members.map(m => m.generation), 0) : 3;
   const membersCount = members.length > 0 ? members.length : 31;
@@ -139,39 +202,177 @@ export default function Homepage({ onNavigate, members = [] }) {
     branchesCount = branchChildren.length > 0 ? branchChildren.length : 1;
   }
 
-  // Upcoming anniversaries: count deceased members whose death anniversary is in the next 30 days
-  let upcomingAnniversariesCount = 1;
-  if (members.length > 0) {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const [activeSlide, setActiveSlide] = useState(0);
+  const touchStartRef = useRef(0);
+  const recentGenerationCutoff = Math.max(1, generations - 1);
+  const getMobileYearsString = (member) => getYearsString(member, { hideUnknownDeceased: true });
+  const getMobileSpouseLabel = (child, spouse) => {
+    const isRecentGeneration = child.generation >= recentGenerationCutoff;
+    if (isRecentGeneration) {
+      return spouse.gender === "nu" ? "Vợ" : "Chồng";
+    }
+    return spouse.gender === "nu" ? "Bà" : "Ông";
+  };
 
-    let count = 0;
-    members.forEach(m => {
-      if (m.isDeceased && m.deathDate) {
-        const parts = m.deathDate.split('-');
-        if (parts.length >= 2) {
-          const month = parseInt(parts[parts.length - 2], 10) - 1; // 0-11
-          const day = parseInt(parts[parts.length - 1], 10);
+  // Helper to build mobile slides dynamically
+  const buildMobileSlides = () => {
+    if (!members || members.length === 0) return [];
 
-          const currentYear = today.getFullYear();
-          const annThisYear = new Date(currentYear, month, day);
-          const annNextYear = new Date(currentYear + 1, month, day);
+    const numericIdOrder = (id) => {
+      const match = String(id || "").match(/\d+$/);
+      return match ? parseInt(match[0], 10) : 0;
+    };
 
-          // Normalize anniversary dates to midnight
-          const dateThisYear = new Date(annThisYear.getFullYear(), annThisYear.getMonth(), annThisYear.getDate());
-          const dateNextYear = new Date(annNextYear.getFullYear(), annNextYear.getMonth(), annNextYear.getDate());
+    const compareMembersForSlideOrder = (a, b) => {
+      const genDiff = (a.generation || 0) - (b.generation || 0);
+      if (genDiff !== 0) return genDiff;
 
-          const diffThisYear = (dateThisYear - today) / (1000 * 60 * 60 * 24);
-          const diffNextYear = (dateNextYear - today) / (1000 * 60 * 60 * 24);
+      const sortedPair = sortMembersByBirthOrder([a, b]);
+      if (sortedPair[0]?.id === a.id && sortedPair[1]?.id === b.id) return -1;
+      if (sortedPair[0]?.id === b.id && sortedPair[1]?.id === a.id) return 1;
 
-          if ((diffThisYear >= 0 && diffThisYear <= 30) || (diffNextYear >= 0 && diffNextYear <= 30)) {
-            count++;
-          }
+      return numericIdOrder(a.id) - numericIdOrder(b.id);
+    };
+
+    const slides = [];
+    const seenUnits = new Set();
+
+    const parentsWithChildren = members.filter(parent =>
+      members.some(child => child.fatherId === parent.id || child.motherId === parent.id)
+    );
+
+    parentsWithChildren.forEach((member) => {
+      const spouses = (member.spouseIds || [])
+        .map(spouseId => members.find(candidate => candidate.id === spouseId))
+        .filter(Boolean);
+
+      const spouse = spouses[0] || null;
+      let parent = member;
+      let partner = spouse;
+
+      if (spouse) {
+        if (spouse.gender === "nam" && member.gender !== "nam") {
+          parent = spouse;
+          partner = member;
+        } else if (member.gender === spouse.gender && compareMembersForSlideOrder(spouse, member) < 0) {
+          parent = spouse;
+          partner = member;
         }
       }
+
+      const unitIds = partner ? [parent.id, partner.id].sort() : [parent.id];
+      const unitKey = unitIds.join("|");
+      if (seenUnits.has(unitKey)) return;
+      seenUnits.add(unitKey);
+
+      const parentIds = partner ? [parent.id, partner.id] : [parent.id];
+      const children = members.filter(child =>
+        child.generation > parent.generation &&
+        (
+          (child.fatherId && parentIds.includes(child.fatherId)) ||
+          (child.motherId && parentIds.includes(child.motherId))
+        )
+      );
+
+      if (children.length === 0) return;
+
+      const sortedCandidates = sortMembersByBirthOrder(children);
+      const candidateIds = new Set(sortedCandidates.map(child => child.id));
+      const usedChildIds = new Set();
+      const sortedChildren = [];
+
+      sortedCandidates.forEach((child) => {
+        if (usedChildIds.has(child.id)) return;
+
+        const spouseInCandidateGroup = (child.spouseIds || [])
+          .map(spouseId => members.find(candidate => candidate.id === spouseId))
+          .find(spouse => spouse && candidateIds.has(spouse.id));
+
+        if (!spouseInCandidateGroup) {
+          usedChildIds.add(child.id);
+          sortedChildren.push(child);
+          return;
+        }
+
+        const primaryChild = numericIdOrder(child.id) <= numericIdOrder(spouseInCandidateGroup.id)
+          ? child
+          : spouseInCandidateGroup;
+        const spouseChild = primaryChild.id === child.id ? spouseInCandidateGroup : child;
+
+        usedChildIds.add(primaryChild.id);
+        usedChildIds.add(spouseChild.id);
+        sortedChildren.push(primaryChild);
+      });
+
+      slides.push({ parent, spouse: partner, children: sortedChildren });
     });
-    upcomingAnniversariesCount = count;
+
+    slides.sort((a, b) => compareMembersForSlideOrder(a.parent, b.parent));
+    return slides;
+  };
+
+  const mobileSlides = buildMobileSlides();
+  const activeSlideIndex = Math.min(activeSlide, Math.max(mobileSlides.length - 1, 0));
+  const currentSlide = mobileSlides[activeSlideIndex];
+
+  const handleTouchStart = (e) => {
+    touchStartRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStartRef.current - touchEnd;
+    if (diff > 50) {
+      // Swipe left -> next slide
+      setActiveSlide((prev) => Math.min(prev + 1, mobileSlides.length - 1));
+    } else if (diff < -50) {
+      // Swipe right -> prev slide
+      setActiveSlide((prev) => Math.max(prev - 1, 0));
+    }
+  };
+
+  // Resolve dynamic mini tree root, children and branches
+  let root = null;
+  let treeChildren = [];
+  let treeBranches = [];
+
+  if (members && members.length > 0) {
+    root = members.find(m => m.generation === 1 && m.gender === "nam") || members.find(m => m.generation === 1);
+    if (root) {
+      treeChildren = sortMembersByBirthOrder(members.filter(m => m.fatherId === root.id || m.motherId === root.id));
+      treeBranches = treeChildren.map(child => {
+        const lastName = child.name.trim().split(" ").pop();
+        const prefix = "Chi cụ";
+        return `${prefix} ${lastName}`;
+      });
+    }
   }
+
+  if (!root) {
+    root = { name: "", title: "", years: "", avatar: "" };
+    treeChildren = [];
+    treeBranches = [];
+  }
+
+  // Curated featured members for homepage.
+  let featuredMembers = [];
+  if (members && members.length > 0) {
+    featuredMembers = members
+      .filter(m => m.isFeatured)
+      .sort((a, b) => (a.generation || 0) - (b.generation || 0) || a.name.localeCompare(b.name, "vi"))
+      .map(m => ({
+      name: m.name,
+      title: m.generation === 1 ? "Thủy tổ dòng họ" : `Đời thứ ${m.generation}`,
+      years: getYearsString(m),
+      member: m
+    }));
+  }
+
+  const upcomingAnniversaries = buildUpcomingAnniversaries(members);
+  const upcomingAnniversariesCount = members.length > 0
+    ? upcomingAnniversaries.filter((event) => event.daysUntil <= 30).length
+    : 0;
+  const visibleAnniversaries = upcomingAnniversaries.slice(0, 6);
 
   const stats = [
     { value: String(generations), label: "Đời", note: "Lịch sử dòng họ", tone: "green", icon: "temple" },
@@ -188,7 +389,8 @@ export default function Homepage({ onNavigate, members = [] }) {
         "--home-mountain-bg": `url(${mountainBg})`,
         "--home-gold-clouds": `url(${goldClouds})`,
         "--home-gold-waves-lotus": `url(${goldWavesLotus})`,
-        "--home-gold-borders": `url(${goldBorders})`
+        "--home-gold-borders": `url(${goldBorders})`,
+        "--home-dongson-drum": `url(${dongsonDrum})`
       }}
     >
       <section className="home-hero">
@@ -201,7 +403,7 @@ export default function Homepage({ onNavigate, members = [] }) {
           <span className="hero-cloud-mark" aria-hidden="true" />
           <h1 className="hero-title serif">
             Lưu giữ cội nguồn
-            <span>- Kết nối muôn đời con cháu</span>
+            <span>Kết nối muôn đời con cháu</span>
           </h1>
           <span className="hero-divider" aria-hidden="true" />
           <p className="hero-description">
@@ -229,46 +431,247 @@ export default function Homepage({ onNavigate, members = [] }) {
             </button>
           </div>
           <img src={pineWatercolor} alt="" className="pine-art" aria-hidden="true" />
-          <span className="panel-cloud panel-cloud-left" aria-hidden="true" />
-          <span className="panel-cloud panel-cloud-right" aria-hidden="true" />
-          <div className="mini-family-tree">
-            <div className="tree-founder">
-              <img src={people[0].avatar} alt={people[0].name} />
-              <div>
-                <span>{people[0].title}</span>
-                <strong>{people[0].name}</strong>
-                <small>{people[0].years}</small>
-              </div>
-            </div>
-            <div className="tree-lines" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="tree-children">
-              {people.slice(1).map((person) => (
-                <div className="tree-child" key={person.name}>
-                  <span className="tree-child-landscape" aria-hidden="true" />
-                  <strong>{person.name}</strong>
-                  <small>{person.years}</small>
+          
+          {isLoading ? (
+            <>
+              {/* Desktop Skeleton */}
+              <div 
+                className="mini-family-tree-dynamic skeleton-tree desktop-only-tree"
+                style={{
+                  "--tree-child-cols": 5,
+                  "--branch-cols": 5
+                }}
+              >
+                {/* Root node skeleton */}
+                <div className="mini-tree-root-wrapper">
+                  <div className="tree-founder skeleton-pulse">
+                    <div className="skeleton-avatar" />
+                    <div>
+                      <span className="skeleton-bar" style={{ width: "80px", height: "12px", marginBottom: "6px" }} />
+                      <strong className="skeleton-bar" style={{ width: "120px", height: "16px", marginBottom: "6px" }} />
+                      <small className="skeleton-bar" style={{ width: "60px", height: "10px" }} />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Connectors skeleton */}
+                <div className="mini-tree-connectors-wrapper">
+                  <div className="mini-tree-line-down-from-root" />
+                  <div 
+                    className="mini-tree-horizontal-line" 
+                    style={{
+                      left: "10%",
+                      right: "10%"
+                    }}
+                  />
+                </div>
+
+                {/* Children row skeleton */}
+                <div className="mini-tree-children-wrapper">
+                  {[1, 2, 3, 4, 5].map((idx) => (
+                    <div key={idx} className="mini-tree-child-column">
+                      <div className="mini-tree-line-down-to-child" />
+                      <div className="tree-child skeleton-pulse">
+                        <span className="tree-child-landscape skeleton-avatar" />
+                        <strong className="skeleton-bar" style={{ width: "60px", height: "12px", marginBottom: "4px" }} />
+                        <small className="skeleton-bar" style={{ width: "40px", height: "9px" }} />
+                      </div>
+                      <div className="skeleton-branch-btn skeleton-pulse" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mobile Skeleton */}
+              <div className="mini-family-tree-dynamic skeleton-tree mobile-only-tree">
+                {/* Two parent nodes side-by-side */}
+                <div className="mini-tree-root-wrapper mobile-root-row">
+                  <div className="tree-founder skeleton-pulse parent-node">
+                    <div className="skeleton-avatar" />
+                    <div>
+                      <span className="skeleton-bar" style={{ width: "60px", height: "10px", marginBottom: "4px" }} />
+                      <strong className="skeleton-bar" style={{ width: "80px", height: "14px", marginBottom: "4px" }} />
+                      <small className="skeleton-bar" style={{ width: "50px", height: "9px" }} />
+                    </div>
+                  </div>
+                  <div className="tree-founder skeleton-pulse spouse-node">
+                    <div className="skeleton-avatar" />
+                    <div>
+                      <span className="skeleton-bar" style={{ width: "60px", height: "10px", marginBottom: "4px" }} />
+                      <strong className="skeleton-bar" style={{ width: "80px", height: "14px", marginBottom: "4px" }} />
+                      <small className="skeleton-bar" style={{ width: "50px", height: "9px" }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Children list */}
+                <div className="mini-tree-children-wrapper">
+                  {[1, 2, 3, 4, 5].map((idx) => (
+                    <div key={idx} className="mini-tree-child-column">
+                      <div className="tree-child skeleton-pulse">
+                        <span className="tree-child-landscape skeleton-avatar" />
+                        <strong className="skeleton-bar" style={{ width: "80px", height: "12px", marginBottom: "4px" }} />
+                        <small className="skeleton-bar" style={{ width: "50px", height: "9px" }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Desktop Tree View */}
+              <div 
+                className="mini-family-tree-dynamic desktop-only-tree"
+                style={{
+                  "--tree-child-cols": treeChildren.length || 5,
+                  "--branch-cols": treeBranches.length || 5
+                }}
+              >
+                {/* Root node */}
+                <div className="mini-tree-root-wrapper">
+                  <div className="tree-founder">
+                    <MemberAvatar member={root} />
+                    <div>
+                      <span>{root.title || "Thủy tổ dòng họ"}</span>
+                      <strong>{root.name}</strong>
+                      <small>{getYearsString(root)}</small>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Connectors */}
+                {treeChildren.length > 0 && (
+                  <div className="mini-tree-connectors-wrapper">
+                    <div className="mini-tree-line-down-from-root" />
+                    <div 
+                      className="mini-tree-horizontal-line" 
+                      style={{
+                        left: `calc(${100 / treeChildren.length / 2}% )`,
+                        right: `calc(${100 / treeChildren.length / 2}% )`
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Children row */}
+                <div className="mini-tree-children-wrapper">
+                  {treeChildren.map((child, idx) => {
+                    const branch = treeBranches[idx];
+                    return (
+                      <div key={child.id || idx} className="mini-tree-child-column">
+                        <div className="mini-tree-line-down-to-child" />
+                        <div 
+                          className="tree-child has-tooltip"
+                          data-tooltip={`${child.name} (${getYearsString(child)})`}
+                        >
+                          <MemberAvatar member={child} className="tree-child-landscape" />
+                          <strong>{child.name}</strong>
+                          <small>{getYearsString(child)}</small>
+                        </div>
+                        {branch && (
+                          <button className="tree-branch-btn" style={{ cursor: "default" }}>
+                            <HeritageIcon type="branch" />
+                            {branch}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mobile Tree View (Slide) */}
+              {mobileSlides.length > 0 && currentSlide && (
+                <div 
+                  className="mini-family-tree-dynamic mobile-only-tree"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  {/* Two parent nodes side-by-side */}
+                  <div className={`mini-tree-root-wrapper mobile-root-row ${currentSlide.spouse ? "has-spouse" : "single-parent"}`}>
+                    <div 
+                      className="tree-founder parent-node has-tooltip"
+                      data-tooltip={`${currentSlide.parent.name}${getMobileYearsString(currentSlide.parent) ? ` (${getMobileYearsString(currentSlide.parent)})` : ""}`}
+                    >
+                      <span className="couple-role-badge">
+                        {currentSlide.parent.gender === "nam" ? "Ông" : "Bà"}
+                      </span>
+                      <MemberAvatar member={currentSlide.parent} />
+                      <div>
+                        <span>{currentSlide.parent.generation === 1 ? "Thủy tổ dòng họ" : `Đời thứ ${currentSlide.parent.generation}`}</span>
+                        <strong>{currentSlide.parent.name}</strong>
+                        {getMobileYearsString(currentSlide.parent) && <small>{getMobileYearsString(currentSlide.parent)}</small>}
+                      </div>
+                    </div>
+                    {currentSlide.spouse && (
+                      <div 
+                        className="tree-founder spouse-node has-tooltip"
+                        data-tooltip={`${currentSlide.spouse.name}${getMobileYearsString(currentSlide.spouse) ? ` (${getMobileYearsString(currentSlide.spouse)})` : ""}`}
+                      >
+                        <span className="couple-role-badge">
+                          {currentSlide.spouse.gender === "nu" ? "Bà" : "Ông"}
+                        </span>
+                        <MemberAvatar member={currentSlide.spouse} />
+                        <div>
+                          <span>{currentSlide.spouse.gender === "nu" ? "Phu nhân" : "Phu quân"}</span>
+                          <strong>{currentSlide.spouse.name}</strong>
+                          {getMobileYearsString(currentSlide.spouse) && <small>{getMobileYearsString(currentSlide.spouse)}</small>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mobile-couple-connectors" aria-hidden="true">
+                    <span className="mobile-couple-line" />
+                    <span className="mobile-family-drop" />
+                  </div>
+
+                  {/* Children list */}
+                  <div className="mini-tree-children-wrapper">
+                    {currentSlide.children.map((child, idx) => {
+                      const childSpouse = (child.spouseIds || [])
+                        .map(spouseId => members.find(candidate => candidate.id === spouseId))
+                        .find(Boolean);
+                      const childStatus = getYearsString(child, { hideUnknownDeceased: true });
+                      const spouseLabel = childSpouse
+                        ? `${getMobileSpouseLabel(child, childSpouse)}: ${childSpouse.name}`
+                        : "";
+
+                      return (
+                        <div key={child.id || idx} className="mini-tree-child-column">
+                          <div 
+                            className="tree-child has-tooltip mobile-child-family-card"
+                            data-tooltip={`${child.name} (${childStatus})${childSpouse ? ` - ${spouseLabel}` : ""}`}
+                          >
+                            <MemberAvatar member={child} className="tree-child-landscape" />
+                            <strong>
+                              <span className="child-name-text">{child.name}</span>
+                              {childStatus && <span className="child-inline-status">{childStatus}</span>}
+                            </strong>
+                            {spouseLabel && <small>{spouseLabel}</small>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {!isLoading && mobileSlides.length > 0 && (
+            <div className="hero-dots mobile-only-dots" aria-label="Slide navigation">
+              {mobileSlides.map((_, idx) => (
+                <span 
+                  key={idx} 
+                  className={idx === activeSlideIndex ? "active" : ""} 
+                  onClick={() => setActiveSlide(idx)}
+                  style={{ cursor: "pointer" }}
+                />
               ))}
             </div>
-            <div className="branch-row">
-              {["Chi cô Mùi", "Chi cô Sên", "Chi cụ Nghiêm", "Chi cô Kỷ", "Chi cụ Kỷ"].map((branch) => (
-                <button key={branch} onClick={() => onNavigate("tree")}>
-                  <HeritageIcon type="branch" />
-                  {branch}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="hero-dots" aria-hidden="true">
-            <span className="active" />
-            <span />
-            <span />
-            <span />
-          </div>
+          )}
         </aside>
       </section>
 
@@ -313,19 +716,38 @@ export default function Homepage({ onNavigate, members = [] }) {
           <div className="column-header-row">
             <h2 className="column-title serif">
               <span className="header-mark" aria-hidden="true" />
-              Danh nhân tiêu biểu
+              Người tiêu biểu
             </h2>
             <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem tất cả <span aria-hidden="true">→</span></button>
           </div>
           <div className="notables-list">
-            {people.map((person) => (
-              <button className="notable-card" key={person.name} onClick={() => onNavigate("tree")}>
-                <img src={person.avatar} alt={person.name} className="notable-avatar" />
-                <strong className="notable-name">{person.name}</strong>
-                <span className="notable-title">{person.title}</span>
-                <span className="notable-years">({person.years})</span>
-              </button>
-            ))}
+            {isLoading ? (
+              [1, 2, 3, 4].map((idx) => (
+                <div className="notable-card skeleton-pulse" key={idx} style={{ cursor: "default" }}>
+                  <div className="notable-avatar skeleton-avatar" />
+                  <strong className="skeleton-bar" style={{ width: "70px", height: "14px", marginTop: "8px", marginBottom: "6px" }} />
+                  <span className="skeleton-bar" style={{ width: "90px", height: "11px", marginBottom: "6px" }} />
+                  <span className="skeleton-bar" style={{ width: "60px", height: "10px" }} />
+                </div>
+              ))
+            ) : (
+              featuredMembers.length > 0 ? (
+                featuredMembers.map((person) => (
+                  <button className="notable-card" key={person.member.id} onClick={() => onOpenPerson(person.member.id)}>
+                    <MemberAvatar member={person.member} className="notable-avatar" />
+                    <span className="notable-copy">
+                      <strong className="notable-name">{person.name}</strong>
+                      <span className="notable-title">{person.title}</span>
+                      <span className="notable-years">({person.years})</span>
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <div className="notables-empty-state">
+                  Chưa có thành viên nào được đánh dấu là người tiêu biểu.
+                </div>
+              )
+            )}
           </div>
         </article>
 
@@ -335,11 +757,21 @@ export default function Homepage({ onNavigate, members = [] }) {
               <span className="header-mark calendar-mark" aria-hidden="true" />
               Ngày giỗ sắp tới
             </h2>
+            <span className="lunar-today-pill">{currentLunarDateLabel}</span>
             <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem lịch đầy đủ <span aria-hidden="true">→</span></button>
           </div>
           <div className="anniversaries-list">
-            {events.map((event) => (
-              <div className="anniversary-item" key={event.title}>
+            {visibleAnniversaries.length === 0 && !isLoading && (
+              <div className="anniversary-empty-state">
+                Chưa có thành viên nào được nhập ngày mất.
+              </div>
+            )}
+            {visibleAnniversaries.map((event) => (
+              <div 
+                className="anniversary-item has-tooltip" 
+                key={event.member.id}
+                data-tooltip={`${event.title} (${event.date})`}
+              >
                 <div className="anniversary-date-box">
                   <strong>{event.day}</strong>
                   <span>{event.month}</span>
@@ -347,13 +779,12 @@ export default function Homepage({ onNavigate, members = [] }) {
                 <div className="anniversary-details">
                   <strong>{event.title}</strong>
                   <span>{event.date}</span>
-                  <small>Từ đường họ Trần Công</small>
+                  <small>{event.note}</small>
                 </div>
-                <button className="btn-item-action" onClick={() => onNavigate("tree")}>Xem chi tiết</button>
+                <button className="btn-item-action" onClick={() => onOpenPerson(event.member.id)}>Xem chi tiết</button>
               </div>
             ))}
           </div>
-          <button className="btn-view-more-events" onClick={() => onNavigate("tree")}>Xem thêm sự kiện <span aria-hidden="true">→</span></button>
         </article>
 
         <article className="home-panel panel-history">
