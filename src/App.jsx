@@ -3,6 +3,9 @@ import Navbar from "./components/Navbar";
 import Homepage from "./components/Homepage";
 import TreeChart from "./components/TreeChart";
 import MemberList from "./components/MemberList";
+import FeaturedMembersPage from "./components/FeaturedMembersPage";
+import AnniversaryPage from "./components/AnniversaryPage";
+import GenerationsPage from "./components/GenerationsPage";
 import Sidebar from "./components/Sidebar";
 import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
@@ -26,7 +29,7 @@ export default function App() {
   });
 
   // View states
-  const [activeView, setActiveView] = useState("home"); // "home", "tree" or "list"
+  const [activeView, setActiveView] = useState("home");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState(null);
 
@@ -328,6 +331,24 @@ export default function App() {
                   selectedPersonId={selectedPersonId}
                   onSelectPerson={handleSelectPerson}
                   searchQuery={searchQuery}
+                />
+              ) : activeView === "generations" ? (
+                <GenerationsPage
+                  members={members}
+                  isLoading={loading}
+                  onOpenPerson={handleSelectPerson}
+                />
+              ) : activeView === "featured" ? (
+                <FeaturedMembersPage
+                  members={members}
+                  isLoading={loading}
+                  onOpenPerson={handleOpenPersonInTree}
+                />
+              ) : activeView === "anniversary" ? (
+                <AnniversaryPage
+                  members={members}
+                  isLoading={loading}
+                  onOpenPerson={handleSelectPerson}
                 />
               ) : (
                 <MemberList

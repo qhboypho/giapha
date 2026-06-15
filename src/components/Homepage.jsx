@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
-import { lunarToSolar, parseSolarDate, solarToLunar, toLocalDate } from "../utils/lunarCalendar";
+import { buildUpcomingAnniversaries, getCurrentLunarDateLabel, getYearsString } from "../utils/anniversaryUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
 import "./Homepage.css";
 import {
@@ -22,23 +22,6 @@ import goldBorders from "../assets/homepage-design/gold-borders-cutout.png";
 import dongsonDrum from "../assets/homepage-design/dongson-drum.jpg";
 
 // Static fallback removed
-
-const getYearsString = (member, options = {}) => {
-  if (!member.id) return member.years || "";
-  if (member.isDeceased) {
-    if (member.deathDate) {
-      const year = member.deathDate.split('-')[0];
-      return `Tạ thế ${year}`;
-    }
-    return options.hideUnknownDeceased ? "" : "Tạ thế";
-  } else {
-    if (member.birthDate) {
-      const year = member.birthDate.split('-')[0];
-      return `Sinh ${year}`;
-    }
-    return "Còn sống";
-  }
-};
 
 function MemberAvatar({ member, className = "" }) {
   if (member?.avatar) {
@@ -110,83 +93,8 @@ function HeritageIcon({ type }) {
   );
 }
 
-const formatDayMonth = (value) => String(value).padStart(2, "0");
-
-const formatSolarDate = (dateString) => {
-  const parsed = parseSolarDate(dateString);
-  if (!parsed) return "";
-  return `${formatDayMonth(parsed.day)}/${formatDayMonth(parsed.month)}/${parsed.year}`;
-};
-
-const buildAnniversaryTitle = (member) => {
-  if (member.generation <= 2) return `Giỗ cụ ${member.name}`;
-  return `Giỗ ${member.gender === "nu" ? "bà" : "ông"} ${member.name}`;
-};
-
-const getValidAnniversarySolarDate = (lunarDeath, lunarYear) => {
-  const exact = lunarToSolar(lunarDeath.day, lunarDeath.month, lunarYear, lunarDeath.leap);
-  if (exact) {
-    const back = solarToLunar(exact.day, exact.month, exact.year);
-    if (
-      back.day === lunarDeath.day &&
-      back.month === lunarDeath.month &&
-      back.leap === lunarDeath.leap
-    ) {
-      return toLocalDate(exact);
-    }
-  }
-
-  if (lunarDeath.leap) {
-    const fallback = lunarToSolar(lunarDeath.day, lunarDeath.month, lunarYear, false);
-    if (fallback) return toLocalDate(fallback);
-  }
-
-  return null;
-};
-
-const buildUpcomingAnniversaries = (members, now = new Date()) => {
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  return members
-    .filter((member) => member.isDeceased && member.deathDate)
-    .map((member) => {
-      const deathSolar = parseSolarDate(member.deathDate);
-      if (!deathSolar) return null;
-
-      const lunarDeath = solarToLunar(deathSolar.day, deathSolar.month, deathSolar.year);
-      const currentLunarYear = solarToLunar(today.getDate(), today.getMonth() + 1, today.getFullYear()).year;
-      const candidates = [currentLunarYear, currentLunarYear + 1, currentLunarYear + 2]
-        .map((year) => getValidAnniversarySolarDate(lunarDeath, year))
-        .filter(Boolean)
-        .map((date) => ({
-          date,
-          daysUntil: Math.round((date - today) / (1000 * 60 * 60 * 24))
-        }))
-        .filter((candidate) => candidate.daysUntil >= 0)
-        .sort((a, b) => a.daysUntil - b.daysUntil);
-
-      if (candidates.length === 0) return null;
-      const next = candidates[0];
-
-      return {
-        member,
-        day: formatDayMonth(lunarDeath.day),
-        month: `Tháng ${lunarDeath.month}${lunarDeath.leap ? " nhuận" : ""}`,
-        title: buildAnniversaryTitle(member),
-        date: `Âm lịch ngày ${formatDayMonth(lunarDeath.day)}/${formatDayMonth(lunarDeath.month)}${lunarDeath.leap ? " nhuận" : ""}`,
-        note: `Tạ thế ngày ${formatSolarDate(member.deathDate)}`,
-        nextSolarDate: next.date,
-        daysUntil: next.daysUntil
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.daysUntil - b.daysUntil || a.member.generation - b.member.generation || a.member.name.localeCompare(b.member.name, "vi"));
-};
-
 export default function Homepage({ onNavigate, onOpenPerson, members = [], isLoading = false }) {
-  const now = new Date();
-  const currentLunarDate = solarToLunar(now.getDate(), now.getMonth() + 1, now.getFullYear());
-  const currentLunarDateLabel = `Hôm nay: ${formatDayMonth(currentLunarDate.day)}/${formatDayMonth(currentLunarDate.month)}${currentLunarDate.leap ? " nhuận" : ""}`;
+  const currentLunarDateLabel = getCurrentLunarDateLabel();
 
   // Calculate dynamic stats from database data
   const generations = members.length > 0 ? Math.max(...members.map(m => m.generation), 0) : 3;
@@ -367,6 +275,8 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], isLoa
       member: m
     }));
   }
+  const visibleFeaturedMembers = featuredMembers.slice(0, 8);
+  const shouldScrollFeaturedMembers = visibleFeaturedMembers.length > 4;
 
   const upcomingAnniversaries = buildUpcomingAnniversaries(members);
   const upcomingAnniversariesCount = members.length > 0
@@ -718,21 +628,23 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], isLoa
               <span className="header-mark" aria-hidden="true" />
               Người tiêu biểu
             </h2>
-            <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem tất cả <span aria-hidden="true">→</span></button>
+            <button className="column-more-link" onClick={() => onNavigate("featured")}>Xem tất cả <span aria-hidden="true">→</span></button>
           </div>
-          <div className="notables-list">
+          <div className={`notables-list${shouldScrollFeaturedMembers ? " is-scrollable" : ""}`}>
             {isLoading ? (
               [1, 2, 3, 4].map((idx) => (
                 <div className="notable-card skeleton-pulse" key={idx} style={{ cursor: "default" }}>
                   <div className="notable-avatar skeleton-avatar" />
-                  <strong className="skeleton-bar" style={{ width: "70px", height: "14px", marginTop: "8px", marginBottom: "6px" }} />
-                  <span className="skeleton-bar" style={{ width: "90px", height: "11px", marginBottom: "6px" }} />
-                  <span className="skeleton-bar" style={{ width: "60px", height: "10px" }} />
+                  <span className="notable-copy">
+                    <strong className="skeleton-bar" style={{ width: "70px", height: "14px", marginBottom: "6px" }} />
+                    <span className="skeleton-bar" style={{ width: "90px", height: "11px", marginBottom: "6px" }} />
+                    <span className="skeleton-bar" style={{ width: "60px", height: "10px" }} />
+                  </span>
                 </div>
               ))
             ) : (
-              featuredMembers.length > 0 ? (
-                featuredMembers.map((person) => (
+              visibleFeaturedMembers.length > 0 ? (
+                visibleFeaturedMembers.map((person) => (
                   <button className="notable-card" key={person.member.id} onClick={() => onOpenPerson(person.member.id)}>
                     <MemberAvatar member={person.member} className="notable-avatar" />
                     <span className="notable-copy">
@@ -758,7 +670,7 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], isLoa
               Ngày giỗ sắp tới
             </h2>
             <span className="lunar-today-pill">{currentLunarDateLabel}</span>
-            <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem lịch đầy đủ <span aria-hidden="true">→</span></button>
+            <button className="column-more-link" onClick={() => onNavigate("anniversary")}>Xem lịch đầy đủ <span aria-hidden="true">→</span></button>
           </div>
           <div className="anniversaries-list">
             {visibleAnniversaries.length === 0 && !isLoading && (

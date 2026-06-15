@@ -3,7 +3,6 @@ import {
   Bell,
   BookOpenText,
   CalendarDays,
-  Home,
   LogOut,
   Moon,
   Network,
@@ -28,9 +27,7 @@ export default function Navbar({
   onAddMember
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const userDisplayName = currentUser?.role === "admin"
-    ? "Trần Công Minh"
-    : currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
+  const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
   const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
 
   const toggleMobileMenu = () => {
@@ -39,22 +36,25 @@ export default function Navbar({
 
   return (
     <nav className="navbar glass">
-      <div className="nav-brand">
-        <span className="logo-icon">陳</span>
-        <span className="logo-text">Gia Phả Họ Trần Công</span>
-      </div>
+      <button
+        type="button"
+        className="nav-brand"
+        onClick={() => setActiveView("home")}
+        aria-label="Về trang chủ"
+      >
+        <span className="logo-icon">
+          <img src="/tranconglogo.png" alt="" aria-hidden="true" />
+        </span>
+        <span className="logo-text" aria-label="Gia Phả Họ Trần Công">
+          <span className="logo-text-kicker">Gia Phả Họ</span>
+          <span className="logo-text-main">Trần Công</span>
+        </span>
+      </button>
 
       {/* Desktop Navigation (Hidden on Mobile) */}
       <div className="nav-actions desktop-nav">
         {/* View toggles */}
         <div className="btn-group">
-          <button
-            className={`btn-tab ${activeView === "home" ? "active" : ""}`}
-            onClick={() => setActiveView("home")}
-          >
-            <Home className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
-            Trang chủ
-          </button>
           <button
             className={`btn-tab ${activeView === "tree" ? "active" : ""}`}
             onClick={() => setActiveView("tree")}
@@ -64,17 +64,17 @@ export default function Navbar({
           </button>
           <button
             className={`btn-tab ${activeView === "generations" ? "active" : ""}`}
-            onClick={() => setActiveView("tree")}
+            onClick={() => setActiveView("generations")}
           >
             <BookOpenText className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
             Các đời
           </button>
           <button
             className={`btn-tab ${activeView === "anniversary" ? "active" : ""}`}
-            onClick={() => setActiveView("tree")}
+            onClick={() => setActiveView("anniversary")}
           >
             <CalendarDays className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
-            Ngày giỗ
+            Lịch giỗ
           </button>
           <button
             className={`btn-tab ${activeView === "list" ? "active" : ""}`}
@@ -149,13 +149,6 @@ export default function Navbar({
         {/* View Toggle */}
         <div className="btn-group" style={{ padding: "2px" }}>
           <button
-            className={`btn-tab ${activeView === "home" ? "active" : ""}`}
-            onClick={() => setActiveView("home")}
-            style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
-          >
-            Chủ
-          </button>
-          <button
             className={`btn-tab ${activeView === "tree" ? "active" : ""}`}
             onClick={() => setActiveView("tree")}
             style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
@@ -202,6 +195,30 @@ export default function Navbar({
               </div>
 
               {/* Admin actions */}
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setActiveView("generations");
+                  setIsMobileMenuOpen(false);
+                }}
+                style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+              >
+                <BookOpenText size={16} strokeWidth={2.2} />
+                Các đời
+              </button>
+
+              <button
+                className="btn btn-secondary"
+                onClick={() => {
+                  setActiveView("anniversary");
+                  setIsMobileMenuOpen(false);
+                }}
+                style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+              >
+                <CalendarDays size={16} strokeWidth={2.2} />
+                Lịch giỗ
+              </button>
+
               {(currentUser?.role === "admin" || currentUser?.role === "editor") && (
                 <button
                   className="btn btn-primary"
