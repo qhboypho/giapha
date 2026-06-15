@@ -3,14 +3,18 @@ import {
   Bell,
   BookOpenText,
   CalendarDays,
+  Eye,
+  EyeOff,
   LogOut,
   Moon,
   Network,
   Search,
+  ShieldCheck,
   Sun,
   Users
 } from "lucide-react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
+import { getRoleLabel, isAdmin } from "../utils/authRoles";
 
 export default function Navbar({
   searchQuery,
@@ -24,7 +28,10 @@ export default function Navbar({
   setIsPrivateMode,
   theme,
   toggleTheme,
-  onAddMember
+  onAddMember,
+  showSensitiveInfo,
+  canRevealSensitiveInfo,
+  onToggleSensitiveInfo
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
@@ -83,6 +90,15 @@ export default function Navbar({
             <Users className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
             Thành viên
           </button>
+          {isAdmin(currentUser) && (
+            <button
+              className={`btn-tab ${activeView === "accounts" ? "active" : ""}`}
+              onClick={() => setActiveView("accounts")}
+            >
+              <ShieldCheck className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
+              Tài khoản
+            </button>
+          )}
         </div>
 
         {/* Search bar */}
@@ -100,6 +116,21 @@ export default function Navbar({
         <button className="btn-bell" aria-label="Thông báo" type="button">
           <Bell aria-hidden="true" strokeWidth={2.2} />
         </button>
+
+        {canRevealSensitiveInfo && (
+          <button
+            className={`btn-icon sensitive-toggle ${showSensitiveInfo ? "active" : ""}`}
+            onClick={() => onToggleSensitiveInfo(!showSensitiveInfo)}
+            title={showSensitiveInfo ? "Ẩn số điện thoại và địa chỉ" : "Xem số điện thoại và địa chỉ"}
+            aria-label={showSensitiveInfo ? "Ẩn thông tin riêng" : "Xem thông tin riêng"}
+          >
+            {showSensitiveInfo ? (
+              <Eye aria-hidden="true" strokeWidth={2.2} size={18} />
+            ) : (
+              <EyeOff aria-hidden="true" strokeWidth={2.2} size={18} />
+            )}
+          </button>
+        )}
 
         {/* Theme Switcher */}
         <button className="btn-icon" onClick={toggleTheme} title={theme === "light" ? "Chuyển sang giao diện tối" : "Chuyển sang giao diện sáng"}>
@@ -232,8 +263,22 @@ export default function Navbar({
                 </button>
               )}
 
+              {isAdmin(currentUser) && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setActiveView("accounts");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+                >
+                  <ShieldCheck size={16} strokeWidth={2.2} />
+                  Tài khoản
+                </button>
+              )}
+
               {/* Security / Privacy Toggle (Admin only) */}
-              {currentUser?.role === "admin" && (
+              {isAdmin(currentUser) && (
                 <button
                   className="btn btn-secondary"
                   onClick={() => {
@@ -242,6 +287,19 @@ export default function Navbar({
                   style={{ width: "100%", justifyContent: "center" }}
                 >
                   {isPrivateMode ? "Riêng tư" : "Công khai"}
+                </button>
+              )}
+
+              {canRevealSensitiveInfo && (
+                <button
+                  className={`btn btn-secondary ${showSensitiveInfo ? "active" : ""}`}
+                  onClick={() => {
+                    onToggleSensitiveInfo(!showSensitiveInfo);
+                  }}
+                  style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+                >
+                  {showSensitiveInfo ? <Eye size={16} strokeWidth={2.2} /> : <EyeOff size={16} strokeWidth={2.2} />}
+                  {showSensitiveInfo ? "Đang hiện thông tin riêng" : "Ẩn thông tin riêng"}
                 </button>
               )}
 
@@ -270,7 +328,7 @@ export default function Navbar({
                   style={{ width: "100%", justifyContent: "center", color: "var(--color-brand-accent)", fontWeight: 700, gap: "8px" }}
                 >
                   <LogOut aria-hidden="true" strokeWidth={2.3} />
-                  Đăng xuất ({currentUser.role})
+                  Đăng xuất ({getRoleLabel(currentUser.role)})
                 </div>
               ) : (
                 <button

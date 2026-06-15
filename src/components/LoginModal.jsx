@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function LoginModal({ isOpen, onClose, onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
+  const canShowDemoAccounts = import.meta.env.DEV;
 
   if (!isOpen) return null;
 
@@ -34,7 +35,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }) {
       } else {
         setError(data.error || "Đăng nhập thất bại.");
       }
-    } catch (err) {
+    } catch {
       setError("Không thể kết nối tới máy chủ.");
     }
   };
@@ -101,49 +102,53 @@ export default function LoginModal({ isOpen, onClose, onLogin }) {
               🔑 Đăng nhập
             </button>
 
-            <hr style={{ border: "none", borderTop: "1px solid var(--border-card)", margin: "4px 0" }} />
+            {canShowDemoAccounts && (
+              <>
+                <hr style={{ border: "none", borderTop: "1px solid var(--border-card)", margin: "4px 0" }} />
 
-            {/* Expandable Demo Accounts Drawer */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowDemoAccounts(!showDemoAccounts)}
-                style={{ fontSize: "0.75rem", padding: "6px 12px", borderRadius: "15px" }}
-              >
-                {showDemoAccounts ? "🙈 Ẩn gợi ý tài khoản thử nghiệm" : "💡 Hiện gợi ý tài khoản thử nghiệm"}
-              </button>
+                {/* Expandable Demo Accounts Drawer, local development only. */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowDemoAccounts(!showDemoAccounts)}
+                    style={{ fontSize: "0.75rem", padding: "6px 12px", borderRadius: "15px" }}
+                  >
+                    {showDemoAccounts ? "🙈 Ẩn gợi ý tài khoản thử nghiệm" : "💡 Hiện gợi ý tài khoản thử nghiệm"}
+                  </button>
 
-              {showDemoAccounts && (
-                <div 
-                  className="animate-fade"
-                  style={{ 
-                    background: "rgba(191, 161, 95, 0.05)", 
-                    border: "1px solid var(--border-card)", 
-                    borderRadius: "8px", 
-                    padding: "10px",
-                    fontSize: "0.75rem",
-                    color: "var(--text-secondary)",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "6px"
-                  }}
-                >
-                  <div>
-                    <strong>1. Admin (Quản lý toàn bộ):</strong>
-                    <div style={{ fontFamily: "monospace", paddingLeft: "8px" }}>Tài khoản: admin / Mật khẩu: admin123</div>
-                  </div>
-                  <div>
-                    <strong>2. Editor (Thêm/Sửa):</strong>
-                    <div style={{ fontFamily: "monospace", paddingLeft: "8px" }}>Tài khoản: editor / Mật khẩu: editor123</div>
-                  </div>
-                  <div>
-                    <strong>3. Member (Chỉ xem phả hệ):</strong>
-                    <div style={{ fontFamily: "monospace", paddingLeft: "8px" }}>Tài khoản: member / Mật khẩu: member123</div>
-                  </div>
+                  {showDemoAccounts && (
+                    <div 
+                      className="animate-fade"
+                      style={{ 
+                        background: "rgba(191, 161, 95, 0.05)", 
+                        border: "1px solid var(--border-card)", 
+                        borderRadius: "8px", 
+                        padding: "10px",
+                        fontSize: "0.75rem",
+                        color: "var(--text-secondary)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px"
+                      }}
+                    >
+                      <div>
+                        <strong>1. Admin (Quản lý toàn bộ):</strong>
+                        <div style={{ fontFamily: "monospace", paddingLeft: "8px" }}>Tài khoản: admin / Mật khẩu: admin123</div>
+                      </div>
+                      <div>
+                        <strong>2. Editor (Thêm/Sửa):</strong>
+                        <div style={{ fontFamily: "monospace", paddingLeft: "8px" }}>Tài khoản: editor / Mật khẩu: editor123</div>
+                      </div>
+                      <div>
+                        <strong>3. Member (Chỉ xem phả hệ):</strong>
+                        <div style={{ fontFamily: "monospace", paddingLeft: "8px" }}>Tài khoản: member / Mật khẩu: member123</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </form>
       </div>

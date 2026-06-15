@@ -9,7 +9,8 @@ export default function Sidebar({
   onClose,
   onEditPerson,
   onAddRelative,
-  currentUser
+  currentUser,
+  showSensitiveInfo
 }) {
   const person = members.find((m) => m.id === personId);
   if (!person) return null;
@@ -27,6 +28,7 @@ export default function Sidebar({
   const children = sortMembersByBirthOrder(members.filter((m) => m.fatherId === person.id || m.motherId === person.id));
 
   const canEdit = currentUser?.role === "admin" || currentUser?.role === "editor";
+  const canEditProfile = canEdit && (!person.sensitiveMasked || showSensitiveInfo);
 
   const renderRelationAvatar = (member, className) => {
     const classNames = `${className} ${member.isDeceased ? "deceased" : ""}`;
@@ -92,8 +94,9 @@ export default function Sidebar({
                 className="btn btn-secondary"
                 onClick={() => onEditPerson(person)}
                 title="Chỉnh sửa hồ sơ"
+                disabled={!canEditProfile}
               >
-                📝 Sửa
+                {canEditProfile ? "📝 Sửa" : "🔒 Bật xem riêng để sửa"}
               </button>
               <button
                 className="btn btn-primary"

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Homepage from "./components/Homepage";
 import TreeChart from "./components/TreeChart";
@@ -6,9 +6,11 @@ import MemberList from "./components/MemberList";
 import FeaturedMembersPage from "./components/FeaturedMembersPage";
 import AnniversaryPage from "./components/AnniversaryPage";
 import GenerationsPage from "./components/GenerationsPage";
+import AccountAdminPage from "./components/AccountAdminPage";
 import Sidebar from "./components/Sidebar";
 import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
+import { getRoleLabel, isAuthenticatedViewer } from "./utils/authRoles";
 import "./App.css";
 
 export default function App() {
@@ -21,6 +23,7 @@ export default function App() {
 
   // Privacy mode status (locked/unlocked)
   const [isPrivateMode, setIsPrivateMode] = useState(true);
+  const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
 
   // Local theme state
   const [theme, setTheme] = useState(() => {
@@ -49,6 +52,21 @@ export default function App() {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("giapha_tc_theme", theme);
   }, [theme]);
+
+  const buildMembersUrl = useCallback((revealSensitive) => {
+    const shouldReveal = Boolean(revealSensitive);
+    return shouldReveal ? "/api/members?revealSensitive=true" : "/api/members";
+  }, []);
+
+  const loadMembers = useCallback(async (revealSensitive = false) => {
+    const res = await fetch(buildMembersUrl(revealSensitive));
+    const data = await res.json();
+    if (data.success) {
+      setMembers(data.data);
+      setShowSensitiveInfo(Boolean(data.sensitiveInfoVisible));
+    }
+    return data;
+  }, [buildMembersUrl]);
 
   // Load user session, settings, and family tree data on mount
   useEffect(() => {
@@ -82,14 +100,10 @@ export default function App() {
       }
 
       // 3. Load family members if page is not locked
-      const isLocked = pMode && (!user || user.role === "guest");
+      const isLocked = pMode && !isAuthenticatedViewer(user);
       if (!isLocked) {
         try {
-          const res = await fetch("/api/members");
-          const data = await res.json();
-          if (data.success) {
-            setMembers(data.data);
-          }
+          await loadMembers(false);
         } catch (err) {
           console.error("Members fetch failed:", err);
         }
@@ -98,7 +112,7 @@ export default function App() {
     };
 
     initApp();
-  }, []);
+  }, [loadMembers]);
 
   const showToast = (message) => {
     setToast(message);
@@ -118,7 +132,7 @@ export default function App() {
 
   const handleLogin = async (user) => {
     setCurrentUser(user);
-    showToast(`Đăng nhập thành công với vai trò ${user.role.toUpperCase()}!`);
+    showToast(`Đăng nhập thành công với vai trò ${getRoleLabel(user.role)}!`);
 
     // Reload settings and members lists
     try {
@@ -130,15 +144,12 @@ export default function App() {
         setIsPrivateMode(pMode);
       }
 
-      const isLocked = pMode && (user.role === "guest");
+      const isLocked = pMode && !isAuthenticatedViewer(user);
       if (!isLocked) {
-        const res = await fetch("/api/members");
-        const data = await res.json();
-        if (data.success) {
-          setMembers(data.data);
-        }
+        await loadMembers(false);
       } else {
         setMembers([]);
+        setShowSensitiveInfo(false);
       }
     } catch (err) {
       console.error("Login follow-up reload failed:", err);
@@ -150,6 +161,7 @@ export default function App() {
       await fetch("/api/auth/logout", { method: "POST" });
       setCurrentUser(null);
       setMembers([]);
+      setShowSensitiveInfo(false);
       setSelectedPersonId(null);
       showToast("Đã đăng xuất khỏi hệ thống.");
     } catch {
@@ -168,14 +180,14 @@ export default function App() {
 
       if (data.success) {
         setIsPrivateMode(newVal);
+        setShowSensitiveInfo(false);
         showToast(newVal ? "Đã chuyển sang chế độ riêng tư." : "Đã chuyển sang chế độ công khai.");
         
         // Reload family tree data based on new lock state
-        const isLocked = newVal && (!currentUser || currentUser.role === "guest");
+        const isLocked = newVal && !isAuthenticatedViewer(currentUser);
         if (!isLocked) {
-          const memRes = await fetch("/api/members");
-          const memData = await memRes.json();
-          if (memData.success) setMembers(memData.data);
+          const memData = await loadMembers(false);
+          if (!memData.success) showToast(memData.error || "Không thể tải dữ liệu gia phả.");
         } else {
           setMembers([]);
           setSelectedPersonId(null);
@@ -190,6 +202,21 @@ export default function App() {
 
   const handleSelectPerson = (id) => {
     setSelectedPersonId(id);
+  };
+
+  const handleToggleSensitiveInfo = async (newVal) => {
+    try {
+      const data = await loadMembers(newVal);
+      if (data.success) {
+        showToast(newVal ? "Đã bật xem thông tin riêng." : "Đã ẩn thông tin riêng.");
+      } else {
+        setShowSensitiveInfo(false);
+        showToast(data.error || "Không thể cập nhật chế độ xem thông tin riêng.");
+      }
+    } catch {
+      setShowSensitiveInfo(false);
+      showToast("Lỗi kết nối máy chủ.");
+    }
   };
 
   const handleOpenPersonInTree = (id) => {
@@ -252,10 +279,8 @@ export default function App() {
         showToast(editPerson ? "Đã cập nhật thông tin thành viên!" : "Đã thêm thành viên mới thành công!");
         
         // Reload members list from database
-        const memRes = await fetch("/api/members");
-        const memData = await memRes.json();
+        const memData = await loadMembers(showSensitiveInfo);
         if (memData.success) {
-          setMembers(memData.data);
           if (!editPerson) {
             // Select the newly added member
             setSelectedPersonId(data.id);
@@ -273,7 +298,8 @@ export default function App() {
   };
 
   // Determine if application is locked under Private Mode
-  const isLocked = isPrivateMode && (!currentUser || currentUser.role === "guest");
+  const isLocked = isPrivateMode && !isAuthenticatedViewer(currentUser);
+  const canRevealSensitiveInfo = isPrivateMode && isAuthenticatedViewer(currentUser);
 
   return (
     <div className="app-container">
@@ -291,6 +317,9 @@ export default function App() {
         theme={theme}
         toggleTheme={toggleTheme}
         onAddMember={handleAddMember}
+        showSensitiveInfo={showSensitiveInfo}
+        canRevealSensitiveInfo={canRevealSensitiveInfo}
+        onToggleSensitiveInfo={handleToggleSensitiveInfo}
       />
 
       {/* Main split display */}
@@ -350,6 +379,11 @@ export default function App() {
                   isLoading={loading}
                   onOpenPerson={handleSelectPerson}
                 />
+              ) : activeView === "accounts" ? (
+                <AccountAdminPage
+                  currentUser={currentUser}
+                  onToast={showToast}
+                />
               ) : (
                 <MemberList
                   members={members}
@@ -371,6 +405,7 @@ export default function App() {
                   onEditPerson={handleEditPerson}
                   onAddRelative={handleAddRelative}
                   currentUser={currentUser}
+                  showSensitiveInfo={showSensitiveInfo}
                 />
               </>
             )}
