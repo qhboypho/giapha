@@ -317,6 +317,7 @@ export default function App() {
       <Navbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        members={members}
         activeView={activeView}
         setActiveView={handleViewChange}
         currentUser={currentUser}
@@ -331,6 +332,7 @@ export default function App() {
         canRevealSensitiveInfo={canRevealSensitiveInfo}
         onToggleSensitiveInfo={handleToggleSensitiveInfo}
         onOpenAccounts={handleOpenAccounts}
+        onSearchSelectMember={handleOpenPersonInTree}
       />
 
       {/* Main split display */}

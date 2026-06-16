@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Bell,
   BookOpenText,
@@ -8,20 +8,58 @@ import {
   EyeOff,
   LogOut,
   LockKeyhole,
+  MapPin,
   Moon,
   Network,
   Search,
   ShieldCheck,
   Sun,
   UserCog,
+  UserRound,
   Users
 } from "lucide-react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getRoleLabel, isAdmin } from "../utils/authRoles";
 
+const normalizeSearchText = (value = "") => (
+  String(value)
+    .toLocaleLowerCase("vi-VN")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+);
+
+const pageSearchItems = [
+  {
+    id: "tree",
+    label: "Cây gia phả",
+    description: "Xem sơ đồ gia phả và mở hồ sơ thành viên",
+    keywords: "cay gia pha so do tree pha he"
+  },
+  {
+    id: "generations",
+    label: "Các đời",
+    description: "Xem thành viên theo từng đời",
+    keywords: "cac doi doi the he generation"
+  },
+  {
+    id: "anniversary",
+    label: "Lịch giỗ",
+    description: "Xem toàn bộ ngày giỗ theo lịch âm",
+    keywords: "lich gio ngay gio su kien am lich"
+  },
+  {
+    id: "list",
+    label: "Thành viên",
+    description: "Danh sách đầy đủ thành viên gia phả",
+    keywords: "thanh vien danh sach nguoi member"
+  }
+];
+
 export default function Navbar({
   searchQuery,
   setSearchQuery,
+  members = [],
   activeView,
   setActiveView,
   currentUser,
@@ -35,16 +73,186 @@ export default function Navbar({
   showSensitiveInfo,
   canRevealSensitiveInfo,
   onToggleSensitiveInfo,
-  onOpenAccounts
+  onOpenAccounts,
+  onSearchSelectMember
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
   const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
   const canAddTopLevelMember = currentUser?.role === "admin" || (currentUser?.role === "editor" && !currentUser?.editScopeRootId);
+  const normalizedQuery = normalizeSearchText(searchQuery.trim());
+  const shouldShowSearchPanel = isSearchOpen && searchQuery.trim().length >= 2;
+
+  const memberById = useMemo(
+    () => new Map(members.map((member) => [member.id, member])),
+    [members]
+  );
+
+  const searchResults = useMemo(() => {
+    if (normalizedQuery.length < 2) {
+      return { members: [], pages: [] };
+    }
+
+    const memberResults = members
+      .map((member) => {
+        const relations = [
+          member.fatherId ? memberById.get(member.fatherId)?.name : "",
+          member.motherId ? memberById.get(member.motherId)?.name : "",
+          ...(member.spouseIds || []).map((id) => memberById.get(id)?.name)
+        ].filter(Boolean);
+        const haystack = normalizeSearchText([
+          member.name,
+          `đời ${member.generation}`,
+          `doi ${member.generation}`,
+          member.gender === "nu" ? "nữ nu bà mẹ vợ" : "nam ông cha chồng",
+          member.isDeceased ? "tạ thế đã mất qua đời" : "còn sống",
+          member.birthDate,
+          member.deathDate,
+          member.birthPlace,
+          member.restingPlace,
+          member.occupation,
+          member.bio,
+          member.phone,
+          member.address,
+          ...relations
+        ].join(" "));
+
+        if (!haystack.includes(normalizedQuery)) return null;
+        const nameMatch = normalizeSearchText(member.name).includes(normalizedQuery);
+        const relationMatch = relations.some((name) => normalizeSearchText(name).includes(normalizedQuery));
+        return {
+          member,
+          score: (nameMatch ? 10 : 0) + (relationMatch ? 4 : 0) + Math.max(0, 6 - member.generation)
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score || a.member.generation - b.member.generation || a.member.name.localeCompare(b.member.name, "vi"))
+      .slice(0, 7)
+      .map((item) => item.member);
+
+    const pageResults = pageSearchItems.filter((item) => (
+      normalizeSearchText(`${item.label} ${item.description} ${item.keywords}`).includes(normalizedQuery)
+    ));
+
+    return { members: memberResults, pages: pageResults };
+  }, [memberById, members, normalizedQuery]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
+  };
+
+  const handleSearchBlur = () => {
+    window.setTimeout(() => setIsSearchOpen(false), 120);
+  };
+
+  const openSearchMember = (member) => {
+    setSearchQuery(member.name);
+    setIsSearchOpen(false);
+    setIsMobileMenuOpen(false);
+    onSearchSelectMember?.(member.id);
+  };
+
+  const openSearchPage = (view) => {
+    setSearchQuery("");
+    setIsSearchOpen(false);
+    setIsMobileMenuOpen(false);
+    setActiveView(view);
+  };
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key !== "Enter" || !shouldShowSearchPanel) return;
+    const firstMember = searchResults.members[0];
+    const firstPage = searchResults.pages[0];
+    if (firstMember) {
+      event.preventDefault();
+      openSearchMember(firstMember);
+    } else if (firstPage) {
+      event.preventDefault();
+      openSearchPage(firstPage.id);
+    }
+  };
+
+  const renderSearchPanel = () => {
+    if (!shouldShowSearchPanel) return null;
+    const hasMemberResults = searchResults.members.length > 0;
+    const hasPageResults = searchResults.pages.length > 0;
+
+    return (
+      <div className="global-search-panel glass">
+        {hasMemberResults && (
+          <div className="global-search-section">
+            <span className="global-search-label">Thành viên</span>
+            {searchResults.members.map((member) => {
+              const avatar = member.avatar || member.photoURL || member.image;
+              const location = member.birthPlace || member.address || member.restingPlace || "";
+              return (
+                <button
+                  key={member.id}
+                  type="button"
+                  className="global-search-item"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => openSearchMember(member)}
+                >
+                  <span
+                    className={`global-search-avatar ${avatar ? "" : "generated-avatar"}`}
+                    style={avatar ? undefined : getAvatarStyle(member)}
+                  >
+                    {avatar ? <img src={avatar} alt="" /> : getAvatarInitials(member.name)}
+                  </span>
+                  <span className="global-search-copy">
+                    <strong>{member.name}</strong>
+                    <small>
+                      <UserRound size={12} strokeWidth={2.2} />
+                      Đời {member.generation} · {member.isDeceased ? "Tạ thế" : "Còn sống"}
+                    </small>
+                    {location && (
+                      <em>
+                        <MapPin size={12} strokeWidth={2.2} />
+                        {location}
+                      </em>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {hasPageResults && (
+          <div className="global-search-section">
+            <span className="global-search-label">Điều hướng</span>
+            {searchResults.pages.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="global-search-item compact"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => openSearchPage(item.id)}
+              >
+                <span className="global-search-nav-icon">
+                  {item.id === "tree" ? <Network size={17} strokeWidth={2.2} /> : null}
+                  {item.id === "generations" ? <BookOpenText size={17} strokeWidth={2.2} /> : null}
+                  {item.id === "anniversary" ? <CalendarDays size={17} strokeWidth={2.2} /> : null}
+                  {item.id === "list" ? <Users size={17} strokeWidth={2.2} /> : null}
+                </span>
+                <span className="global-search-copy">
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!hasMemberResults && !hasPageResults && (
+          <div className="global-search-empty">
+            Không tìm thấy kết quả phù hợp.
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -107,7 +315,12 @@ export default function Navbar({
             placeholder="Tìm kiếm thành viên, đời, sự kiện..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchOpen(true)}
+            onBlur={handleSearchBlur}
+            onKeyDown={handleSearchKeyDown}
+            autoComplete="off"
           />
+          {renderSearchPanel()}
         </div>
 
         <button className="btn-bell" aria-label="Thông báo" type="button">
@@ -272,10 +485,15 @@ export default function Navbar({
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Tìm thành viên..."
+                  placeholder="Tìm thành viên, đời, trang..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchOpen(true)}
+                  onBlur={handleSearchBlur}
+                  onKeyDown={handleSearchKeyDown}
+                  autoComplete="off"
                 />
+                {renderSearchPanel()}
               </div>
 
               {/* Admin actions */}
