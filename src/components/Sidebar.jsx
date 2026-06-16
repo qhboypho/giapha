@@ -1,4 +1,5 @@
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
+import { canEditMemberInScope } from "../utils/editorScope";
 import { getAge, getGenderLabel } from "../utils/mockData";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
 
@@ -27,7 +28,7 @@ export default function Sidebar({
   // Children
   const children = sortMembersByBirthOrder(members.filter((m) => m.fatherId === person.id || m.motherId === person.id));
 
-  const canEdit = currentUser?.role === "admin" || currentUser?.role === "editor";
+  const canEdit = canEditMemberInScope(currentUser, members, person.id);
   const canEditProfile = canEdit && (!person.sensitiveMasked || showSensitiveInfo);
 
   const renderRelationAvatar = (member, className) => {

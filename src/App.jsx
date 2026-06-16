@@ -382,6 +382,7 @@ export default function App() {
               ) : activeView === "accounts" ? (
                 <AccountAdminPage
                   currentUser={currentUser}
+                  members={members}
                   onToast={showToast}
                 />
               ) : (
@@ -429,6 +430,7 @@ export default function App() {
           editPerson={editPerson}
           addRelativeOf={addRelativeOf}
           members={members}
+          currentUser={currentUser}
         />
       )}
 

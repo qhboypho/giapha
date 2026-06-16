@@ -2,15 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyRound, Plus, Save, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
+import { getScopeRootOptions } from "../utils/editorScope";
 
 const emptyForm = {
   username: "",
   fullName: "",
   role: "member",
+  editScopeRootId: "",
   password: ""
 };
 
-export default function AccountAdminPage({ currentUser, onToast }) {
+export default function AccountAdminPage({ currentUser, members = [], onToast }) {
   const canManage = isAdmin(currentUser);
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -21,6 +23,11 @@ export default function AccountAdminPage({ currentUser, onToast }) {
   const adminCount = useMemo(
     () => users.filter((user) => user.role === "admin").length,
     [users]
+  );
+  const scopeOptions = useMemo(() => getScopeRootOptions(members), [members]);
+  const scopeLabelById = useMemo(
+    () => new Map(scopeOptions.map((option) => [option.id, option.label])),
+    [scopeOptions]
   );
 
   const loadUsers = useCallback(async () => {
@@ -69,6 +76,7 @@ export default function AccountAdminPage({ currentUser, onToast }) {
       username: user.username,
       fullName: user.fullName || "",
       role: user.role || "member",
+      editScopeRootId: user.editScopeRootId || "",
       password: ""
     });
   };
@@ -82,6 +90,7 @@ export default function AccountAdminPage({ currentUser, onToast }) {
         username: form.username.trim(),
         fullName: form.fullName.trim(),
         role: form.role,
+        editScopeRootId: form.role === "editor" ? form.editScopeRootId : "",
         password: form.password
       };
 
@@ -191,7 +200,11 @@ export default function AccountAdminPage({ currentUser, onToast }) {
             <select
               className="form-input"
               value={form.role}
-              onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
+              onChange={(event) => setForm((prev) => ({
+                ...prev,
+                role: event.target.value,
+                editScopeRootId: event.target.value === "editor" ? prev.editScopeRootId : ""
+              }))}
             >
               {EDITABLE_ROLES.map((role) => (
                 <option key={role.value} value={role.value}>
@@ -200,6 +213,24 @@ export default function AccountAdminPage({ currentUser, onToast }) {
               ))}
             </select>
           </label>
+
+          {form.role === "editor" && (
+            <label>
+              Phạm vi chỉnh sửa
+              <select
+                className="form-input"
+                value={form.editScopeRootId}
+                onChange={(event) => setForm((prev) => ({ ...prev, editScopeRootId: event.target.value }))}
+              >
+                <option value="">Không giới hạn - sửa mọi chi</option>
+                {scopeOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <label>
             {editing ? "Mật khẩu mới" : "Mật khẩu"}
@@ -244,7 +275,23 @@ export default function AccountAdminPage({ currentUser, onToast }) {
                     {getAvatarInitials(user.fullName || user.username)}
                   </div>
                   <div className="account-info">
-                    <h3>{user.fullName || user.username}</h3>
+                    <div className="account-title-row">
+                      <h3>{user.fullName || user.username}</h3>
+                      <div className="account-actions">
+                        <button className="btn-icon" type="button" onClick={() => handleEdit(user)} title="Sửa tài khoản">
+                          <KeyRound size={16} strokeWidth={2.2} />
+                        </button>
+                        <button
+                          className="btn-icon danger"
+                          type="button"
+                          onClick={() => handleDelete(user.username)}
+                          disabled={isSelf || cannotDeleteLastAdmin || saving}
+                          title={isSelf ? "Không thể xóa tài khoản đang đăng nhập" : "Xóa tài khoản"}
+                        >
+                          <Trash2 size={16} strokeWidth={2.2} />
+                        </button>
+                      </div>
+                    </div>
                     <p>
                       <UserRound size={13} strokeWidth={2.2} />
                       {user.username}
@@ -252,21 +299,14 @@ export default function AccountAdminPage({ currentUser, onToast }) {
                     <span className={`account-role role-${user.role}`}>
                       {getRoleLabel(user.role)}
                     </span>
+                    {user.role === "editor" && (
+                      <span className="account-scope">
+                        {user.editScopeRootId
+                          ? scopeLabelById.get(user.editScopeRootId) || "Chi đã chọn không còn tồn tại"
+                          : "Sửa mọi chi"}
+                      </span>
+                    )}
                     <small>{ROLE_DESCRIPTIONS[user.role] || "Tài khoản hệ thống."}</small>
-                  </div>
-                  <div className="account-actions">
-                    <button className="btn-icon" type="button" onClick={() => handleEdit(user)} title="Sửa tài khoản">
-                      <KeyRound size={16} strokeWidth={2.2} />
-                    </button>
-                    <button
-                      className="btn-icon danger"
-                      type="button"
-                      onClick={() => handleDelete(user.username)}
-                      disabled={isSelf || cannotDeleteLastAdmin || saving}
-                      title={isSelf ? "Không thể xóa tài khoản đang đăng nhập" : "Xóa tài khoản"}
-                    >
-                      <Trash2 size={16} strokeWidth={2.2} />
-                    </button>
                   </div>
                 </article>
               );

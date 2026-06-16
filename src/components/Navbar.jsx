@@ -36,6 +36,7 @@ export default function Navbar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
   const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
+  const canAddTopLevelMember = currentUser?.role === "admin" || (currentUser?.role === "editor" && !currentUser?.editScopeRootId);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
@@ -250,7 +251,7 @@ export default function Navbar({
                 Lịch giỗ
               </button>
 
-              {(currentUser?.role === "admin" || currentUser?.role === "editor") && (
+              {canAddTopLevelMember && (
                 <button
                   className="btn btn-primary"
                   onClick={() => {

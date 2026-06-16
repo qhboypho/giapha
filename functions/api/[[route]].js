@@ -65,6 +65,105 @@ function validateUsername(username) {
   return value;
 }
 
+function parseSpouseIds(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  try {
+    return JSON.parse(value || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function formatMemberRow(row) {
+  return {
+    ...row,
+    isDeceased: row.isDeceased === 1,
+    isFeatured: row.isFeatured === 1,
+    spouseIds: parseSpouseIds(row.spouseIds),
+    fatherId: row.fatherId || null,
+    motherId: row.motherId || null
+  };
+}
+
+async function fetchFormattedMembers(db) {
+  const { results } = await db.prepare("SELECT * FROM members").all();
+  return results.map(formatMemberRow);
+}
+
+function buildEditorScopeIds(members, rootId) {
+  if (!rootId) return null;
+  const memberById = new Map(members.map(member => [member.id, member]));
+  if (!memberById.has(rootId)) return new Set();
+
+  const scopeIds = new Set([rootId]);
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+
+    for (const member of members) {
+      const isChildOfScope = scopeIds.has(member.fatherId) || scopeIds.has(member.motherId);
+      const isSpouseOfScope = member.spouseIds?.some(spouseId => scopeIds.has(spouseId));
+      const hasSpouseInScope = Array.from(scopeIds).some(scopeId => {
+        const scopedMember = memberById.get(scopeId);
+        return scopedMember?.spouseIds?.includes(member.id);
+      });
+
+      if ((isChildOfScope || isSpouseOfScope || hasSpouseInScope) && !scopeIds.has(member.id)) {
+        scopeIds.add(member.id);
+        changed = true;
+      }
+    }
+  }
+
+  return scopeIds;
+}
+
+function getUserScopeIds(user, members) {
+  if (!user || user.role !== EDITOR_ROLE || !user.editScopeRootId) return null;
+  return buildEditorScopeIds(members, user.editScopeRootId);
+}
+
+function canEditMember(user, members, memberId) {
+  if (isAdmin(user)) return true;
+  if (user?.role !== EDITOR_ROLE) return false;
+  if (!user.editScopeRootId) return true;
+  return getUserScopeIds(user, members)?.has(memberId) || false;
+}
+
+function canCreateMember(user, members, data) {
+  if (isAdmin(user)) return true;
+  if (user?.role !== EDITOR_ROLE) return false;
+  if (!user.editScopeRootId) return true;
+
+  const scopeIds = getUserScopeIds(user, members);
+  if (!scopeIds || scopeIds.size === 0) return false;
+
+  const relatedIds = [
+    data.fatherId,
+    data.motherId,
+    ...(Array.isArray(data.spouseIds) ? data.spouseIds : [])
+  ].filter(Boolean);
+
+  return relatedIds.some(id => scopeIds.has(id));
+}
+
+function relationsStayInScope(user, members, data, oldMember = null) {
+  if (isAdmin(user)) return true;
+  if (user?.role !== EDITOR_ROLE) return false;
+  if (!user.editScopeRootId) return true;
+
+  const scopeIds = getUserScopeIds(user, members);
+  const oldSpouseIds = parseSpouseIds(oldMember?.spouseIds);
+  const relationChecks = [
+    { id: data.fatherId, allowedOldIds: [oldMember?.fatherId] },
+    { id: data.motherId, allowedOldIds: [oldMember?.motherId] },
+    ...(Array.isArray(data.spouseIds) ? data.spouseIds : []).map(id => ({ id, allowedOldIds: oldSpouseIds }))
+  ].filter(item => item.id);
+
+  return relationChecks.every(({ id, allowedOldIds }) => scopeIds?.has(id) || allowedOldIds.includes(id));
+}
+
 // --- Helper: Validate session and return user object ---
 async function getAuthenticatedUser(c) {
   const sessionId = getCookie(c, 'session_id');
@@ -72,14 +171,15 @@ async function getAuthenticatedUser(c) {
 
   try {
     const session = await c.env.DB.prepare(
-      "SELECT s.username, s.role, u.fullName FROM sessions s JOIN users u ON s.username = u.username WHERE s.id = ? AND s.expiresAt > datetime('now') LIMIT 1"
+      "SELECT s.username, s.role, u.fullName, u.editScopeRootId FROM sessions s JOIN users u ON s.username = u.username WHERE s.id = ? AND s.expiresAt > datetime('now') LIMIT 1"
     ).bind(sessionId).first();
 
     if (!session) return null;
     return {
       username: session.username,
       role: session.role,
-      fullName: session.fullName
+      fullName: session.fullName,
+      editScopeRootId: session.editScopeRootId || null
     };
   } catch (err) {
     console.error('Session validation error:', err);
@@ -135,7 +235,7 @@ app.post('/auth/login', async (c) => {
     }
 
     const user = await c.env.DB.prepare(
-      "SELECT username, password, role, fullName FROM users WHERE username = ? LIMIT 1"
+      "SELECT username, password, role, fullName, editScopeRootId FROM users WHERE username = ? LIMIT 1"
     ).bind(username.trim().toLowerCase()).first();
 
     if (!user) {
@@ -169,7 +269,8 @@ app.post('/auth/login', async (c) => {
       user: {
         username: user.username,
         role: user.role,
-        fullName: user.fullName
+        fullName: user.fullName,
+        editScopeRootId: user.editScopeRootId || null
       }
     });
   } catch (err) {
@@ -232,7 +333,7 @@ app.get('/users', async (c) => {
 
   try {
     const { results } = await c.env.DB.prepare(
-      "SELECT username, role, fullName, createdAt FROM users ORDER BY createdAt ASC, username ASC"
+      "SELECT username, role, fullName, editScopeRootId, createdAt FROM users ORDER BY createdAt ASC, username ASC"
     ).all();
 
     return c.json({ success: true, data: results });
@@ -254,6 +355,7 @@ app.post('/users', async (c) => {
     const password = String(data.password || '');
     const role = normalizeUserRole(data.role);
     const fullName = String(data.fullName || '').trim();
+    const editScopeRootId = role === EDITOR_ROLE ? (String(data.editScopeRootId || '').trim() || null) : null;
 
     if (!username) {
       return c.json({ success: false, error: 'Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm, gạch dưới/gạch ngang và dài 3-32 ký tự.' }, 400);
@@ -266,13 +368,19 @@ app.post('/users', async (c) => {
     if (existing) {
       return c.json({ success: false, error: 'Tên đăng nhập đã tồn tại.' }, 409);
     }
+    if (editScopeRootId) {
+      const scopeRoot = await c.env.DB.prepare("SELECT id FROM members WHERE id = ? LIMIT 1").bind(editScopeRootId).first();
+      if (!scopeRoot) {
+        return c.json({ success: false, error: 'Không tìm thấy chi/phạm vi chỉnh sửa đã chọn.' }, 400);
+      }
+    }
 
     const hashed = await hashPassword(password);
     await c.env.DB.prepare(
-      "INSERT INTO users (username, password, role, fullName) VALUES (?, ?, ?, ?)"
-    ).bind(username, hashed, role, fullName).run();
+      "INSERT INTO users (username, password, role, fullName, editScopeRootId) VALUES (?, ?, ?, ?, ?)"
+    ).bind(username, hashed, role, fullName, editScopeRootId).run();
 
-    return c.json({ success: true, user: { username, role, fullName } });
+    return c.json({ success: true, user: { username, role, fullName, editScopeRootId } });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }
@@ -300,6 +408,13 @@ app.put('/users/:username', async (c) => {
     const role = normalizeUserRole(data.role);
     const fullName = String(data.fullName || '').trim();
     const password = String(data.password || '');
+    const editScopeRootId = role === EDITOR_ROLE ? (String(data.editScopeRootId || '').trim() || null) : null;
+    if (editScopeRootId) {
+      const scopeRoot = await c.env.DB.prepare("SELECT id FROM members WHERE id = ? LIMIT 1").bind(editScopeRootId).first();
+      if (!scopeRoot) {
+        return c.json({ success: false, error: 'Không tìm thấy chi/phạm vi chỉnh sửa đã chọn.' }, 400);
+      }
+    }
 
     if (existing.role === ADMIN_ROLE && role !== ADMIN_ROLE) {
       const adminCount = await c.env.DB.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'admin'").first();
@@ -314,15 +429,15 @@ app.put('/users/:username', async (c) => {
       }
       const hashed = await hashPassword(password);
       await c.env.DB.prepare(
-        "UPDATE users SET role = ?, fullName = ?, password = ? WHERE username = ?"
-      ).bind(role, fullName, hashed, username).run();
+        "UPDATE users SET role = ?, fullName = ?, editScopeRootId = ?, password = ? WHERE username = ?"
+      ).bind(role, fullName, editScopeRootId, hashed, username).run();
     } else {
       await c.env.DB.prepare(
-        "UPDATE users SET role = ?, fullName = ? WHERE username = ?"
-      ).bind(role, fullName, username).run();
+        "UPDATE users SET role = ?, fullName = ?, editScopeRootId = ? WHERE username = ?"
+      ).bind(role, fullName, editScopeRootId, username).run();
     }
 
-    return c.json({ success: true, user: { username, role, fullName } });
+    return c.json({ success: true, user: { username, role, fullName, editScopeRootId } });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }
@@ -377,26 +492,20 @@ app.get('/members', async (c) => {
       }
     }
 
-    const { results } = await c.env.DB.prepare("SELECT * FROM members").all();
+    const formatted = await fetchFormattedMembers(c.env.DB);
     const wantsSensitiveReveal = c.req.query('revealSensitive') === 'true';
     const canRevealSensitiveInfo = isPrivateMode && isAuthenticatedViewer(user);
     const revealSensitiveInfo = wantsSensitiveReveal && canRevealSensitiveInfo;
-
-    // Map database structures back to React-friendly format
-    const formatted = results.map(row => ({
-      ...row,
-      isDeceased: row.isDeceased === 1,
-      isFeatured: row.isFeatured === 1,
-      spouseIds: JSON.parse(row.spouseIds || '[]'),
-      fatherId: row.fatherId || null,
-      motherId: row.motherId || null
-    }));
+    const editableScopeIds = user?.role === EDITOR_ROLE && user.editScopeRootId
+      ? Array.from(getUserScopeIds(user, formatted) || [])
+      : null;
 
     return c.json({
       success: true,
       data: revealSensitiveInfo ? formatted.map(member => ({ ...member, sensitiveMasked: false })) : formatted.map(maskSensitiveMember),
       sensitiveInfoVisible: revealSensitiveInfo,
-      canRevealSensitiveInfo
+      canRevealSensitiveInfo,
+      editableScopeIds
     });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
@@ -413,6 +522,11 @@ app.post('/members', async (c) => {
   try {
     const data = await c.req.json();
     const id = data.id || `member_${Date.now()}`;
+    const members = await fetchFormattedMembers(c.env.DB);
+
+    if (!canCreateMember(user, members, data)) {
+      return c.json({ success: false, error: 'Tài khoản biên tập viên này chỉ được thêm thành viên trong chi được phân quyền.' }, 403);
+    }
 
     await c.env.DB.prepare(`
       INSERT INTO members (
@@ -461,6 +575,15 @@ app.put('/members/:id', async (c) => {
 
   try {
     const data = await c.req.json();
+    const members = await fetchFormattedMembers(c.env.DB);
+    const oldMember = members.find(member => member.id === memberId);
+
+    if (!canEditMember(user, members, memberId)) {
+      return c.json({ success: false, error: 'Tài khoản biên tập viên này chỉ được sửa thành viên trong chi được phân quyền.' }, 403);
+    }
+    if (!relationsStayInScope(user, members, data, oldMember)) {
+      return c.json({ success: false, error: 'Không thể gắn cha/mẹ/vợ/chồng ngoài chi được phân quyền.' }, 403);
+    }
 
     // Fetch old spouseIds first for delta sync
     const oldRow = await c.env.DB.prepare("SELECT spouseIds FROM members WHERE id = ?").bind(memberId).first();

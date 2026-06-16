@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
+import { getEditableScopeIds } from "../utils/editorScope";
 
 const memberVal = (val) => val === undefined || val === null ? "" : val;
 
@@ -63,7 +64,8 @@ export default function MemberModal({
   onSubmit,
   editPerson,
   addRelativeOf,
-  members
+  members,
+  currentUser
 }) {
   const [formData, setFormData] = useState(() => createInitialFormData(editPerson, addRelativeOf));
 
@@ -112,19 +114,28 @@ export default function MemberModal({
     onSubmit(finalData);
   };
 
+  const editableScopeIds = getEditableScopeIds(currentUser, members);
+  const isAllowedRelationOption = (member) => {
+    if (!editableScopeIds) return true;
+    return editableScopeIds.has(member.id)
+      || member.id === formData.fatherId
+      || member.id === formData.motherId
+      || formData.spouseIds?.includes(member.id);
+  };
+
   // Get potential fathers (men in family)
   const potentialFathers = members.filter(
-    (m) => m.gender === "nam" && m.id !== editPerson?.id
+    (m) => m.gender === "nam" && m.id !== editPerson?.id && isAllowedRelationOption(m)
   );
 
   // Get potential mothers (women in family)
   const potentialMothers = members.filter(
-    (m) => m.gender === "nu" && m.id !== editPerson?.id
+    (m) => m.gender === "nu" && m.id !== editPerson?.id && isAllowedRelationOption(m)
   );
 
   // Get potential spouses
   const potentialSpouses = members.filter(
-    (m) => m.id !== editPerson?.id && m.gender !== formData.gender
+    (m) => m.id !== editPerson?.id && m.gender !== formData.gender && isAllowedRelationOption(m)
   );
 
   const title = editPerson ? "Chỉnh sửa thành viên" : addRelativeOf ? `Thêm thân nhân cho ${addRelativeOf.name}` : "Thêm thành viên mới";
