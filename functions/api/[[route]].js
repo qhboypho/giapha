@@ -293,6 +293,59 @@ app.post('/auth/logout', async (c) => {
   return c.json({ success: true, message: 'Đăng xuất thành công.' });
 });
 
+// 4. POST /api/auth/change-password - Change current account password
+app.post('/auth/change-password', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!user) {
+    return c.json({ success: false, error: 'Bạn cần đăng nhập để đổi mật khẩu.' }, 401);
+  }
+
+  try {
+    const { currentPassword, newPassword } = await c.req.json();
+    const current = String(currentPassword || '');
+    const next = String(newPassword || '');
+
+    if (!current || !next) {
+      return c.json({ success: false, error: 'Vui lòng nhập đủ mật khẩu hiện tại và mật khẩu mới.' }, 400);
+    }
+    if (next.length < 8) {
+      return c.json({ success: false, error: 'Mật khẩu mới phải có ít nhất 8 ký tự.' }, 400);
+    }
+    if (current === next) {
+      return c.json({ success: false, error: 'Mật khẩu mới không nên trùng mật khẩu hiện tại.' }, 400);
+    }
+
+    const account = await c.env.DB.prepare(
+      "SELECT username, password FROM users WHERE username = ? LIMIT 1"
+    ).bind(user.username).first();
+
+    if (!account) {
+      return c.json({ success: false, error: 'Không tìm thấy tài khoản hiện tại.' }, 404);
+    }
+
+    const isValid = await verifyPassword(current, account.password);
+    if (!isValid) {
+      return c.json({ success: false, error: 'Mật khẩu hiện tại không chính xác.' }, 401);
+    }
+
+    const hashed = await hashPassword(next);
+    await c.env.DB.prepare(
+      "UPDATE users SET password = ? WHERE username = ?"
+    ).bind(hashed, user.username).run();
+
+    const sessionId = getCookie(c, 'session_id');
+    if (sessionId) {
+      await c.env.DB.prepare(
+        "DELETE FROM sessions WHERE username = ? AND id != ?"
+      ).bind(user.username, sessionId).run();
+    }
+
+    return c.json({ success: true });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
 // 4. GET /api/settings - Fetch public/private settings
 app.get('/settings', async (c) => {
   try {

@@ -3,14 +3,17 @@ import {
   Bell,
   BookOpenText,
   CalendarDays,
+  ChevronDown,
   Eye,
   EyeOff,
   LogOut,
+  LockKeyhole,
   Moon,
   Network,
   Search,
   ShieldCheck,
   Sun,
+  UserCog,
   Users
 } from "lucide-react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
@@ -31,9 +34,11 @@ export default function Navbar({
   onAddMember,
   showSensitiveInfo,
   canRevealSensitiveInfo,
-  onToggleSensitiveInfo
+  onToggleSensitiveInfo,
+  onOpenAccounts
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
   const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
   const canAddTopLevelMember = currentUser?.role === "admin" || (currentUser?.role === "editor" && !currentUser?.editScopeRootId);
@@ -91,15 +96,6 @@ export default function Navbar({
             <Users className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
             Thành viên
           </button>
-          {isAdmin(currentUser) && (
-            <button
-              className={`btn-tab ${activeView === "accounts" ? "active" : ""}`}
-              onClick={() => setActiveView("accounts")}
-            >
-              <ShieldCheck className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
-              Tài khoản
-            </button>
-          )}
         </div>
 
         {/* Search bar */}
@@ -118,21 +114,6 @@ export default function Navbar({
           <Bell aria-hidden="true" strokeWidth={2.2} />
         </button>
 
-        {canRevealSensitiveInfo && (
-          <button
-            className={`btn-icon sensitive-toggle ${showSensitiveInfo ? "active" : ""}`}
-            onClick={() => onToggleSensitiveInfo(!showSensitiveInfo)}
-            title={showSensitiveInfo ? "Ẩn số điện thoại và địa chỉ" : "Xem số điện thoại và địa chỉ"}
-            aria-label={showSensitiveInfo ? "Ẩn thông tin riêng" : "Xem thông tin riêng"}
-          >
-            {showSensitiveInfo ? (
-              <Eye aria-hidden="true" strokeWidth={2.2} size={18} />
-            ) : (
-              <EyeOff aria-hidden="true" strokeWidth={2.2} size={18} />
-            )}
-          </button>
-        )}
-
         {/* Theme Switcher */}
         <button className="btn-icon" onClick={toggleTheme} title={theme === "light" ? "Chuyển sang giao diện tối" : "Chuyển sang giao diện sáng"}>
           {theme === "light" ? (
@@ -144,8 +125,14 @@ export default function Navbar({
 
         {/* User login / logout */}
         {currentUser ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div className="user-badge" style={{ cursor: "default" }}>
+          <div className="user-menu-wrap">
+            <button
+              className={`user-badge user-menu-trigger ${isUserMenuOpen ? "active" : ""}`}
+              onClick={() => setIsUserMenuOpen((prev) => !prev)}
+              aria-haspopup="menu"
+              aria-expanded={isUserMenuOpen}
+              type="button"
+            >
               <div
                 className={`user-avatar ${userAvatar ? "" : "generated-avatar"}`}
                 style={userAvatar ? undefined : getAvatarStyle({ id: currentUser.id || currentUser.username, name: userDisplayName })}
@@ -159,15 +146,80 @@ export default function Navbar({
               <span className="user-role">
                 {userDisplayName}
               </span>
-            </div>
-            <button 
-              className="btn-logout tooltip-container tooltip-bottom" 
-              onClick={onLogout} 
-              aria-label="Đăng xuất"
-            >
-              <LogOut aria-hidden="true" strokeWidth={2.3} />
-              <span className="tooltip-text">Đăng xuất</span>
+              <ChevronDown className="user-menu-chevron" size={16} strokeWidth={2.4} aria-hidden="true" />
             </button>
+            {isUserMenuOpen && (
+              <div className="user-menu-panel glass" role="menu">
+                <div className="user-menu-heading">
+                  <strong>{userDisplayName}</strong>
+                  <span>{getRoleLabel(currentUser.role)}</span>
+                </div>
+
+                {isAdmin(currentUser) && (
+                  <>
+                    <button
+                      className="user-menu-item"
+                      type="button"
+                      onClick={() => {
+                        onOpenAccounts?.("manage");
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      <UserCog size={17} strokeWidth={2.2} />
+                      Quản trị tài khoản
+                    </button>
+                    <button
+                      className="user-menu-item"
+                      type="button"
+                      onClick={() => {
+                        onOpenAccounts?.("password");
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      <LockKeyhole size={17} strokeWidth={2.2} />
+                      Đổi mật khẩu
+                    </button>
+                    <button
+                      className="user-menu-item"
+                      type="button"
+                      onClick={() => {
+                        setIsPrivateMode(!isPrivateMode);
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      <ShieldCheck size={17} strokeWidth={2.2} />
+                      {isPrivateMode ? "Chế độ: Riêng tư" : "Chế độ: Công khai"}
+                    </button>
+                  </>
+                )}
+
+                {canRevealSensitiveInfo && (
+                  <button
+                    className="user-menu-item"
+                    type="button"
+                    onClick={() => {
+                      onToggleSensitiveInfo(!showSensitiveInfo);
+                      setIsUserMenuOpen(false);
+                    }}
+                  >
+                    {showSensitiveInfo ? <Eye size={17} strokeWidth={2.2} /> : <EyeOff size={17} strokeWidth={2.2} />}
+                    {showSensitiveInfo ? "Ẩn thông tin riêng" : "Xem thông tin riêng"}
+                  </button>
+                )}
+
+                <button
+                  className="user-menu-item danger"
+                  type="button"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    onLogout();
+                  }}
+                >
+                  <LogOut size={17} strokeWidth={2.2} />
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <button className="btn btn-secondary" onClick={() => setIsLoginModalOpen(true)} style={{ flex: "none", borderRadius: "20px" }}>
@@ -268,13 +320,27 @@ export default function Navbar({
                 <button
                   className="btn btn-secondary"
                   onClick={() => {
-                    setActiveView("accounts");
+                    onOpenAccounts?.("manage");
                     setIsMobileMenuOpen(false);
                   }}
                   style={{ width: "100%", justifyContent: "center", gap: "8px" }}
                 >
                   <ShieldCheck size={16} strokeWidth={2.2} />
                   Tài khoản
+                </button>
+              )}
+
+              {isAdmin(currentUser) && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    onOpenAccounts?.("password");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+                >
+                  <LockKeyhole size={16} strokeWidth={2.2} />
+                  Đổi mật khẩu
                 </button>
               )}
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyRound, Plus, Save, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
@@ -12,13 +12,21 @@ const emptyForm = {
   password: ""
 };
 
-export default function AccountAdminPage({ currentUser, members = [], onToast }) {
+const emptyPasswordForm = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: ""
+};
+
+export default function AccountAdminPage({ currentUser, members = [], mode = "manage", onToast }) {
   const canManage = isAdmin(currentUser);
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(emptyForm);
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(canManage);
   const [saving, setSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const adminCount = useMemo(
     () => users.filter((user) => user.role === "admin").length,
@@ -29,6 +37,7 @@ export default function AccountAdminPage({ currentUser, members = [], onToast })
     () => new Map(scopeOptions.map((option) => [option.id, option.label])),
     [scopeOptions]
   );
+  const selectedScopeLabel = form.editScopeRootId ? scopeLabelById.get(form.editScopeRootId) : "";
 
   const loadUsers = useCallback(async () => {
     try {
@@ -136,6 +145,43 @@ export default function AccountAdminPage({ currentUser, members = [], onToast })
     }
   };
 
+  const handlePasswordSubmit = async (event) => {
+    event.preventDefault();
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      onToast?.("Mật khẩu mới và xác nhận mật khẩu chưa khớp.");
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      onToast?.("Mật khẩu mới phải có ít nhất 8 ký tự.");
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPasswordForm(emptyPasswordForm);
+        onToast?.("Đã đổi mật khẩu tài khoản hiện tại.");
+      } else {
+        onToast?.(data.error || "Không thể đổi mật khẩu.");
+      }
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ.");
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   if (!canManage) {
     return (
       <div className="accounts-page">
@@ -156,8 +202,12 @@ export default function AccountAdminPage({ currentUser, members = [], onToast })
             <ShieldCheck size={16} strokeWidth={2.2} />
             Quản trị hệ thống
           </span>
-          <h1>Tài khoản</h1>
-          <p>Tạo tài khoản xem nội bộ, cấp quyền biên tập và giữ ít nhất một quản trị viên hoạt động.</p>
+          <h1>{mode === "password" ? "Đổi mật khẩu" : "Tài khoản"}</h1>
+          <p>
+            {mode === "password"
+              ? "Cập nhật mật khẩu tài khoản đang đăng nhập trước khi tiếp tục quản trị hệ thống."
+              : "Tạo tài khoản xem nội bộ, cấp quyền biên tập và giữ ít nhất một quản trị viên hoạt động."}
+          </p>
         </div>
         <div className="accounts-metric">
           <strong>{users.length}</strong>
@@ -165,6 +215,60 @@ export default function AccountAdminPage({ currentUser, members = [], onToast })
           <small>{adminCount} quản trị viên</small>
         </div>
       </section>
+
+      {mode === "password" && (
+        <form className="account-password-card glass" onSubmit={handlePasswordSubmit}>
+          <div className="account-form-title">
+            <LockKeyhole size={18} strokeWidth={2.2} />
+            <h2>Đổi mật khẩu quản trị viên</h2>
+          </div>
+          <p>
+            Mật khẩu mới sẽ áp dụng cho tài khoản <strong>{currentUser?.username}</strong>. Các phiên đăng nhập khác của tài khoản này sẽ bị đăng xuất.
+          </p>
+          <div className="account-password-grid">
+            <label>
+              Mật khẩu hiện tại
+              <input
+                className="form-input"
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
+                autoComplete="current-password"
+                required
+              />
+            </label>
+            <label>
+              Mật khẩu mới
+              <input
+                className="form-input"
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </label>
+            <label>
+              Nhập lại mật khẩu mới
+              <input
+                className="form-input"
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </label>
+          </div>
+          <div className="account-form-actions">
+            <button className="btn btn-primary" type="submit" disabled={passwordSaving}>
+              {passwordSaving ? "Đang đổi..." : "Đổi mật khẩu"}
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="accounts-layout">
         <form className="account-form glass" onSubmit={handleSubmit}>
@@ -225,10 +329,13 @@ export default function AccountAdminPage({ currentUser, members = [], onToast })
                 <option value="">Không giới hạn - sửa mọi chi</option>
                 {scopeOptions.map((option) => (
                   <option key={option.id} value={option.id}>
-                    {option.label}
+                    Đời {option.generation}: {option.label.replace(/^Đời\s+\d+:\s*/i, "")}
                   </option>
                 ))}
               </select>
+              <span className="account-field-hint">
+                {selectedScopeLabel || "Tài khoản này có thể thêm/sửa mọi chi trong gia phả."}
+              </span>
             </label>
           )}
 

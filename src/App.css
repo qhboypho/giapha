@@ -17,7 +17,7 @@
   justify-content: space-between;
   z-index: 10;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   background:
     radial-gradient(circle at 28% 110%, rgba(241, 192, 91, 0.26), transparent 17%),
     radial-gradient(circle at 70% -20%, rgba(241, 192, 91, 0.18), transparent 15%),
@@ -262,6 +262,12 @@
   background: rgba(255, 227, 154, 0.18);
 }
 
+.navbar .privacy-toggle.active {
+  color: #8ff0a4;
+  border-color: rgba(143, 240, 164, 0.58);
+  background: rgba(58, 116, 78, 0.22);
+}
+
 .theme-mark {
   width: 18px;
   height: 18px;
@@ -283,13 +289,103 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  border: 0;
   padding: 5px 12px 5px 5px;
   border-radius: 999px;
   background: rgba(67, 5, 3, 0.24);
   border: 1px solid rgba(255, 248, 239, 0.25);
-  cursor: default;
+  cursor: pointer;
   color: #FFF8EF;
   transition: all var(--transition-fast);
+}
+
+.navbar .user-menu-trigger:hover,
+.navbar .user-menu-trigger.active {
+  border-color: #d7a94d;
+  background: rgba(255, 248, 239, 0.12);
+}
+
+.user-menu-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.user-menu-chevron {
+  color: rgba(255, 248, 239, 0.78);
+  transition: transform var(--transition-fast);
+}
+
+.user-menu-trigger.active .user-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.user-menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 240px;
+  z-index: 160;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(215, 169, 77, 0.36);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+}
+
+.user-menu-heading {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--border-card);
+  margin-bottom: 6px;
+}
+
+.user-menu-heading strong {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.user-menu-heading span {
+  color: var(--color-brand-accent);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.user-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.user-menu-item svg {
+  color: var(--color-brand-accent);
+  flex: none;
+}
+
+.user-menu-item:hover {
+  background: var(--bg-secondary);
+  color: var(--color-brand-primary);
+}
+
+.user-menu-item.danger {
+  color: var(--color-red);
+  margin-top: 4px;
+}
+
+.user-menu-item.danger svg {
+  color: currentColor;
 }
 
 .navbar .btn-logout {
@@ -2673,6 +2769,7 @@
 }
 
 .account-form,
+.account-password-card,
 .accounts-list {
   border: 1px solid var(--border-card);
   background: var(--bg-card);
@@ -2686,6 +2783,29 @@
   gap: 14px;
   padding: 18px;
   align-self: start;
+}
+
+.account-password-card {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.account-password-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.account-password-card strong {
+  color: var(--text-primary);
+}
+
+.account-password-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
 }
 
 .account-form-title,
@@ -2709,12 +2829,37 @@
   font-size: 1.25rem;
 }
 
-.account-form label {
+.account-form label,
+.account-password-card label {
   display: grid;
   gap: 7px;
+  min-width: 0;
   color: var(--text-secondary);
   font-weight: 800;
   font-size: 0.84rem;
+}
+
+.account-form .form-input,
+.account-form .form-select,
+.account-form select,
+.account-password-card .form-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-field-hint {
+  display: block;
+  max-width: 100%;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .account-form select.form-input option {
@@ -2871,7 +3016,8 @@
 
 @media (max-width: 900px) {
   .accounts-layout,
-  .accounts-grid {
+  .accounts-grid,
+  .account-password-grid {
     grid-template-columns: 1fr;
   }
 

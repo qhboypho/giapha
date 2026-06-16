@@ -33,6 +33,7 @@ export default function App() {
 
   // View states
   const [activeView, setActiveView] = useState("home");
+  const [accountPageMode, setAccountPageMode] = useState("manage");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState(null);
 
@@ -127,7 +128,16 @@ export default function App() {
     if (view !== activeView && selectedPersonId) {
       setSelectedPersonId(null);
     }
+    if (view !== "accounts") {
+      setAccountPageMode("manage");
+    }
     setActiveView(view);
+  };
+
+  const handleOpenAccounts = (mode = "manage") => {
+    setSelectedPersonId(null);
+    setAccountPageMode(mode);
+    setActiveView("accounts");
   };
 
   const handleLogin = async (user) => {
@@ -320,6 +330,7 @@ export default function App() {
         showSensitiveInfo={showSensitiveInfo}
         canRevealSensitiveInfo={canRevealSensitiveInfo}
         onToggleSensitiveInfo={handleToggleSensitiveInfo}
+        onOpenAccounts={handleOpenAccounts}
       />
 
       {/* Main split display */}
@@ -383,6 +394,7 @@ export default function App() {
                 <AccountAdminPage
                   currentUser={currentUser}
                   members={members}
+                  mode={accountPageMode}
                   onToast={showToast}
                 />
               ) : (
