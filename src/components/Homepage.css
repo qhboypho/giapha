@@ -1283,12 +1283,6 @@
   position: relative;
   overflow: hidden;
   color: #f5dfb7;
-  background:
-    var(--home-gold-waves-lotus) left 2rem bottom -0.25rem / 390px auto no-repeat,
-    var(--home-gold-waves-lotus) right 2rem bottom -0.25rem / 390px auto no-repeat,
-    radial-gradient(circle at 8% 50%, rgba(184, 130, 47, 0.22), transparent 18%),
-    radial-gradient(circle at 92% 50%, rgba(184, 130, 47, 0.18), transparent 18%),
-    linear-gradient(90deg, #1b0d05, #3a1c0b 45%, #1b0d05);
   border-top: 2px solid rgba(184, 130, 47, 0.38);
 }
 
@@ -1820,7 +1814,20 @@
 
   .traditional-footer::before,
   .traditional-footer::after {
-    display: none;
+    display: block;
+    width: 190px;
+    height: 58px;
+    bottom: 0;
+    opacity: 0.34;
+    background-size: 560px auto;
+  }
+
+  .traditional-footer::before {
+    left: -1.6rem;
+  }
+
+  .traditional-footer::after {
+    right: -1.6rem;
   }
 }
 
