@@ -16,7 +16,8 @@ import {
   Sun,
   UserCog,
   UserRound,
-  Users
+  Users,
+  X
 } from "lucide-react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getRoleLabel, isAdmin } from "../utils/authRoles";
@@ -79,6 +80,7 @@ export default function Navbar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
   const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
   const canAddTopLevelMember = currentUser?.role === "admin" || (currentUser?.role === "editor" && !currentUser?.editScopeRootId);
@@ -143,6 +145,17 @@ export default function Navbar({
     setIsMobileMenuOpen((prev) => !prev);
   };
 
+  const openMobileSearch = () => {
+    setIsMobileMenuOpen(false);
+    setIsMobileSearchOpen(true);
+    setIsSearchOpen(true);
+  };
+
+  const closeMobileSearch = () => {
+    setIsMobileSearchOpen(false);
+    setIsSearchOpen(false);
+  };
+
   const handleSearchBlur = () => {
     window.setTimeout(() => setIsSearchOpen(false), 120);
   };
@@ -151,6 +164,7 @@ export default function Navbar({
     setSearchQuery(member.name);
     setIsSearchOpen(false);
     setIsMobileMenuOpen(false);
+    setIsMobileSearchOpen(false);
     onSearchSelectMember?.(member.id);
   };
 
@@ -158,6 +172,7 @@ export default function Navbar({
     setSearchQuery("");
     setIsSearchOpen(false);
     setIsMobileMenuOpen(false);
+    setIsMobileSearchOpen(false);
     setActiveView(view);
   };
 
@@ -461,11 +476,49 @@ export default function Navbar({
           </button>
         </div>
 
+        <button
+          className="mobile-search-btn"
+          onClick={openMobileSearch}
+          aria-label="Tìm kiếm"
+          type="button"
+        >
+          <Search aria-hidden="true" strokeWidth={2.3} />
+        </button>
+
         {/* Hamburger Menu button */}
         <button className="hamburger-btn" onClick={toggleMobileMenu} aria-label="Toggle menu">
           <span aria-hidden="true">☰</span>
         </button>
       </div>
+
+      {isMobileSearchOpen && (
+        <>
+          <div className="mobile-search-backdrop" onClick={closeMobileSearch} />
+          <div className="mobile-search-overlay glass">
+            <div className="mobile-search-head">
+              <strong>Tìm kiếm gia phả</strong>
+              <button className="btn-icon mobile-search-close" type="button" onClick={closeMobileSearch} aria-label="Đóng tìm kiếm">
+                <X size={18} strokeWidth={2.4} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="search-box mobile-search-box">
+              <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Nhập tên, đời, địa danh..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchOpen(true)}
+                onKeyDown={handleSearchKeyDown}
+                autoComplete="off"
+                autoFocus
+              />
+              {renderSearchPanel()}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
@@ -479,23 +532,6 @@ export default function Navbar({
               </button>
             </div>
             <div className="mobile-drawer-body">
-              {/* Mobile Search */}
-              <div className="search-box" style={{ width: "100%" }}>
-                <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Tìm thành viên, đời, trang..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setIsSearchOpen(true)}
-                  onBlur={handleSearchBlur}
-                  onKeyDown={handleSearchKeyDown}
-                  autoComplete="off"
-                />
-                {renderSearchPanel()}
-              </div>
-
               {/* Admin actions */}
               <button
                 className="btn btn-secondary"
