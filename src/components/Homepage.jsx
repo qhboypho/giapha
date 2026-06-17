@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { buildUpcomingAnniversaries, getCurrentLunarDateLabel, getYearsString } from "../utils/anniversaryUtils";
+import { buildHomepageHistoryEvents, formatHistoryEventDate } from "../utils/familyHistoryUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
 import "./Homepage.css";
 import {
@@ -66,14 +67,6 @@ const features = [
   }
 ];
 
-const history = [
-  ["1936", "Thủy tổ Trần Công Kỳ tạ thế, gia tộc tiếp nối giữ gìn nề nếp gia quy."],
-  ["1959", "Cụ bà Trần Thị Hiền tạ thế, các chi họ lớn dần hình thành phát triển."],
-  ["1980", "Cụ Trần Công Nghiêm tạ thế, dòng họ lan tỏa đến nhiều vùng miền."],
-  ["1992", "Cụ Trần Công Huê tạ thế, các thế hệ sau giữ vững truyền thống."],
-  ["Hiện tại", "Con cháu sum vầy, cùng nhau kết nối và số hóa gia phả dòng họ."]
-];
-
 const heritageIconMap = {
   temple: Landmark,
   people: Users,
@@ -93,8 +86,9 @@ function HeritageIcon({ type }) {
   );
 }
 
-export default function Homepage({ onNavigate, onOpenPerson, members = [], isLoading = false }) {
+export default function Homepage({ onNavigate, onOpenPerson, members = [], historyEvents = [], isLoading = false }) {
   const currentLunarDateLabel = getCurrentLunarDateLabel();
+  const homepageHistoryEvents = buildHomepageHistoryEvents(historyEvents);
 
   // Calculate dynamic stats from database data
   const generations = members.length > 0 ? Math.max(...members.map(m => m.generation), 0) : 3;
@@ -708,10 +702,10 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], isLoa
             <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem toàn bộ <span aria-hidden="true">→</span></button>
           </div>
           <div className="history-timeline">
-            {history.map(([year, text]) => (
-              <div className="timeline-node" key={year}>
-                <strong>{year}</strong>
-                <span>{text}</span>
+            {homepageHistoryEvents.map((event) => (
+              <div className="timeline-node" key={event.id || `${event.eventDate}-${event.title}`}>
+                <strong>{formatHistoryEventDate(event.eventDate)}</strong>
+                <span>{event.description || "Đang cập nhập"}</span>
               </div>
             ))}
           </div>

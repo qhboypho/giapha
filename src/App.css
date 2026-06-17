@@ -3219,8 +3219,229 @@
   color: var(--text-primary);
 }
 
+/* Family history administration */
+.history-admin-page {
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  padding: 28px clamp(16px, 4vw, 48px) 56px;
+  background:
+    radial-gradient(circle at 76% 20%, rgba(191, 161, 95, 0.12), transparent 30%),
+    var(--bg-primary);
+}
+
+.history-admin-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 390px) 1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.history-event-form,
+.history-events-list {
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-xl);
+}
+
+.history-event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  align-self: start;
+}
+
+.history-event-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-weight: 800;
+  font-size: 0.84rem;
+}
+
+.history-event-form .form-input,
+.history-event-form .form-textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.history-event-form .form-textarea {
+  resize: vertical;
+  min-height: 112px;
+  white-space: normal;
+}
+
+.history-member-select {
+  min-height: 128px;
+  white-space: normal !important;
+}
+
+.history-event-form select.form-input option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.history-toggle-row {
+  display: flex !important;
+  grid-template-columns: none !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px !important;
+  padding: 12px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-primary) !important;
+}
+
+.history-toggle-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-brand-primary);
+}
+
+.history-events-list {
+  padding: 18px;
+  min-width: 0;
+}
+
+.history-event-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.history-event-card {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+}
+
+.history-event-date {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  color: var(--color-brand-accent);
+  font-weight: 900;
+}
+
+.history-event-date svg {
+  width: 34px;
+  height: 34px;
+  padding: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(215, 169, 77, 0.38);
+  background: rgba(191, 161, 95, 0.12);
+}
+
+.history-event-body {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.history-event-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.history-event-title-row h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.history-event-body p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.history-event-body small {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.history-visibility-pill,
+.history-related-members span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(192, 57, 43, 0.28);
+  background: rgba(192, 57, 43, 0.1);
+  color: var(--color-red);
+  font-size: 0.72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.history-visibility-pill.is-visible {
+  border-color: rgba(58, 116, 78, 0.32);
+  background: rgba(58, 116, 78, 0.11);
+  color: var(--color-green);
+}
+
+.history-related-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-related-members span {
+  border-color: rgba(191, 161, 95, 0.28);
+  background: rgba(191, 161, 95, 0.1);
+  color: var(--text-secondary);
+}
+
+.history-event-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.history-event-actions .btn {
+  flex: none;
+  min-height: 34px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.history-event-actions .danger {
+  color: var(--color-red);
+}
+
+.history-admin-footnote {
+  display: block;
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
 @media (max-width: 900px) {
   .accounts-layout,
+  .history-admin-layout,
   .accounts-grid,
   .account-password-grid {
     grid-template-columns: 1fr;
@@ -3233,10 +3454,21 @@
   .accounts-metric {
     width: 100%;
   }
+
+  .history-event-card {
+    grid-template-columns: 1fr;
+  }
+
+  .history-event-title-row,
+  .history-event-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 560px) {
-  .accounts-page {
+  .accounts-page,
+  .history-admin-page {
     padding: 18px 12px 40px;
   }
 

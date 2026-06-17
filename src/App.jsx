@@ -7,6 +7,7 @@ import FeaturedMembersPage from "./components/FeaturedMembersPage";
 import AnniversaryPage from "./components/AnniversaryPage";
 import GenerationsPage from "./components/GenerationsPage";
 import AccountAdminPage from "./components/AccountAdminPage";
+import HistoryAdminPage from "./components/HistoryAdminPage";
 import Sidebar from "./components/Sidebar";
 import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
@@ -16,6 +17,7 @@ import "./App.css";
 export default function App() {
   // Family tree members from database
   const [members, setMembers] = useState([]);
+  const [historyEvents, setHistoryEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Authenticated user state
@@ -69,6 +71,23 @@ export default function App() {
     return data;
   }, [buildMembersUrl]);
 
+  const loadHistoryEvents = useCallback(async () => {
+    const res = await fetch("/api/history-events");
+    const data = await res.json();
+    if (data.success) {
+      setHistoryEvents(data.data);
+    }
+    return data;
+  }, []);
+
+  const closeTransientOverlays = useCallback(() => {
+    setSelectedPersonId(null);
+    setIsLoginModalOpen(false);
+    setIsMemberModalOpen(false);
+    setEditPerson(null);
+    setAddRelativeOf(null);
+  }, []);
+
   // Load user session, settings, and family tree data on mount
   useEffect(() => {
     const initApp = async () => {
@@ -105,15 +124,16 @@ export default function App() {
       if (!isLocked) {
         try {
           await loadMembers(false);
+          await loadHistoryEvents();
         } catch (err) {
-          console.error("Members fetch failed:", err);
+          console.error("Initial data fetch failed:", err);
         }
       }
       setLoading(false);
     };
 
     initApp();
-  }, [loadMembers]);
+  }, [loadHistoryEvents, loadMembers]);
 
   const showToast = (message) => {
     setToast(message);
@@ -125,9 +145,7 @@ export default function App() {
   };
 
   const handleViewChange = (view) => {
-    if (view !== activeView && selectedPersonId) {
-      setSelectedPersonId(null);
-    }
+    closeTransientOverlays();
     if (view !== "accounts") {
       setAccountPageMode("manage");
     }
@@ -135,9 +153,15 @@ export default function App() {
   };
 
   const handleOpenAccounts = (mode = "manage") => {
-    setSelectedPersonId(null);
+    closeTransientOverlays();
     setAccountPageMode(mode);
     setActiveView("accounts");
+  };
+
+  const handleOpenHistoryAdmin = () => {
+    closeTransientOverlays();
+    setAccountPageMode("manage");
+    setActiveView("history-admin");
   };
 
   const handleLogin = async (user) => {
@@ -157,8 +181,10 @@ export default function App() {
       const isLocked = pMode && !isAuthenticatedViewer(user);
       if (!isLocked) {
         await loadMembers(false);
+        await loadHistoryEvents();
       } else {
         setMembers([]);
+        setHistoryEvents([]);
         setShowSensitiveInfo(false);
       }
     } catch (err) {
@@ -171,6 +197,7 @@ export default function App() {
       await fetch("/api/auth/logout", { method: "POST" });
       setCurrentUser(null);
       setMembers([]);
+      setHistoryEvents([]);
       setShowSensitiveInfo(false);
       setSelectedPersonId(null);
       showToast("Đã đăng xuất khỏi hệ thống.");
@@ -198,8 +225,11 @@ export default function App() {
         if (!isLocked) {
           const memData = await loadMembers(false);
           if (!memData.success) showToast(memData.error || "Không thể tải dữ liệu gia phả.");
+          const historyData = await loadHistoryEvents();
+          if (!historyData.success) showToast(historyData.error || "Không thể tải lịch sử dòng họ.");
         } else {
           setMembers([]);
+          setHistoryEvents([]);
           setSelectedPersonId(null);
         }
       } else {
@@ -230,6 +260,7 @@ export default function App() {
   };
 
   const handleOpenPersonInTree = (id) => {
+    closeTransientOverlays();
     setActiveView("tree");
     setSelectedPersonId(id);
   };
@@ -333,6 +364,7 @@ export default function App() {
         canRevealSensitiveInfo={canRevealSensitiveInfo}
         onToggleSensitiveInfo={handleToggleSensitiveInfo}
         onOpenAccounts={handleOpenAccounts}
+        onOpenHistoryAdmin={handleOpenHistoryAdmin}
         onSearchSelectMember={handleOpenPersonInTree}
       />
 
@@ -366,6 +398,7 @@ export default function App() {
                   onNavigate={handleViewChange}
                   onOpenPerson={handleOpenPersonInTree}
                   members={members}
+                  historyEvents={historyEvents}
                   isLoading={loading}
                 />
               ) : activeView === "tree" ? (
@@ -399,6 +432,13 @@ export default function App() {
                   members={members}
                   mode={accountPageMode}
                   onToast={showToast}
+                />
+              ) : activeView === "history-admin" ? (
+                <HistoryAdminPage
+                  currentUser={currentUser}
+                  members={members}
+                  onToast={showToast}
+                  onEventsChanged={setHistoryEvents}
                 />
               ) : (
                 <MemberList

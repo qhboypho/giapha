@@ -85,9 +85,54 @@ function formatMemberRow(row) {
   };
 }
 
+function formatHistoryEventRow(row) {
+  return {
+    ...row,
+    isHomepageVisible: row.isHomepageVisible === 1,
+    relatedMemberIds: parseSpouseIds(row.relatedMemberIds),
+    sortOrder: Number(row.sortOrder || 0)
+  };
+}
+
 async function fetchFormattedMembers(db) {
   const { results } = await db.prepare("SELECT * FROM members").all();
   return results.map(formatMemberRow);
+}
+
+async function fetchHistoryEvents(db, includeHidden = false) {
+  const query = includeHidden
+    ? "SELECT * FROM family_history_events ORDER BY eventDate ASC, sortOrder ASC, createdAt ASC"
+    : "SELECT * FROM family_history_events WHERE isHomepageVisible = 1 ORDER BY eventDate ASC, sortOrder ASC, createdAt ASC";
+  const { results } = await db.prepare(query).all();
+  return results.map(formatHistoryEventRow);
+}
+
+function normalizeHistoryEventPayload(data = {}) {
+  const eventDate = String(data.eventDate || '').trim();
+  const title = String(data.title || '').trim();
+  const description = String(data.description || '').trim();
+  const relatedBranch = String(data.relatedBranch || '').trim();
+  const relatedMemberIds = Array.isArray(data.relatedMemberIds)
+    ? data.relatedMemberIds.map((id) => String(id || '').trim()).filter(Boolean)
+    : [];
+  const sortOrder = Number.isFinite(Number(data.sortOrder)) ? Number(data.sortOrder) : 0;
+
+  if (!/^\d{4}(-\d{2}(-\d{2})?)?$/.test(eventDate)) {
+    return { error: 'Thời gian cột mốc cần nhập dạng YYYY, YYYY-MM hoặc YYYY-MM-DD.' };
+  }
+  if (!title) {
+    return { error: 'Vui lòng nhập tiêu đề cột mốc lịch sử.' };
+  }
+
+  return {
+    eventDate,
+    title,
+    description,
+    relatedBranch,
+    relatedMemberIds,
+    isHomepageVisible: Boolean(data.isHomepageVisible),
+    sortOrder
+  };
 }
 
 function buildEditorScopeIds(members, rootId) {
@@ -708,6 +753,119 @@ app.delete('/members/:id', async (c) => {
     await c.env.DB.prepare("UPDATE members SET motherId = NULL WHERE motherId = ?").bind(memberId).run();
 
     return c.json({ success: true, message: 'Đã xóa thành viên thành công.' });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 14. GET /api/history-events - Fetch family history milestones
+app.get('/history-events', async (c) => {
+  try {
+    const isPrivateMode = await getPrivateMode(c.env.DB);
+    const user = await getAuthenticatedUser(c);
+
+    if (isPrivateMode && !isAuthenticatedViewer(user)) {
+      return c.json({ success: false, error: 'Chế độ riêng tư đang bật. Vui lòng đăng nhập tài khoản thành viên.' }, 403);
+    }
+
+    const includeHidden = c.req.query('includeHidden') === 'true' && isAdmin(user);
+    const events = await fetchHistoryEvents(c.env.DB, includeHidden);
+    return c.json({ success: true, data: events });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 15. POST /api/history-events - Create a family history milestone (Admin only)
+app.post('/history-events', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Bạn không có quyền thực hiện thao tác này.' }, 403);
+  }
+
+  try {
+    const payload = normalizeHistoryEventPayload(await c.req.json());
+    if (payload.error) {
+      return c.json({ success: false, error: payload.error }, 400);
+    }
+
+    const id = `history_${Date.now()}`;
+    await c.env.DB.prepare(`
+      INSERT INTO family_history_events (
+        id, eventDate, title, description, relatedBranch, relatedMemberIds,
+        isHomepageVisible, sortOrder
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      id,
+      payload.eventDate,
+      payload.title,
+      payload.description,
+      payload.relatedBranch,
+      JSON.stringify(payload.relatedMemberIds),
+      payload.isHomepageVisible ? 1 : 0,
+      payload.sortOrder
+    ).run();
+
+    return c.json({ success: true, id });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 16. PUT /api/history-events/:id - Update a family history milestone (Admin only)
+app.put('/history-events/:id', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Bạn không có quyền thực hiện thao tác này.' }, 403);
+  }
+
+  const eventId = c.req.param('id');
+
+  try {
+    const existing = await c.env.DB.prepare("SELECT id FROM family_history_events WHERE id = ? LIMIT 1").bind(eventId).first();
+    if (!existing) {
+      return c.json({ success: false, error: 'Không tìm thấy cột mốc lịch sử.' }, 404);
+    }
+
+    const payload = normalizeHistoryEventPayload(await c.req.json());
+    if (payload.error) {
+      return c.json({ success: false, error: payload.error }, 400);
+    }
+
+    await c.env.DB.prepare(`
+      UPDATE family_history_events SET
+        eventDate = ?, title = ?, description = ?, relatedBranch = ?, relatedMemberIds = ?,
+        isHomepageVisible = ?, sortOrder = ?, updatedAt = datetime('now')
+      WHERE id = ?
+    `).bind(
+      payload.eventDate,
+      payload.title,
+      payload.description,
+      payload.relatedBranch,
+      JSON.stringify(payload.relatedMemberIds),
+      payload.isHomepageVisible ? 1 : 0,
+      payload.sortOrder,
+      eventId
+    ).run();
+
+    return c.json({ success: true, id: eventId });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 17. DELETE /api/history-events/:id - Delete a family history milestone (Admin only)
+app.delete('/history-events/:id', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Bạn không có quyền thực hiện thao tác này.' }, 403);
+  }
+
+  const eventId = c.req.param('id');
+
+  try {
+    await c.env.DB.prepare("DELETE FROM family_history_events WHERE id = ?").bind(eventId).run();
+    return c.json({ success: true });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }

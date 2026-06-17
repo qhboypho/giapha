@@ -13,6 +13,7 @@ import {
   Network,
   Search,
   ShieldCheck,
+  ScrollText,
   Sun,
   UserCog,
   UserRound,
@@ -76,6 +77,7 @@ export default function Navbar({
   canRevealSensitiveInfo,
   onToggleSensitiveInfo,
   onOpenAccounts,
+  onOpenHistoryAdmin,
   onSearchSelectMember
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -412,6 +414,17 @@ export default function Navbar({
                       className="user-menu-item"
                       type="button"
                       onClick={() => {
+                        onOpenHistoryAdmin?.();
+                        setIsUserMenuOpen(false);
+                      }}
+                    >
+                      <ScrollText size={17} strokeWidth={2.2} />
+                      Quản lý lịch sử
+                    </button>
+                    <button
+                      className="user-menu-item"
+                      type="button"
+                      onClick={() => {
                         setIsPrivateMode(!isPrivateMode);
                         setIsUserMenuOpen(false);
                       }}
@@ -598,6 +611,20 @@ export default function Navbar({
                 >
                   <LockKeyhole size={16} strokeWidth={2.2} />
                   Đổi mật khẩu
+                </button>
+              )}
+
+              {isAdmin(currentUser) && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    onOpenHistoryAdmin?.();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+                >
+                  <ScrollText size={16} strokeWidth={2.2} />
+                  Quản lý lịch sử
                 </button>
               )}
 
