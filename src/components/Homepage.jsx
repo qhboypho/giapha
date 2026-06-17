@@ -699,7 +699,7 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], histo
               <span className="header-mark record-mark" aria-hidden="true" />
               Lịch sử dòng họ
             </h2>
-            <button className="column-more-link" onClick={() => onNavigate("tree")}>Xem toàn bộ <span aria-hidden="true">→</span></button>
+            <button className="column-more-link" onClick={() => onNavigate("history")}>Xem toàn bộ <span aria-hidden="true">→</span></button>
           </div>
           <div className="history-timeline">
             {homepageHistoryEvents.map((event) => (

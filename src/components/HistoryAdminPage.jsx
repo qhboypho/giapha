@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Eye, EyeOff, History, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { CalendarClock, Eye, EyeOff, History, Images, Plus, Save, Search, Trash2, Upload, X } from "lucide-react";
 import { formatHistoryEventDate } from "../utils/familyHistoryUtils";
 import { getRoleLabel, isAdmin } from "../utils/authRoles";
+import { compressHistoryImage, formatImageSize, MAX_HISTORY_IMAGES, MAX_HISTORY_UPLOAD_BYTES } from "../utils/historyImageUtils";
 
 const emptyForm = {
   eventDate: "",
@@ -9,6 +10,7 @@ const emptyForm = {
   description: "",
   relatedBranch: "",
   relatedMemberIds: [],
+  images: [],
   isHomepageVisible: true,
   sortOrder: 0
 };
@@ -20,6 +22,7 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(canManage);
   const [saving, setSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
   const memberOptions = useMemo(() => (
@@ -91,6 +94,7 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
       description: event.description || "",
       relatedBranch: event.relatedBranch || "",
       relatedMemberIds: event.relatedMemberIds || [],
+      images: event.images || [],
       isHomepageVisible: Boolean(event.isHomepageVisible),
       sortOrder: Number(event.sortOrder || 0)
     });
@@ -120,8 +124,71 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
     setForm((prev) => ({ ...prev, eventDate: value }));
   };
 
+  const handleImageUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (files.length === 0) return;
+
+    const slotsLeft = MAX_HISTORY_IMAGES - form.images.length;
+    if (slotsLeft <= 0) {
+      onToast?.(`Mỗi cột mốc chỉ lưu tối đa ${MAX_HISTORY_IMAGES} ảnh.`);
+      return;
+    }
+
+    setImageUploading(true);
+    const uploadedImages = [];
+    try {
+      for (const file of files.slice(0, slotsLeft)) {
+        const compressed = await compressHistoryImage(file);
+        if (compressed.size > MAX_HISTORY_UPLOAD_BYTES) {
+          onToast?.(`Ảnh ${file.name} vẫn quá nặng sau khi nén.`);
+          continue;
+        }
+
+        const body = new FormData();
+        body.append("file", compressed);
+        const res = await fetch("/api/history-images", {
+          method: "POST",
+          body
+        });
+        const data = await res.json();
+        if (!data.success) {
+          onToast?.(data.error || `Không thể tải ảnh ${file.name}.`);
+          continue;
+        }
+        uploadedImages.push(data.image);
+      }
+
+      if (uploadedImages.length > 0) {
+        setForm((prev) => ({
+          ...prev,
+          images: [...prev.images, ...uploadedImages].slice(0, MAX_HISTORY_IMAGES)
+        }));
+        onToast?.(`Đã tải lên ${uploadedImages.length} ảnh lịch sử.`);
+      }
+      if (files.length > slotsLeft) {
+        onToast?.(`Đã bỏ qua ${files.length - slotsLeft} ảnh vì vượt giới hạn ${MAX_HISTORY_IMAGES} ảnh.`);
+      }
+    } catch (err) {
+      onToast?.(err.message || "Không thể xử lý ảnh.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const removeImage = (key) => {
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((image) => image.key !== key)
+    }));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (imageUploading) {
+      onToast?.("Đợi ảnh tải lên xong rồi lưu cột mốc.");
+      return;
+    }
     setSaving(true);
 
     try {
@@ -305,6 +372,40 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
           </label>
 
           <label>
+            Ảnh sự kiện
+            <span className="history-upload-box">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                multiple
+                onChange={handleImageUpload}
+                disabled={imageUploading || form.images.length >= MAX_HISTORY_IMAGES}
+              />
+              <Upload size={18} strokeWidth={2.2} />
+              <span>{imageUploading ? "Đang tải ảnh..." : "Chọn ảnh để tải lên R2"}</span>
+            </span>
+            <span className="account-field-hint">
+              Tối đa {MAX_HISTORY_IMAGES} ảnh. Ảnh sẽ được nén trước khi gửi lên R2, D1 chỉ lưu đường dẫn.
+            </span>
+            {form.images.length > 0 && (
+              <div className="history-image-preview-list">
+                {form.images.map((image) => (
+                  <figure className="history-image-preview" key={image.key}>
+                    <img src={image.src} alt={image.name || "Ảnh lịch sử"} />
+                    <figcaption>
+                      <span>{image.name || "Ảnh lịch sử"}</span>
+                      <small>{formatImageSize(image.size)}</small>
+                    </figcaption>
+                    <button type="button" onClick={() => removeImage(image.key)} aria-label="Xóa ảnh">
+                      <X size={14} strokeWidth={2.4} />
+                    </button>
+                  </figure>
+                ))}
+              </div>
+            )}
+          </label>
+
+          <label>
             Thứ tự ưu tiên
             <input
               className="form-input"
@@ -324,11 +425,11 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
           </label>
 
           <div className="account-form-actions">
-            <button className="btn btn-primary" type="submit" disabled={saving}>
-              {saving ? "Đang lưu..." : editing ? "Lưu thay đổi" : "Thêm cột mốc"}
+            <button className="btn btn-primary" type="submit" disabled={saving || imageUploading}>
+              {saving ? "Đang lưu..." : imageUploading ? "Đang tải ảnh..." : editing ? "Lưu thay đổi" : "Thêm cột mốc"}
             </button>
             {editing && (
-              <button className="btn btn-secondary" type="button" onClick={resetForm} disabled={saving}>
+              <button className="btn btn-secondary" type="button" onClick={resetForm} disabled={saving || imageUploading}>
                 Hủy
               </button>
             )}
@@ -358,6 +459,12 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
                   </div>
                   <p>{event.description || "Đang cập nhập"}</p>
                   {event.relatedBranch && <small>{event.relatedBranch}</small>}
+                  {event.images?.length > 0 && (
+                    <div className="history-event-images-pill">
+                      <Images size={14} strokeWidth={2.2} />
+                      {event.images.length} ảnh
+                    </div>
+                  )}
                   {event.relatedMemberIds?.length > 0 && (
                     <div className="history-related-members">
                       {event.relatedMemberIds.map((id) => (

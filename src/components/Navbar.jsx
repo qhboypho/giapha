@@ -51,6 +51,12 @@ const pageSearchItems = [
     keywords: "lich gio ngay gio su kien am lich"
   },
   {
+    id: "history",
+    label: "Lịch sử dòng họ",
+    description: "Xem toàn bộ cột mốc và ảnh tư liệu",
+    keywords: "lich su dong ho cot moc su kien anh tu lieu nha tho"
+  },
+  {
     id: "list",
     label: "Thành viên",
     description: "Danh sách đầy đủ thành viên gia phả",
@@ -253,6 +259,7 @@ export default function Navbar({
                   {item.id === "tree" ? <Network size={17} strokeWidth={2.2} /> : null}
                   {item.id === "generations" ? <BookOpenText size={17} strokeWidth={2.2} /> : null}
                   {item.id === "anniversary" ? <CalendarDays size={17} strokeWidth={2.2} /> : null}
+                  {item.id === "history" ? <ScrollText size={17} strokeWidth={2.2} /> : null}
                   {item.id === "list" ? <Users size={17} strokeWidth={2.2} /> : null}
                 </span>
                 <span className="global-search-copy">

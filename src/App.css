@@ -1858,6 +1858,235 @@
   font-weight: 650;
 }
 
+/* Family history detail page */
+.family-history-page::before {
+  opacity: 0.14;
+}
+
+.family-history-hero {
+  align-items: center;
+}
+
+.family-history-summary strong {
+  color: var(--color-brand-primary);
+}
+
+.family-history-timeline {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0.25rem 0 2rem;
+}
+
+.family-history-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(96px, max-content) 42px minmax(0, 1fr);
+  gap: 0.95rem;
+  padding-bottom: 1.15rem;
+}
+
+.family-history-item::before {
+  content: "";
+  position: absolute;
+  top: 42px;
+  bottom: 0;
+  left: calc(96px + 0.95rem + 21px);
+  width: 1px;
+  background: linear-gradient(180deg, rgba(191, 161, 95, 0.7), rgba(191, 161, 95, 0.12));
+}
+
+.family-history-item:last-child::before {
+  display: none;
+}
+
+.family-history-date {
+  justify-self: end;
+  padding-top: 0.54rem;
+  color: var(--color-danger);
+  font-family: var(--font-display);
+  font-size: clamp(0.94rem, 1.5vw, 1.2rem);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.family-history-node {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(191, 161, 95, 0.5);
+  border-radius: 50%;
+  color: var(--color-brand-primary);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.family-history-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(191, 161, 95, 0.24);
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(191, 161, 95, 0.1), rgba(139, 13, 11, 0.04)),
+    var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.family-history-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.family-history-card h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  line-height: 1.18;
+}
+
+.family-history-card-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+  max-width: min(320px, 45%);
+  color: var(--color-brand-primary);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.family-history-card-head span svg {
+  flex: none;
+}
+
+.family-history-card p {
+  margin: 0.62rem 0 0;
+  color: var(--text-secondary);
+  line-height: 1.62;
+  white-space: pre-line;
+}
+
+.family-history-gallery {
+  display: flex;
+  gap: 0.66rem;
+  overflow-x: auto;
+  margin-top: 0.9rem;
+  padding-bottom: 0.15rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(191, 161, 95, 0.48) rgba(191, 161, 95, 0.08);
+}
+
+.family-history-gallery button {
+  flex: 0 0 auto;
+  width: 126px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(191, 161, 95, 0.28);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.family-history-gallery img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.family-history-gallery button:hover img {
+  transform: scale(1.035);
+}
+
+.history-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 2.2rem);
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.history-lightbox figure {
+  display: grid;
+  justify-items: center;
+  gap: 0.82rem;
+  width: min(1060px, 100%);
+  max-height: 90dvh;
+  margin: 0;
+}
+
+.history-lightbox figure img {
+  max-width: 100%;
+  max-height: calc(90dvh - 78px);
+  object-fit: contain;
+  border-radius: 14px;
+  border: 1px solid rgba(245, 192, 91, 0.32);
+  background: #090705;
+  box-shadow: 0 26px 90px rgba(0, 0, 0, 0.48);
+}
+
+.history-lightbox figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: min(1060px, 100%);
+  color: #fff8e8;
+  font-weight: 850;
+}
+
+.history-lightbox figcaption span,
+.history-lightbox figcaption small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.history-lightbox figcaption small {
+  color: rgba(255, 248, 232, 0.7);
+  font-size: 0.82rem;
+}
+
+.history-lightbox-close,
+.history-lightbox-nav {
+  position: fixed;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(245, 192, 91, 0.3);
+  border-radius: 50%;
+  color: #fff8e8;
+  background: rgba(25, 16, 9, 0.72);
+  box-shadow: var(--shadow-md);
+}
+
+.history-lightbox-close {
+  top: 1rem;
+  right: 1rem;
+}
+
+.history-lightbox-nav.prev {
+  left: 1rem;
+}
+
+.history-lightbox-nav.next {
+  right: 1rem;
+}
+
 /* Sidebar Details Panel */
 .sidebar {
   width: 400px;
@@ -3416,6 +3645,96 @@
   accent-color: var(--color-brand-primary);
 }
 
+.history-upload-box {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 54px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px dashed rgba(215, 169, 77, 0.42);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  cursor: pointer;
+}
+
+.history-upload-box input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.history-upload-box svg {
+  color: var(--color-brand-primary);
+}
+
+.history-upload-box span {
+  min-width: 0;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.history-image-preview-list {
+  display: grid;
+  gap: 8px;
+}
+
+.history-image-preview {
+  position: relative;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid rgba(191, 161, 95, 0.22);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+}
+
+.history-image-preview img {
+  width: 72px;
+  height: 54px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(191, 161, 95, 0.2);
+}
+
+.history-image-preview figcaption {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.history-image-preview figcaption span {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-image-preview figcaption small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.history-image-preview button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(192, 57, 43, 0.35);
+  border-radius: 50%;
+  color: var(--color-red);
+  background: rgba(192, 57, 43, 0.08);
+}
+
 .history-events-list {
   padding: 18px;
   min-width: 0;
@@ -3486,6 +3805,20 @@
 .history-event-body small {
   color: var(--text-muted);
   font-weight: 800;
+}
+
+.history-event-images-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(191, 161, 95, 0.28);
+  color: var(--color-brand-primary);
+  background: rgba(191, 161, 95, 0.1);
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
 .history-visibility-pill,
@@ -3575,6 +3908,37 @@
   .history-date-row {
     grid-template-columns: 1fr;
   }
+
+  .family-history-item {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+    padding-left: 52px;
+  }
+
+  .family-history-item::before {
+    left: 20px;
+    top: 42px;
+  }
+
+  .family-history-node {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  .family-history-date {
+    justify-self: start;
+    padding-top: 0.3rem;
+  }
+
+  .family-history-card-head {
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .family-history-card-head span {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 560px) {
@@ -3590,5 +3954,33 @@
   .account-avatar {
     width: 46px;
     height: 46px;
+  }
+
+  .history-image-preview {
+    grid-template-columns: 62px minmax(0, 1fr) auto;
+  }
+
+  .history-image-preview img {
+    width: 62px;
+    height: 48px;
+  }
+
+  .family-history-gallery button {
+    width: 108px;
+  }
+
+  .history-lightbox {
+    padding: 0.72rem;
+  }
+
+  .history-lightbox figcaption {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .history-lightbox-nav.prev,
+  .history-lightbox-nav.next {
+    bottom: 1rem;
+    top: auto;
   }
 }

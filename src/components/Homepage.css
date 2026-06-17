@@ -1216,33 +1216,35 @@
 
 .history-timeline {
   display: grid;
-  gap: 0.43rem;
-  padding: 0.12rem 0 0 0;
+  grid-template-columns: max-content 20px minmax(0, 1fr);
+  column-gap: 0.72rem;
+  row-gap: 0;
+  max-height: 184px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 13, 11, 0.38) transparent;
+  padding: 0.12rem 0.2rem 0.08rem 0;
   position: relative;
-  --timeline-year-width: 56px;
-  --timeline-rail-width: 18px;
-  --timeline-column-gap: 0.56rem;
-  --timeline-line-x: calc(var(--timeline-year-width) + var(--timeline-column-gap) + (var(--timeline-rail-width) / 2));
 }
 
-.history-timeline::before {
-  content: "";
-  position: absolute;
-  left: var(--timeline-line-x);
-  top: 0.58rem;
-  bottom: 0.64rem;
-  width: 1px;
-  background: rgba(139, 13, 11, 0.62);
-  transform: translateX(-0.5px);
+.history-timeline::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-timeline::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(139, 13, 11, 0.34);
 }
 
 .timeline-node {
   display: grid;
-  grid-template-columns: var(--timeline-year-width) var(--timeline-rail-width) minmax(0, 1fr);
-  column-gap: var(--timeline-column-gap);
-  align-items: center;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: start;
   position: relative;
-  min-height: 1.18rem;
+  min-height: 1.4rem;
+  padding: 0.08rem 0 0.32rem;
 }
 
 .timeline-node::before {
@@ -1250,6 +1252,23 @@
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
+  align-self: stretch;
+  width: 1px;
+  min-height: calc(100% + 0.34rem);
+  background: rgba(139, 13, 11, 0.52);
+  transform: translateY(0.68rem);
+}
+
+.timeline-node:last-child::before {
+  display: none;
+}
+
+.timeline-node::after {
+  content: "";
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  margin-top: 0.26rem;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -1264,7 +1283,9 @@
   color: var(--home-red);
   font-size: 0.82rem;
   line-height: 1.08;
-  text-align: left;
+  text-align: right;
+  white-space: nowrap;
+  padding-top: 0.12rem;
 }
 
 .timeline-node span {
@@ -2056,11 +2077,11 @@
   color: #ffe066;
 }
 
-[data-theme="dark"] .history-timeline::before {
+[data-theme="dark"] .timeline-node::before {
   background: rgba(245, 192, 91, 0.25);
 }
 
-[data-theme="dark"] .timeline-node::before {
+[data-theme="dark"] .timeline-node::after {
   background: #0e0e0c;
   border-color: var(--home-gold);
   box-shadow: 0 0 0 2px rgba(14, 14, 12, 0.9);

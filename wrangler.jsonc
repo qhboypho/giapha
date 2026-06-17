@@ -13,5 +13,12 @@
       "database_id": "8733270f-4775-4736-835a-c46f14119798",
       "preview_database_id": "8733270f-4775-4736-835a-c46f14119798"
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "giapha-tc-media",
+      "preview_bucket_name": "giapha-tc-media-preview"
+    }
   ]
 }

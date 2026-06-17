@@ -12,6 +12,9 @@ const LEGACY_VIEWER_ROLE = 'viewer';
 const ALLOWED_USER_ROLES = new Set([ADMIN_ROLE, EDITOR_ROLE, VIEWER_ROLE, LEGACY_VIEWER_ROLE]);
 const SENSITIVE_PHONE_MASK = 'Đã ẩn số điện thoại';
 const SENSITIVE_LOCATION_MASK = 'Đã ẩn địa chỉ';
+const HISTORY_IMAGE_LIMIT = 8;
+const HISTORY_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
+const ALLOWED_HISTORY_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 function isAuthenticatedViewer(user) {
   return Boolean(user && user.role !== 'guest');
@@ -74,6 +77,16 @@ function parseSpouseIds(value) {
   }
 }
 
+function parseJsonArray(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  try {
+    const parsed = JSON.parse(value || '[]');
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
 function formatMemberRow(row) {
   return {
     ...row,
@@ -89,7 +102,8 @@ function formatHistoryEventRow(row) {
   return {
     ...row,
     isHomepageVisible: row.isHomepageVisible === 1,
-    relatedMemberIds: parseSpouseIds(row.relatedMemberIds),
+    relatedMemberIds: parseJsonArray(row.relatedMemberIds),
+    images: parseJsonArray(row.imageUrls),
     sortOrder: Number(row.sortOrder || 0)
   };
 }
@@ -116,6 +130,18 @@ function normalizeHistoryEventPayload(data = {}) {
     ? data.relatedMemberIds.map((id) => String(id || '').trim()).filter(Boolean)
     : [];
   const sortOrder = Number.isFinite(Number(data.sortOrder)) ? Number(data.sortOrder) : 0;
+  const images = Array.isArray(data.images)
+    ? data.images
+      .slice(0, HISTORY_IMAGE_LIMIT)
+      .map((image) => ({
+        key: String(image?.key || '').trim(),
+        src: String(image?.src || '').trim(),
+        name: String(image?.name || '').trim(),
+        type: String(image?.type || '').trim(),
+        size: Number(image?.size || 0)
+      }))
+      .filter((image) => image.key && image.src)
+    : [];
 
   if (!/^\d{4}(-\d{2}(-\d{2})?)?$/.test(eventDate)) {
     return { error: 'Thời gian cột mốc cần nhập dạng YYYY, YYYY-MM hoặc YYYY-MM-DD.' };
@@ -130,9 +156,31 @@ function normalizeHistoryEventPayload(data = {}) {
     description,
     relatedBranch,
     relatedMemberIds,
+    images,
     isHomepageVisible: Boolean(data.isHomepageVisible),
     sortOrder
   };
+}
+
+function sanitizeFileName(name = '') {
+  return String(name || 'history-image')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80) || 'history-image';
+}
+
+function getMediaKeyFromRequest(c) {
+  return decodeURIComponent(c.req.path.replace(/^\/api\/media\//, '')).replace(/^\/+/, '');
+}
+
+async function deleteHistoryImagesFromBucket(c, images = []) {
+  if (!c.env.MEDIA_BUCKET) return;
+  const keys = images.map((image) => image?.key).filter(Boolean);
+  await Promise.allSettled(keys.map((key) => c.env.MEDIA_BUCKET.delete(key)));
 }
 
 function buildEditorScopeIds(members, rootId) {
@@ -776,7 +824,94 @@ app.get('/history-events', async (c) => {
   }
 });
 
-// 15. POST /api/history-events - Create a family history milestone (Admin only)
+// 15. GET /api/media/* - Serve private R2 media through the app access rules
+app.get('/media/*', async (c) => {
+  try {
+    const isPrivateMode = await getPrivateMode(c.env.DB);
+    const user = await getAuthenticatedUser(c);
+    if (isPrivateMode && !isAuthenticatedViewer(user)) {
+      return c.json({ success: false, error: 'Chế độ riêng tư đang bật. Vui lòng đăng nhập tài khoản thành viên.' }, 403);
+    }
+
+    if (!c.env.MEDIA_BUCKET) {
+      return c.json({ success: false, error: 'Chưa cấu hình R2 MEDIA_BUCKET.' }, 500);
+    }
+
+    const key = getMediaKeyFromRequest(c);
+    if (!key || key.includes('..')) {
+      return c.json({ success: false, error: 'Đường dẫn ảnh không hợp lệ.' }, 400);
+    }
+
+    const object = await c.env.MEDIA_BUCKET.get(key);
+    if (!object) {
+      return c.json({ success: false, error: 'Không tìm thấy ảnh.' }, 404);
+    }
+
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set('etag', object.httpEtag);
+    headers.set('cache-control', object.httpMetadata?.cacheControl || 'public, max-age=31536000, immutable');
+    return new Response(object.body, { headers });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 16. POST /api/history-images - Upload a family history image to R2 (Admin only)
+app.post('/history-images', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Bạn không có quyền thực hiện thao tác này.' }, 403);
+  }
+  if (!c.env.MEDIA_BUCKET) {
+    return c.json({ success: false, error: 'Chưa cấu hình R2 MEDIA_BUCKET.' }, 500);
+  }
+
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file');
+    if (!(file instanceof File)) {
+      return c.json({ success: false, error: 'Vui lòng chọn ảnh cần tải lên.' }, 400);
+    }
+    if (!ALLOWED_HISTORY_IMAGE_TYPES.has(file.type)) {
+      return c.json({ success: false, error: 'Ảnh chỉ hỗ trợ JPG, PNG, WEBP hoặc GIF.' }, 400);
+    }
+    if (file.size > HISTORY_IMAGE_MAX_BYTES) {
+      return c.json({ success: false, error: 'Ảnh sau khi nén cần nhỏ hơn 2MB.' }, 400);
+    }
+
+    const safeName = sanitizeFileName(file.name);
+    const extension = safeName.includes('.') ? safeName.split('.').pop() : file.type.split('/').pop();
+    const key = `history/${new Date().getUTCFullYear()}/${crypto.randomUUID()}.${extension}`;
+    const body = await file.arrayBuffer();
+
+    await c.env.MEDIA_BUCKET.put(key, body, {
+      httpMetadata: {
+        contentType: file.type,
+        cacheControl: 'public, max-age=31536000, immutable'
+      },
+      customMetadata: {
+        originalName: safeName,
+        uploadedBy: user.username
+      }
+    });
+
+    return c.json({
+      success: true,
+      image: {
+        key,
+        src: `/api/media/${encodeURIComponent(key)}`,
+        name: file.name,
+        type: file.type,
+        size: file.size
+      }
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 17. POST /api/history-events - Create a family history milestone (Admin only)
 app.post('/history-events', async (c) => {
   const user = await getAuthenticatedUser(c);
   if (!isAdmin(user)) {
@@ -793,8 +928,8 @@ app.post('/history-events', async (c) => {
     await c.env.DB.prepare(`
       INSERT INTO family_history_events (
         id, eventDate, title, description, relatedBranch, relatedMemberIds,
-        isHomepageVisible, sortOrder
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        imageUrls, isHomepageVisible, sortOrder
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       payload.eventDate,
@@ -802,6 +937,7 @@ app.post('/history-events', async (c) => {
       payload.description,
       payload.relatedBranch,
       JSON.stringify(payload.relatedMemberIds),
+      JSON.stringify(payload.images),
       payload.isHomepageVisible ? 1 : 0,
       payload.sortOrder
     ).run();
@@ -812,7 +948,7 @@ app.post('/history-events', async (c) => {
   }
 });
 
-// 16. PUT /api/history-events/:id - Update a family history milestone (Admin only)
+// 18. PUT /api/history-events/:id - Update a family history milestone (Admin only)
 app.put('/history-events/:id', async (c) => {
   const user = await getAuthenticatedUser(c);
   if (!isAdmin(user)) {
@@ -822,7 +958,7 @@ app.put('/history-events/:id', async (c) => {
   const eventId = c.req.param('id');
 
   try {
-    const existing = await c.env.DB.prepare("SELECT id FROM family_history_events WHERE id = ? LIMIT 1").bind(eventId).first();
+    const existing = await c.env.DB.prepare("SELECT id, imageUrls FROM family_history_events WHERE id = ? LIMIT 1").bind(eventId).first();
     if (!existing) {
       return c.json({ success: false, error: 'Không tìm thấy cột mốc lịch sử.' }, 404);
     }
@@ -832,9 +968,13 @@ app.put('/history-events/:id', async (c) => {
       return c.json({ success: false, error: payload.error }, 400);
     }
 
+    const previousImages = parseJsonArray(existing.imageUrls);
+    const nextKeys = new Set(payload.images.map((image) => image.key));
+    const removedImages = previousImages.filter((image) => image.key && !nextKeys.has(image.key));
+
     await c.env.DB.prepare(`
       UPDATE family_history_events SET
-        eventDate = ?, title = ?, description = ?, relatedBranch = ?, relatedMemberIds = ?,
+        eventDate = ?, title = ?, description = ?, relatedBranch = ?, relatedMemberIds = ?, imageUrls = ?,
         isHomepageVisible = ?, sortOrder = ?, updatedAt = datetime('now')
       WHERE id = ?
     `).bind(
@@ -843,10 +983,13 @@ app.put('/history-events/:id', async (c) => {
       payload.description,
       payload.relatedBranch,
       JSON.stringify(payload.relatedMemberIds),
+      JSON.stringify(payload.images),
       payload.isHomepageVisible ? 1 : 0,
       payload.sortOrder,
       eventId
     ).run();
+
+    await deleteHistoryImagesFromBucket(c, removedImages);
 
     return c.json({ success: true, id: eventId });
   } catch (err) {
@@ -854,7 +997,7 @@ app.put('/history-events/:id', async (c) => {
   }
 });
 
-// 17. DELETE /api/history-events/:id - Delete a family history milestone (Admin only)
+// 19. DELETE /api/history-events/:id - Delete a family history milestone (Admin only)
 app.delete('/history-events/:id', async (c) => {
   const user = await getAuthenticatedUser(c);
   if (!isAdmin(user)) {
@@ -864,7 +1007,9 @@ app.delete('/history-events/:id', async (c) => {
   const eventId = c.req.param('id');
 
   try {
+    const existing = await c.env.DB.prepare("SELECT imageUrls FROM family_history_events WHERE id = ? LIMIT 1").bind(eventId).first();
     await c.env.DB.prepare("DELETE FROM family_history_events WHERE id = ?").bind(eventId).run();
+    await deleteHistoryImagesFromBucket(c, parseJsonArray(existing?.imageUrls));
     return c.json({ success: true });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);

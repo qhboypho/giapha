@@ -8,6 +8,7 @@ import AnniversaryPage from "./components/AnniversaryPage";
 import GenerationsPage from "./components/GenerationsPage";
 import AccountAdminPage from "./components/AccountAdminPage";
 import HistoryAdminPage from "./components/HistoryAdminPage";
+import FamilyHistoryPage from "./components/FamilyHistoryPage";
 import Sidebar from "./components/Sidebar";
 import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
@@ -425,6 +426,11 @@ export default function App() {
                   members={members}
                   isLoading={loading}
                   onOpenPerson={handleSelectPerson}
+                />
+              ) : activeView === "history" ? (
+                <FamilyHistoryPage
+                  events={historyEvents}
+                  isLoading={loading}
                 />
               ) : activeView === "accounts" ? (
                 <AccountAdminPage
