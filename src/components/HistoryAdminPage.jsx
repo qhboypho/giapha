@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Eye, EyeOff, History, Plus, Save, Trash2 } from "lucide-react";
+import { CalendarClock, Eye, EyeOff, History, Plus, Save, Search, Trash2, X } from "lucide-react";
 import { formatHistoryEventDate } from "../utils/familyHistoryUtils";
 import { getRoleLabel, isAdmin } from "../utils/authRoles";
 
@@ -20,6 +20,7 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(canManage);
   const [saving, setSaving] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
   const memberOptions = useMemo(() => (
     [...members]
@@ -34,6 +35,14 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
     () => new Map(memberOptions.map((option) => [option.id, option.label])),
     [memberOptions]
   );
+  const selectedMemberIds = useMemo(() => new Set(form.relatedMemberIds), [form.relatedMemberIds]);
+  const normalizedMemberSearch = memberSearchQuery.trim().toLocaleLowerCase("vi-VN");
+  const filteredMemberOptions = useMemo(() => {
+    if (!normalizedMemberSearch) return memberOptions.slice(0, 12);
+    return memberOptions
+      .filter((option) => option.label.toLocaleLowerCase("vi-VN").includes(normalizedMemberSearch))
+      .slice(0, 24);
+  }, [memberOptions, normalizedMemberSearch]);
 
   const visibleCount = events.filter((event) => event.isHomepageVisible).length;
 
@@ -87,9 +96,28 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
     });
   };
 
-  const handleMemberSelect = (event) => {
-    const values = Array.from(event.target.selectedOptions).map((option) => option.value);
-    setForm((prev) => ({ ...prev, relatedMemberIds: values }));
+  const toggleRelatedMember = (memberId) => {
+    setForm((prev) => {
+      const current = new Set(prev.relatedMemberIds);
+      if (current.has(memberId)) {
+        current.delete(memberId);
+      } else {
+        current.add(memberId);
+      }
+      return { ...prev, relatedMemberIds: Array.from(current) };
+    });
+  };
+
+  const removeRelatedMember = (memberId) => {
+    setForm((prev) => ({
+      ...prev,
+      relatedMemberIds: prev.relatedMemberIds.filter((id) => id !== memberId)
+    }));
+  };
+
+  const setDateFromPicker = (value) => {
+    if (!value) return;
+    setForm((prev) => ({ ...prev, eventDate: value }));
   };
 
   const handleSubmit = async (event) => {
@@ -180,13 +208,23 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
 
           <label>
             Thời gian
-            <input
-              className="form-input"
-              value={form.eventDate}
-              onChange={(event) => setForm((prev) => ({ ...prev, eventDate: event.target.value }))}
-              placeholder="YYYY, YYYY-MM hoặc YYYY-MM-DD"
-              required
-            />
+            <span className="history-date-row">
+              <input
+                className="form-input"
+                value={form.eventDate}
+                onChange={(event) => setForm((prev) => ({ ...prev, eventDate: event.target.value }))}
+                placeholder="YYYY, YYYY-MM hoặc YYYY-MM-DD"
+                required
+              />
+              <input
+                className="form-input history-date-picker"
+                type="date"
+                value={/^\d{4}-\d{2}-\d{2}$/.test(form.eventDate) ? form.eventDate : ""}
+                onChange={(event) => setDateFromPicker(event.target.value)}
+                title="Chọn ngày cụ thể"
+              />
+            </span>
+            <span className="account-field-hint">Có thể nhập riêng năm, tháng/năm, hoặc chọn ngày cụ thể bằng lịch.</span>
           </label>
 
           <label>
@@ -223,17 +261,47 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
 
           <label>
             Thành viên liên quan
-            <select
-              className="form-input history-member-select"
-              multiple
-              value={form.relatedMemberIds}
-              onChange={handleMemberSelect}
-            >
-              {memberOptions.map((option) => (
-                <option key={option.id} value={option.id}>{option.label}</option>
+            <span className="history-member-search">
+              <Search size={15} strokeWidth={2.2} aria-hidden="true" />
+              <input
+                className="form-input"
+                value={memberSearchQuery}
+                onChange={(event) => setMemberSearchQuery(event.target.value)}
+                placeholder="Tìm thành viên để chọn..."
+              />
+            </span>
+            {form.relatedMemberIds.length > 0 && (
+              <div className="history-selected-members">
+                {form.relatedMemberIds.map((memberId) => (
+                  <button
+                    key={memberId}
+                    type="button"
+                    className="history-selected-chip"
+                    onClick={() => removeRelatedMember(memberId)}
+                    title="Bỏ chọn"
+                  >
+                    {memberLabelById.get(memberId) || memberId}
+                    <X size={12} strokeWidth={2.4} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="history-member-picker" role="group" aria-label="Chọn thành viên liên quan">
+              {filteredMemberOptions.map((option) => (
+                <label className={`history-member-option ${selectedMemberIds.has(option.id) ? "is-selected" : ""}`} key={option.id}>
+                  <input
+                    type="checkbox"
+                    checked={selectedMemberIds.has(option.id)}
+                    onChange={() => toggleRelatedMember(option.id)}
+                  />
+                  <span>{option.label}</span>
+                </label>
               ))}
-            </select>
-            <span className="account-field-hint">Giữ Ctrl hoặc Cmd để chọn nhiều người. Có thể bỏ trống nếu là sự kiện chung.</span>
+              {filteredMemberOptions.length === 0 && (
+                <span className="history-member-empty">Không tìm thấy thành viên phù hợp.</span>
+              )}
+            </div>
+            <span className="account-field-hint">Bấm từng người để chọn nhiều thành viên. Có thể bỏ trống nếu là sự kiện chung.</span>
           </label>
 
           <label>
