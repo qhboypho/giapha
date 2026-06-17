@@ -63,6 +63,7 @@ export default function Navbar({
   members = [],
   activeView,
   setActiveView,
+  suppressOverlays = false,
   currentUser,
   setIsLoginModalOpen,
   onLogout,
@@ -190,7 +191,7 @@ export default function Navbar({
   };
 
   const renderSearchPanel = () => {
-    if (!shouldShowSearchPanel) return null;
+    if (suppressOverlays || !shouldShowSearchPanel) return null;
     const hasMemberResults = searchResults.members.length > 0;
     const hasPageResults = searchResults.pages.length > 0;
 
@@ -376,7 +377,7 @@ export default function Navbar({
               </span>
               <ChevronDown className="user-menu-chevron" size={16} strokeWidth={2.4} aria-hidden="true" />
             </button>
-            {isUserMenuOpen && (
+            {isUserMenuOpen && !suppressOverlays && (
               <div className="user-menu-panel glass" role="menu">
                 <div className="user-menu-heading">
                   <strong>{userDisplayName}</strong>
@@ -491,7 +492,7 @@ export default function Navbar({
         </button>
       </div>
 
-      {isMobileSearchOpen && (
+      {isMobileSearchOpen && !suppressOverlays && (
         <>
           <div className="mobile-search-backdrop" onClick={closeMobileSearch} />
           <div className="mobile-search-overlay glass">
@@ -523,7 +524,7 @@ export default function Navbar({
       )}
 
       {/* Mobile Drawer Menu */}
-      {isMobileMenuOpen && (
+      {isMobileMenuOpen && !suppressOverlays && (
         <>
           <div className="modal-overlay" style={{ zIndex: 140 }} onClick={() => setIsMobileMenuOpen(false)} />
           <div className="mobile-drawer glass animate-slide-right">

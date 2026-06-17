@@ -522,14 +522,6 @@
   color: currentColor;
 }
 
-.app-container:has(.sidebar) .user-menu-panel,
-.app-container:has(.sidebar) .global-search-panel,
-.app-container:has(.sidebar) .mobile-search-backdrop,
-.app-container:has(.sidebar) .mobile-search-overlay,
-.app-container:has(.sidebar) .mobile-drawer {
-  display: none;
-}
-
 .navbar .btn-logout {
   display: flex;
   align-items: center;

@@ -320,6 +320,7 @@ export default function App() {
         members={members}
         activeView={activeView}
         setActiveView={handleViewChange}
+        suppressOverlays={Boolean(selectedPersonId || isLoginModalOpen || isMemberModalOpen)}
         currentUser={currentUser}
         setIsLoginModalOpen={setIsLoginModalOpen}
         onLogout={handleLogout}
