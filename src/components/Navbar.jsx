@@ -377,7 +377,7 @@ export default function Navbar({
               </span>
               <ChevronDown className="user-menu-chevron" size={16} strokeWidth={2.4} aria-hidden="true" />
             </button>
-            {isUserMenuOpen && !suppressOverlays && (
+            {isUserMenuOpen && (
               <div className="user-menu-panel glass" role="menu">
                 <div className="user-menu-heading">
                   <strong>{userDisplayName}</strong>
