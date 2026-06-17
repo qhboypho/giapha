@@ -502,18 +502,20 @@ export default function Navbar({
               </button>
             </div>
             <div className="search-box mobile-search-box">
-              <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Nhập tên, đời, địa danh..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsSearchOpen(true)}
-                onKeyDown={handleSearchKeyDown}
-                autoComplete="off"
-                autoFocus
-              />
+              <div className="mobile-search-input-wrap">
+                <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Nhập tên, đời, địa danh..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchOpen(true)}
+                  onKeyDown={handleSearchKeyDown}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
               {renderSearchPanel()}
             </div>
           </div>

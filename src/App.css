@@ -2309,6 +2309,19 @@
   width: 100%;
 }
 
+.mobile-search-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.mobile-search-input-wrap .search-input {
+  padding-right: 44px;
+}
+
+.mobile-search-box > .search-icon {
+  top: 21.5px;
+}
+
 .mobile-search-overlay .global-search-panel {
   position: static;
   width: 100%;
