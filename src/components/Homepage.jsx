@@ -45,25 +45,29 @@ const features = [
     title: "Cây phả hệ",
     text: "Khám phá sơ đồ gia phả trực quan, dễ dàng theo dõi các đời.",
     icon: "tree",
-    tone: "green"
+    tone: "green",
+    view: "tree"
   },
   {
     title: "Hồ sơ tổ tiên",
     text: "Lưu giữ thông tin, tiểu sử của các bậc tiền nhân.",
     icon: "record",
-    tone: "gold"
+    tone: "gold",
+    view: "list"
   },
   {
     title: "Ngày giỗ & sự kiện",
     text: "Quản lý ngày giỗ, sự kiện quan trọng của dòng họ.",
     icon: "calendar",
-    tone: "red"
+    tone: "red",
+    view: "anniversary"
   },
   {
     title: "Ký ức gia đình",
     text: "Lưu giữ hình ảnh, kỷ vật và câu chuyện gia đình.",
     icon: "memory",
-    tone: "teal"
+    tone: "teal",
+    view: "history"
   }
 ];
 
@@ -601,7 +605,7 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], histo
           <button
             className={`feature-card feature-${feature.tone}`}
             key={feature.title}
-            onClick={() => onNavigate(feature.title === "Cây phả hệ" ? "tree" : "list")}
+            onClick={() => onNavigate(feature.view)}
           >
             <span className="feature-medallion">
               <HeritageIcon type={feature.icon} />
