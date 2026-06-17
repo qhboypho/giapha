@@ -1682,8 +1682,8 @@
   }
 
   .mobile-child-family-card small {
-    color: #6d4a24;
-    font-weight: 700;
+    color: var(--color-brand-primary, var(--home-red));
+    font-weight: 800;
   }
 
   
