@@ -24,9 +24,51 @@ export default function Sidebar({
   
   // Spouses
   const spouses = members.filter((m) => person.spouseIds?.includes(m.id));
+  const memberById = new Map(members.map((member) => [member.id, member]));
+  const maxGeneration = members.length > 0 ? Math.max(...members.map((member) => member.generation || 1)) : person.generation || 1;
+  const recentGenerationCutoff = Math.max(1, maxGeneration - 1);
 
   // Children
-  const children = sortMembersByBirthOrder(members.filter((m) => m.fatherId === person.id || m.motherId === person.id));
+  const parentIds = new Set([person.id, ...spouses.map((spouse) => spouse.id)]);
+  const childCandidates = sortMembersByBirthOrder(
+    members.filter((member) => parentIds.has(member.fatherId) || parentIds.has(member.motherId))
+  );
+  const childCandidateIds = new Set(childCandidates.map((member) => member.id));
+  const consumedChildIds = new Set();
+  const numericIdOrder = (id) => {
+    const match = String(id || "").match(/\d+$/);
+    return match ? parseInt(match[0], 10) : Number.MAX_SAFE_INTEGER;
+  };
+  const isLinkedToCurrentCouple = (member) => parentIds.has(member.fatherId) || parentIds.has(member.motherId);
+  const children = [];
+
+  childCandidates.forEach((child) => {
+    if (consumedChildIds.has(child.id)) return;
+
+    const spouseInCandidateGroup = (child.spouseIds || [])
+      .map((spouseId) => memberById.get(spouseId))
+      .find((spouse) => spouse && childCandidateIds.has(spouse.id));
+
+    if (!spouseInCandidateGroup) {
+      consumedChildIds.add(child.id);
+      children.push(child);
+      return;
+    }
+
+    const childLinked = isLinkedToCurrentCouple(child);
+    const spouseLinked = isLinkedToCurrentCouple(spouseInCandidateGroup);
+    const primaryChild = childLinked && !spouseLinked
+      ? child
+      : spouseLinked && !childLinked
+        ? spouseInCandidateGroup
+        : numericIdOrder(child.id) <= numericIdOrder(spouseInCandidateGroup.id)
+          ? child
+          : spouseInCandidateGroup;
+
+    consumedChildIds.add(child.id);
+    consumedChildIds.add(spouseInCandidateGroup.id);
+    children.push(primaryChild);
+  });
 
   const canEdit = canEditMemberInScope(currentUser, members, person.id);
   const canEditProfile = canEdit && (!person.sensitiveMasked || showSensitiveInfo);
@@ -48,6 +90,21 @@ export default function Sidebar({
       </div>
     );
   };
+
+  const getSpouseLabel = (member, spouse) => {
+    if (!spouse) return "";
+    const isRecentGeneration = member.generation >= recentGenerationCutoff;
+    if (isRecentGeneration) {
+      return spouse.gender === "nu" ? "Vợ" : "Chồng";
+    }
+    return spouse.gender === "nu" ? "Bà" : "Ông";
+  };
+
+  const getPrimarySpouse = (member) => (
+    (member.spouseIds || [])
+      .map((spouseId) => memberById.get(spouseId))
+      .find(Boolean) || null
+  );
 
   return (
     <aside className="sidebar glass">
@@ -240,22 +297,32 @@ export default function Sidebar({
                   Con cái ({children.length}):
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  {children.map((child) => (
-                    <div 
-                      key={child.id} 
-                      className="relation-item has-tooltip" 
-                      onClick={() => onSelectPerson(child.id)}
-                      data-tooltip={child.name}
-                    >
-                      {renderRelationAvatar(child, "relation-avatar")}
-                      <div className="relation-details">
-                        <span className="relation-name">{child.name}</span>
-                        <span className="relation-role">
-                          {child.gender === "nam" ? "Con trai" : "Con gái"} (Đời thứ {child.generation})
-                        </span>
+                  {children.map((child) => {
+                    const childSpouse = getPrimarySpouse(child);
+                    const spouseLabel = getSpouseLabel(child, childSpouse);
+
+                    return (
+                      <div
+                        key={child.id}
+                        className="relation-item has-tooltip"
+                        onClick={() => onSelectPerson(child.id)}
+                        data-tooltip={`${child.name}${childSpouse ? ` - ${spouseLabel}: ${childSpouse.name}` : ""}`}
+                      >
+                        {renderRelationAvatar(child, "relation-avatar")}
+                        <div className="relation-details">
+                          <span className="relation-name">{child.name}</span>
+                          <span className="relation-role">
+                            {child.gender === "nam" ? "Con trai" : "Con gái"} (Đời thứ {child.generation})
+                          </span>
+                          {childSpouse && (
+                            <span className="relation-role relation-spouse-role">
+                              {spouseLabel}: {childSpouse.name}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -2303,6 +2303,7 @@
 .relation-details {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -2317,6 +2318,11 @@
 .relation-role {
   font-size: 0.7rem;
   color: var(--text-muted);
+}
+
+.relation-spouse-role {
+  color: var(--color-brand-primary);
+  font-weight: 800;
 }
 
 /* Modals & Forms */
