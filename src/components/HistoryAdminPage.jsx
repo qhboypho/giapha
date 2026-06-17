@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Eye, EyeOff, History, Images, Plus, Save, Search, Trash2, Upload, X } from "lucide-react";
+import { CalendarClock, Eye, EyeOff, History, Plus, Save, Search, Trash2, Upload, X } from "lucide-react";
 import { formatHistoryEventDate } from "../utils/familyHistoryUtils";
 import { getRoleLabel, isAdmin } from "../utils/authRoles";
 import { compressHistoryImage, formatImageSize, MAX_HISTORY_IMAGES, MAX_HISTORY_UPLOAD_BYTES } from "../utils/historyImageUtils";
@@ -15,7 +15,7 @@ const emptyForm = {
   sortOrder: 0
 };
 
-export default function HistoryAdminPage({ currentUser, members = [], onToast, onEventsChanged }) {
+export default function HistoryAdminPage({ currentUser, members = [], onToast, onEventsChanged, onPreviewHistory }) {
   const canManage = isAdmin(currentUser);
   const [events, setEvents] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -259,10 +259,16 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
             Nhập các sự kiện quan trọng của dòng họ như xây nhà thờ, họp họ, dựng bia, lập quỹ hoặc cột mốc theo từng chi.
           </p>
         </div>
-        <div className="accounts-metric">
-          <strong>{events.length}</strong>
-          <span>cột mốc</span>
-          <small>{visibleCount} đang hiện trang chủ</small>
+        <div className="history-admin-hero-actions">
+          <button className="btn btn-secondary history-preview-btn" type="button" onClick={onPreviewHistory}>
+            <Eye size={16} strokeWidth={2.2} />
+            Preview trang lịch sử
+          </button>
+          <div className="accounts-metric">
+            <strong>{events.length}</strong>
+            <span>cột mốc</span>
+            <small>{visibleCount} đang hiện trang chủ</small>
+          </div>
         </div>
       </section>
 
@@ -460,9 +466,17 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
                   <p>{event.description || "Đang cập nhập"}</p>
                   {event.relatedBranch && <small>{event.relatedBranch}</small>}
                   {event.images?.length > 0 && (
-                    <div className="history-event-images-pill">
-                      <Images size={14} strokeWidth={2.2} />
-                      {event.images.length} ảnh
+                    <div className="history-event-thumbs" aria-label={`Ảnh của ${event.title}`}>
+                      {event.images.slice(0, 4).map((image, index) => (
+                        <span className="history-event-thumb" key={image.key || image.src || index}>
+                          <img src={image.src} alt={image.name || `Ảnh ${index + 1} của ${event.title}`} />
+                        </span>
+                      ))}
+                      {event.images.length > 4 && (
+                        <span className="history-event-thumb history-event-thumb-more">
+                          +{event.images.length - 4}
+                        </span>
+                      )}
                     </div>
                   )}
                   {event.relatedMemberIds?.length > 0 && (

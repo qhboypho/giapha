@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   BookOpenText,
@@ -87,14 +87,40 @@ export default function Navbar({
   onSearchSelectMember
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [userMenuOpenView, setUserMenuOpenView] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const userMenuRef = useRef(null);
   const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
   const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
   const canAddTopLevelMember = currentUser?.role === "admin" || (currentUser?.role === "editor" && !currentUser?.editScopeRootId);
   const normalizedQuery = normalizeSearchText(searchQuery.trim());
   const shouldShowSearchPanel = isSearchOpen && searchQuery.trim().length >= 2;
+  const isUserMenuOpen = userMenuOpenView === activeView;
+
+  useEffect(() => {
+    if (!isUserMenuOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpenView(null);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setUserMenuOpenView(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isUserMenuOpen]);
 
   const memberById = useMemo(
     () => new Map(members.map((member) => [member.id, member])),
@@ -172,6 +198,7 @@ export default function Navbar({
   const openSearchMember = (member) => {
     setSearchQuery(member.name);
     setIsSearchOpen(false);
+    setUserMenuOpenView(null);
     setIsMobileMenuOpen(false);
     setIsMobileSearchOpen(false);
     onSearchSelectMember?.(member.id);
@@ -180,6 +207,7 @@ export default function Navbar({
   const openSearchPage = (view) => {
     setSearchQuery("");
     setIsSearchOpen(false);
+    setUserMenuOpenView(null);
     setIsMobileMenuOpen(false);
     setIsMobileSearchOpen(false);
     setActiveView(view);
@@ -363,10 +391,10 @@ export default function Navbar({
 
         {/* User login / logout */}
         {currentUser ? (
-          <div className="user-menu-wrap">
+          <div className="user-menu-wrap" ref={userMenuRef}>
             <button
               className={`user-badge user-menu-trigger ${isUserMenuOpen ? "active" : ""}`}
-              onClick={() => setIsUserMenuOpen((prev) => !prev)}
+              onClick={() => setUserMenuOpenView((prev) => (prev === activeView ? null : activeView))}
               aria-haspopup="menu"
               aria-expanded={isUserMenuOpen}
               type="button"
@@ -400,7 +428,7 @@ export default function Navbar({
                       type="button"
                       onClick={() => {
                         onOpenAccounts?.("manage");
-                        setIsUserMenuOpen(false);
+                        setUserMenuOpenView(null);
                       }}
                     >
                       <UserCog size={17} strokeWidth={2.2} />
@@ -411,7 +439,7 @@ export default function Navbar({
                       type="button"
                       onClick={() => {
                         onOpenAccounts?.("password");
-                        setIsUserMenuOpen(false);
+                        setUserMenuOpenView(null);
                       }}
                     >
                       <LockKeyhole size={17} strokeWidth={2.2} />
@@ -422,7 +450,7 @@ export default function Navbar({
                       type="button"
                       onClick={() => {
                         onOpenHistoryAdmin?.();
-                        setIsUserMenuOpen(false);
+                        setUserMenuOpenView(null);
                       }}
                     >
                       <ScrollText size={17} strokeWidth={2.2} />
@@ -433,7 +461,7 @@ export default function Navbar({
                       type="button"
                       onClick={() => {
                         setIsPrivateMode(!isPrivateMode);
-                        setIsUserMenuOpen(false);
+                        setUserMenuOpenView(null);
                       }}
                     >
                       <ShieldCheck size={17} strokeWidth={2.2} />
@@ -448,7 +476,7 @@ export default function Navbar({
                     type="button"
                     onClick={() => {
                       onToggleSensitiveInfo(!showSensitiveInfo);
-                      setIsUserMenuOpen(false);
+                      setUserMenuOpenView(null);
                     }}
                   >
                     {showSensitiveInfo ? <Eye size={17} strokeWidth={2.2} /> : <EyeOff size={17} strokeWidth={2.2} />}
@@ -460,7 +488,7 @@ export default function Navbar({
                   className="user-menu-item danger"
                   type="button"
                   onClick={() => {
-                    setIsUserMenuOpen(false);
+                    setUserMenuOpenView(null);
                     onLogout();
                   }}
                 >

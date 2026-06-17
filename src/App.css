@@ -2010,13 +2010,14 @@
 .history-lightbox {
   position: fixed;
   inset: 0;
-  z-index: 2200;
+  z-index: 12000;
   display: grid;
   place-items: center;
   padding: clamp(1rem, 4vw, 2.2rem);
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  cursor: zoom-out;
 }
 
 .history-lightbox figure {
@@ -2026,6 +2027,9 @@
   width: min(1060px, 100%);
   max-height: 90dvh;
   margin: 0;
+  cursor: default;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .history-lightbox figure img {
@@ -2038,21 +2042,35 @@
   box-shadow: 0 26px 90px rgba(0, 0, 0, 0.48);
 }
 
+.history-lightbox-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-height: calc(90dvh - 78px);
+}
+
 .history-lightbox figcaption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  width: min(1060px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 0.32rem;
+  width: min(680px, 100%);
   color: #fff8e8;
   font-weight: 850;
+  text-align: center;
 }
 
 .history-lightbox figcaption span,
 .history-lightbox figcaption small {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
+}
+
+.history-lightbox figcaption span {
+  font-size: 0.98rem;
+  line-height: 1.25;
 }
 
 .history-lightbox figcaption small {
@@ -2062,7 +2080,6 @@
 
 .history-lightbox-close,
 .history-lightbox-nav {
-  position: fixed;
   display: grid;
   place-items: center;
   width: 44px;
@@ -2075,16 +2092,24 @@
 }
 
 .history-lightbox-close {
+  position: fixed;
   top: 1rem;
   right: 1rem;
 }
 
+.history-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
 .history-lightbox-nav.prev {
-  left: 1rem;
+  left: 0.8rem;
 }
 
 .history-lightbox-nav.next {
-  right: 1rem;
+  right: 0.8rem;
 }
 
 /* Sidebar Details Panel */
@@ -3470,6 +3495,20 @@
   margin-top: 18px;
 }
 
+.history-admin-hero-actions {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.history-preview-btn {
+  align-self: center;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
 .history-event-form,
 .history-events-list {
   border: 1px solid var(--border-card);
@@ -3807,18 +3846,39 @@
   font-weight: 800;
 }
 
-.history-event-images-pill {
-  display: inline-flex;
+.history-event-thumbs {
+  display: flex;
   align-items: center;
-  gap: 5px;
-  width: fit-content;
-  padding: 4px 8px;
-  border-radius: 999px;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.history-event-thumb {
+  width: 56px;
+  height: 42px;
+  flex: none;
+  overflow: hidden;
   border: 1px solid rgba(191, 161, 95, 0.28);
+  border-radius: 9px;
+  background: var(--bg-card);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.13);
+}
+
+.history-event-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.history-event-thumb-more {
+  display: grid;
+  place-items: center;
   color: var(--color-brand-primary);
-  background: rgba(191, 161, 95, 0.1);
-  font-size: 0.72rem;
-  font-weight: 900;
+  background: rgba(191, 161, 95, 0.12);
+  font-size: 0.78rem;
+  font-weight: 950;
 }
 
 .history-visibility-pill,
@@ -3893,6 +3953,16 @@
 
   .accounts-metric {
     width: 100%;
+  }
+
+  .history-admin-hero-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .history-preview-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .history-event-card {
@@ -3974,13 +4044,14 @@
   }
 
   .history-lightbox figcaption {
-    align-items: flex-start;
-    flex-direction: column;
+    width: calc(100vw - 1.44rem);
   }
 
-  .history-lightbox-nav.prev,
+  .history-lightbox-nav.prev {
+    left: 0.72rem;
+  }
+
   .history-lightbox-nav.next {
-    bottom: 1rem;
-    top: auto;
+    right: 0.72rem;
   }
 }

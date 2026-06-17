@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { CalendarClock, ChevronLeft, ChevronRight, History, Images, MapPin, X } from "lucide-react";
 import { buildHomepageHistoryEvents, formatHistoryEventDate } from "../utils/familyHistoryUtils";
 
 export default function FamilyHistoryPage({ events = [], isLoading = false }) {
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [dragStartX, setDragStartX] = useState(null);
   const historyEvents = useMemo(() => buildHomepageHistoryEvents(events), [events]);
   const galleryImages = useMemo(() => (
     historyEvents.flatMap((event) => (
@@ -26,6 +28,30 @@ export default function FamilyHistoryPage({ events = [], isLoading = false }) {
       if (prev === null || galleryImages.length === 0) return prev;
       return (prev + direction + galleryImages.length) % galleryImages.length;
     });
+  };
+
+  const closeLightbox = () => {
+    setLightboxIndex(null);
+    setDragStartX(null);
+  };
+
+  const handleLightboxBackdropClick = (event) => {
+    if (event.target === event.currentTarget) {
+      closeLightbox();
+    }
+  };
+
+  const handleLightboxPointerDown = (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    setDragStartX(event.clientX);
+  };
+
+  const handleLightboxPointerUp = (event) => {
+    if (dragStartX === null) return;
+    const distance = dragStartX - event.clientX;
+    setDragStartX(null);
+    if (galleryImages.length <= 1 || Math.abs(distance) < 44) return;
+    shiftImage(distance > 0 ? 1 : -1);
   };
 
   return (
@@ -100,18 +126,53 @@ export default function FamilyHistoryPage({ events = [], isLoading = false }) {
         </div>
       )}
 
-      {activeImage && (
-        <div className="history-lightbox" role="dialog" aria-modal="true" aria-label="Xem ảnh lịch sử">
-          <button className="history-lightbox-close" type="button" onClick={() => setLightboxIndex(null)} aria-label="Đóng">
+      {activeImage && createPortal((
+        <div className="history-lightbox" role="dialog" aria-modal="true" aria-label="Xem ảnh lịch sử" onClick={handleLightboxBackdropClick}>
+          <button
+            className="history-lightbox-close"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              closeLightbox();
+            }}
+            aria-label="Đóng"
+          >
             <X size={22} strokeWidth={2.4} />
           </button>
-          {galleryImages.length > 1 && (
-            <button className="history-lightbox-nav prev" type="button" onClick={() => shiftImage(-1)} aria-label="Ảnh trước">
-              <ChevronLeft size={28} strokeWidth={2.4} />
-            </button>
-          )}
-          <figure>
-            <img src={activeImage.src} alt={activeImage.name || activeImage.eventTitle || "Ảnh lịch sử dòng họ"} />
+          <figure
+            onPointerDown={handleLightboxPointerDown}
+            onPointerUp={handleLightboxPointerUp}
+            onPointerCancel={() => setDragStartX(null)}
+          >
+            <div className="history-lightbox-stage">
+              {galleryImages.length > 1 && (
+                <button
+                  className="history-lightbox-nav prev"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    shiftImage(-1);
+                  }}
+                  aria-label="Ảnh trước"
+                >
+                  <ChevronLeft size={28} strokeWidth={2.4} />
+                </button>
+              )}
+              <img src={activeImage.src} alt={activeImage.name || activeImage.eventTitle || "Ảnh lịch sử dòng họ"} draggable="false" />
+              {galleryImages.length > 1 && (
+                <button
+                  className="history-lightbox-nav next"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    shiftImage(1);
+                  }}
+                  aria-label="Ảnh sau"
+                >
+                  <ChevronRight size={28} strokeWidth={2.4} />
+                </button>
+              )}
+            </div>
             <figcaption>
               <span>
                 <Images size={15} strokeWidth={2.2} />
@@ -120,13 +181,8 @@ export default function FamilyHistoryPage({ events = [], isLoading = false }) {
               <small>{formatHistoryEventDate(activeImage.eventDate)} · {lightboxIndex + 1}/{galleryImages.length}</small>
             </figcaption>
           </figure>
-          {galleryImages.length > 1 && (
-            <button className="history-lightbox-nav next" type="button" onClick={() => shiftImage(1)} aria-label="Ảnh sau">
-              <ChevronRight size={28} strokeWidth={2.4} />
-            </button>
-          )}
         </div>
-      )}
+      ), document.body)}
     </section>
   );
 }

@@ -445,6 +445,7 @@ export default function App() {
                   members={members}
                   onToast={showToast}
                   onEventsChanged={setHistoryEvents}
+                  onPreviewHistory={() => handleViewChange("history")}
                 />
               ) : (
                 <MemberList
