@@ -103,7 +103,7 @@ function formatHistoryEventRow(row) {
     ...row,
     isHomepageVisible: row.isHomepageVisible === 1,
     relatedMemberIds: parseJsonArray(row.relatedMemberIds),
-    images: parseJsonArray(row.imageUrls),
+    images: parseJsonArray(row.imageUrls).map(normalizeHistoryImage).filter(Boolean),
     sortOrder: Number(row.sortOrder || 0)
   };
 }
@@ -133,14 +133,8 @@ function normalizeHistoryEventPayload(data = {}) {
   const images = Array.isArray(data.images)
     ? data.images
       .slice(0, HISTORY_IMAGE_LIMIT)
-      .map((image) => ({
-        key: String(image?.key || '').trim(),
-        src: String(image?.src || '').trim(),
-        name: String(image?.name || '').trim(),
-        type: String(image?.type || '').trim(),
-        size: Number(image?.size || 0)
-      }))
-      .filter((image) => image.key && image.src)
+      .map(normalizeHistoryImage)
+      .filter(Boolean)
     : [];
 
   if (!/^\d{4}(-\d{2}(-\d{2})?)?$/.test(eventDate)) {
@@ -173,8 +167,36 @@ function sanitizeFileName(name = '') {
     .slice(0, 80) || 'history-image';
 }
 
+function safeDecodePath(value = '') {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function buildMediaUrl(key = '') {
+  return `/api/media/${String(key || '')
+    .split('/')
+    .filter(Boolean)
+    .map((part) => encodeURIComponent(part))
+    .join('/')}`;
+}
+
+function normalizeHistoryImage(image = {}) {
+  const key = safeDecodePath(String(image?.key || '').trim()).replace(/^\/+/, '');
+  if (!key || key.includes('..')) return null;
+  return {
+    key,
+    src: buildMediaUrl(key),
+    name: String(image?.name || '').trim(),
+    type: String(image?.type || '').trim(),
+    size: Number(image?.size || 0)
+  };
+}
+
 function getMediaKeyFromRequest(c) {
-  return decodeURIComponent(c.req.path.replace(/^\/api\/media\//, '')).replace(/^\/+/, '');
+  return safeDecodePath(c.req.path.replace(/^\/(?:api\/)?media\//, '')).replace(/^\/+/, '');
 }
 
 async function deleteHistoryImagesFromBucket(c, images = []) {
@@ -900,7 +922,7 @@ app.post('/history-images', async (c) => {
       success: true,
       image: {
         key,
-        src: `/api/media/${encodeURIComponent(key)}`,
+        src: buildMediaUrl(key),
         name: file.name,
         type: file.type,
         size: file.size
