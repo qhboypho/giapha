@@ -199,19 +199,19 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
     URL.revokeObjectURL(url);
   };
 
-  const exportMembers = async () => {
+  const downloadResponseFile = async (endpoint, fallbackFilename, successMessage, errorMessage) => {
     setSyncBusy(true);
     try {
-      const res = await fetch("/api/member-sync/export");
+      const res = await fetch(endpoint);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        onToast?.(data.error || "Không thể xuất dữ liệu cây gia phả.");
+        onToast?.(data.error || errorMessage);
         return;
       }
 
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") || "";
-      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `giapha-members-${new Date().toISOString().slice(0, 10)}.json`;
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || fallbackFilename;
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -220,12 +220,39 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      onToast?.("Đã xuất dữ liệu cây gia phả.");
+      onToast?.(successMessage);
     } catch {
-      onToast?.("Lỗi kết nối máy chủ khi xuất dữ liệu.");
+      onToast?.(errorMessage);
     } finally {
       setSyncBusy(false);
     }
+  };
+
+  const exportMembers = async () => {
+    await downloadResponseFile(
+      "/api/member-sync/export",
+      `giapha-members-${new Date().toISOString().slice(0, 10)}.json`,
+      "Đã xuất dữ liệu cây gia phả.",
+      "Không thể xuất dữ liệu cây gia phả."
+    );
+  };
+
+  const downloadMemberSample = async () => {
+    await downloadResponseFile(
+      "/api/member-sync/sample",
+      "giapha-members-sample.json",
+      "Đã tải file JSON mẫu.",
+      "Không thể tải file JSON mẫu."
+    );
+  };
+
+  const downloadAiPrompt = async () => {
+    await downloadResponseFile(
+      "/api/member-sync/ai-prompt",
+      "giapha-ai-import-prompt.txt",
+      "Đã tải prompt AI nhập liệu.",
+      "Không thể tải prompt AI."
+    );
   };
 
   const previewMemberImport = async (payload, filename) => {
@@ -408,6 +435,14 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
               <Download size={16} strokeWidth={2.2} />
               Xuất dữ liệu cây
             </button>
+            <button className="btn btn-secondary" type="button" onClick={downloadMemberSample} disabled={syncBusy}>
+              <Download size={16} strokeWidth={2.2} />
+              Tải JSON mẫu
+            </button>
+            <button className="btn btn-secondary" type="button" onClick={downloadAiPrompt} disabled={syncBusy}>
+              <Download size={16} strokeWidth={2.2} />
+              Tải prompt AI
+            </button>
             <label className={`btn btn-primary member-sync-import ${syncBusy ? "disabled" : ""}`}>
               <Upload size={16} strokeWidth={2.2} />
               Chọn file nhập
@@ -426,6 +461,33 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
                 <span><strong>{syncPreview.toUpdate}</strong> cập nhật</span>
                 <span><strong>{syncPreview.unchanged}</strong> không đổi</span>
                 <span><strong>{syncPreview.toDelete}</strong> sẽ xóa khỏi prod</span>
+              </div>
+              <div className="member-sync-detail-grid">
+                {[
+                  ["Thêm mới", syncPreview.creates || [], "create"],
+                  ["Cập nhật", syncPreview.updates || [], "update"],
+                  ["Xóa khỏi prod", syncPreview.deletes || [], "delete"]
+                ].map(([title, items, tone]) => (
+                  <div className={`member-sync-detail-section ${tone}`} key={title}>
+                    <strong>{title}</strong>
+                    {items.length > 0 ? (
+                      <div className="member-sync-detail-list">
+                        {items.slice(0, 6).map((item) => (
+                          <span key={`${tone}-${item.id}`}>
+                            <b>{item.name}</b>
+                            <small>
+                              Đời {item.generation}
+                              {item.changedFields?.length ? ` · đổi ${item.changedFields.join(", ")}` : ""}
+                            </small>
+                          </span>
+                        ))}
+                        {items.length > 6 && <em>Còn {items.length - 6} người khác.</em>}
+                      </div>
+                    ) : (
+                      <small>Không có thay đổi.</small>
+                    )}
+                  </div>
+                ))}
               </div>
               {syncErrors.length > 0 ? (
                 <div className="member-sync-errors">

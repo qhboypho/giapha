@@ -4,8 +4,10 @@ import { handle } from 'hono/cloudflare-pages';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { verifyPassword, generateSecureToken, hashPassword } from '../helpers/auth';
 import {
+  buildMemberSyncAiPrompt,
   buildMemberSyncExport,
   buildMemberSyncPreview,
+  buildMemberSyncSample,
   normalizeImportedMembers,
   normalizeMemberForSync,
   validateMemberRelations
@@ -129,6 +131,15 @@ function jsonDownloadResponse(payload, filename) {
   return new Response(JSON.stringify(payload, null, 2), {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`
+    }
+  });
+}
+
+function textDownloadResponse(content, filename) {
+  return new Response(content, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
       'Content-Disposition': `attachment; filename="${filename}"`
     }
   });
@@ -970,7 +981,27 @@ app.get('/member-sync/export', async (c) => {
   }
 });
 
-// 15. POST /api/member-sync/preview - Validate and preview a family tree import file (Admin only)
+// 15. GET /api/member-sync/sample - Download a valid sample import file (Admin only)
+app.get('/member-sync/sample', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được tải file mẫu đồng bộ.' }, 403);
+  }
+
+  return jsonDownloadResponse(buildMemberSyncSample(), 'giapha-members-sample.json');
+});
+
+// 16. GET /api/member-sync/ai-prompt - Download the AI extraction prompt (Admin only)
+app.get('/member-sync/ai-prompt', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được tải prompt AI.' }, 403);
+  }
+
+  return textDownloadResponse(buildMemberSyncAiPrompt(), 'giapha-ai-import-prompt.txt');
+});
+
+// 17. POST /api/member-sync/preview - Validate and preview a family tree import file (Admin only)
 app.post('/member-sync/preview', async (c) => {
   const user = await getAuthenticatedUser(c);
   if (!isAdmin(user)) {

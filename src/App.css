@@ -3793,6 +3793,73 @@
   line-height: 1;
 }
 
+.member-sync-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.member-sync-detail-section {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: rgba(44, 29, 19, 0.72);
+}
+
+.member-sync-detail-section > strong {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.member-sync-detail-section > small,
+.member-sync-detail-list em {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.member-sync-detail-section.delete {
+  border-color: rgba(192, 57, 43, 0.32);
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.member-sync-detail-list {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.member-sync-detail-list span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(215, 169, 77, 0.14);
+}
+
+.member-sync-detail-list span:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.member-sync-detail-list b {
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+}
+
+.member-sync-detail-list small {
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
 .member-sync-errors {
   display: grid;
   gap: 6px;
@@ -4505,7 +4572,8 @@
   .history-admin-layout,
   .accounts-grid,
   .account-password-grid,
-  .member-sync-stats {
+  .member-sync-stats,
+  .member-sync-detail-grid {
     grid-template-columns: 1fr;
   }
 

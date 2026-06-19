@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import {
+  buildMemberSyncAiPrompt,
   buildMemberSyncExport,
   buildMemberSyncPreview,
+  buildMemberSyncSample,
   normalizeImportedMembers,
   validateMemberRelations
 } from "../src/utils/memberSyncUtils.js";
@@ -101,5 +103,26 @@ assert.equal(preview.totalIncoming, 3);
 assert.equal(preview.toCreate, 1);
 assert.equal(preview.toUpdate, 1);
 assert.equal(preview.unchanged, 1);
+assert.equal(preview.creates.length, 1);
+assert.equal(preview.creates[0].id, "g2_1");
+assert.equal(preview.updates.length, 1);
+assert.deepEqual(preview.updates[0].changedFields, ["occupation"]);
+assert.equal(preview.deletes.length, 0);
+
+const deletePreview = buildMemberSyncPreview(existingMembers, [normalizedMembers[0]]);
+assert.equal(deletePreview.toDelete, 1);
+assert.equal(deletePreview.deletes[0].id, "g1_2");
+
+const samplePayload = buildMemberSyncSample();
+const sampleMembers = normalizeImportedMembers(samplePayload);
+const sampleRelationResult = validateMemberRelations(sampleMembers);
+assert.equal(samplePayload.type, "giapha-tc-members");
+assert.equal(samplePayload.version, 1);
+assert.equal(sampleRelationResult.valid, true);
+
+const aiPrompt = buildMemberSyncAiPrompt();
+assert.match(aiPrompt, /giapha-tc-members/);
+assert.match(aiPrompt, /members/);
+assert.match(aiPrompt, /Chỉ trả về JSON thuần/);
 
 console.log("member sync utils tests passed");
