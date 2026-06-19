@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import {
   BookOpenText,
   ChevronDown,
+  ChevronRight,
   GitBranch,
   MapPin,
   Network,
@@ -161,7 +162,12 @@ export default function GenerationsPage({ members = [], isLoading = false, onOpe
   }, [members]);
 
   const [selectedGeneration, setSelectedGeneration] = useState(() => generations[0] || 1);
+  const [collapsedGroupState, setCollapsedGroupState] = useState(() => ({
+    generation: null,
+    ids: new Set()
+  }));
   const activeGeneration = generations.includes(selectedGeneration) ? selectedGeneration : generations[0] || 1;
+  const collapsedGroups = collapsedGroupState.generation === activeGeneration ? collapsedGroupState.ids : new Set();
 
   const memberById = useMemo(() => new Map(members.map((member) => [member.id, member])), [members]);
   const generationGroups = useMemo(
@@ -179,7 +185,22 @@ export default function GenerationsPage({ members = [], isLoading = false, onOpe
   }, [generations, members]);
 
   const handleGenerationChange = (generation) => {
-    setSelectedGeneration(Number(generation));
+    const nextGeneration = Number(generation);
+    setSelectedGeneration(nextGeneration);
+    setCollapsedGroupState({ generation: nextGeneration, ids: new Set() });
+  };
+
+  const toggleGroup = (groupId) => {
+    setCollapsedGroupState((current) => {
+      const currentIds = current.generation === activeGeneration ? current.ids : new Set();
+      const next = new Set(currentIds);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return { generation: activeGeneration, ids: next };
+    });
   };
 
   return (
@@ -234,68 +255,92 @@ export default function GenerationsPage({ members = [], isLoading = false, onOpe
         </div>
       ) : generationGroups.length > 0 && peopleCount > 0 ? (
         <div className="generation-groups">
-          {generationGroups.map((group, groupIndex) => (
-            <section className="generation-family-group" key={group.id} style={{ "--index": groupIndex }}>
-              <div className="generation-couple-head">
-                <span className="generation-couple-icon" aria-hidden="true">
-                  <Network strokeWidth={1.9} />
-                </span>
-                <span className="generation-couple-text">
-                  <strong>{group.title}</strong>
-                  <small>{group.subtitle}</small>
-                </span>
-                <span className="generation-branch-count">
-                  <Users strokeWidth={1.8} />
-                  {group.members.length} người
-                </span>
-              </div>
+          {generationGroups.map((group, groupIndex) => {
+            const isCollapsed = collapsedGroups.has(group.id);
+            const ToggleIcon = isCollapsed ? ChevronRight : ChevronDown;
 
-              <div className="generation-tree-stem" aria-hidden="true" />
-
-              <div className="generation-members-grid">
-                {group.members.map((member) => {
-                  const spouses = getSpouses(member, memberById);
-                  const childCount = getChildCount(member, spouses, members);
-
-                  return (
-                    <button
-                      type="button"
-                      className={`generation-member-card ${member.gender || ""} ${member.isDeceased ? "deceased" : ""}`}
-                      key={member.id}
-                      onClick={() => onOpenPerson(member.id)}
-                    >
-                      <GenerationAvatar member={member} />
-                      <span className="generation-member-main">
-                        <span className="generation-member-topline">
-                          <strong>{member.name}</strong>
-                          <em>Đời {member.generation || "?"}</em>
-                        </span>
-                        <span className="generation-member-meta">
-                          <UserRound strokeWidth={1.7} />
-                          {getYearsString(member)}
-                        </span>
-                        {spouses.length > 0 && (
-                          <span className="generation-member-spouse">
-                            {member.gender === "nam" ? "Bà" : "Ông"}: {spouses.map((spouse) => spouse.name).join(", ")}
-                          </span>
-                        )}
-                        <span className="generation-member-children">
-                          <GitBranch strokeWidth={1.7} />
-                          Con cái: {childCount > 0 ? `${childCount} người` : "Đang cập nhật"}
-                        </span>
-                        {(member.birthPlace || member.address) && (
-                          <span className="generation-member-place">
-                            <MapPin strokeWidth={1.7} />
-                            {member.birthPlace || member.address}
-                          </span>
-                        )}
+            return (
+              <section
+                className={`generation-family-group ${isCollapsed ? "is-collapsed" : ""}`}
+                key={group.id}
+                style={{ "--index": groupIndex }}
+              >
+                <button
+                  type="button"
+                  className="generation-couple-head generation-couple-toggle-row"
+                  aria-expanded={!isCollapsed}
+                  aria-label={`${isCollapsed ? "Mở" : "Đóng"} nhánh ${group.title}`}
+                  onClick={() => toggleGroup(group.id)}
+                >
+                  <span className="generation-couple-icon" aria-hidden="true">
+                    <Network strokeWidth={1.9} />
+                  </span>
+                  <span className="generation-couple-text">
+                    <span className="generation-couple-title-line">
+                      <strong>{group.title}</strong>
+                      <span className="generation-branch-count">
+                        <Users strokeWidth={1.8} />
+                        <span>{group.members.length} người con</span>
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+                    </span>
+                    <small>{group.subtitle}</small>
+                  </span>
+                  <span className="generation-branch-arrow" aria-hidden="true">
+                    <ToggleIcon strokeWidth={2.2} />
+                  </span>
+                </button>
+
+                {!isCollapsed && (
+                  <>
+                    <div className="generation-tree-stem" aria-hidden="true" />
+
+                    <div className="generation-members-grid">
+                      {group.members.map((member) => {
+                        const spouses = getSpouses(member, memberById);
+                        const childCount = getChildCount(member, spouses, members);
+
+                        return (
+                          <button
+                            type="button"
+                            className={`generation-member-card ${member.gender || ""} ${member.isDeceased ? "deceased" : ""}`}
+                            key={member.id}
+                            onClick={() => onOpenPerson(member.id)}
+                          >
+                            <GenerationAvatar member={member} />
+                            <span className="generation-member-main">
+                              <span className="generation-member-topline">
+                                <strong>{member.name}</strong>
+                                <em>Đời {member.generation || "?"}</em>
+                              </span>
+                              <span className="generation-member-meta">
+                                <UserRound strokeWidth={1.7} />
+                                {getYearsString(member)}
+                              </span>
+                              {spouses.length > 0 && (
+                                <span className="generation-member-spouse">
+                                  {member.gender === "nam" ? "Bà" : "Ông"}: {spouses.map((spouse) => spouse.name).join(", ")}
+                                </span>
+                              )}
+                              <span className="generation-member-children">
+                                <GitBranch strokeWidth={1.7} />
+                                Con cái: {childCount > 0 ? `${childCount} người` : "Đang cập nhật"}
+                              </span>
+                              {(member.birthPlace || member.address) && (
+                                <span className="generation-member-place">
+                                  <MapPin strokeWidth={1.7} />
+                                  {member.birthPlace || member.address}
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </section>
+            );
+          })}
         </div>
       ) : (
         <div className="directory-empty-state">
