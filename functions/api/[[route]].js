@@ -12,6 +12,12 @@ import {
   normalizeMemberForSync,
   validateMemberRelations
 } from '../../src/utils/memberSyncUtils.js';
+import {
+  SITE_CONFIG_SETTING_KEY,
+  parseSiteConfigValue,
+  serializeSiteConfig,
+  validateSiteConfigInput
+} from '../../src/utils/siteConfigUtils.js';
 
 const app = new Hono().basePath('/api');
 const ADMIN_ROLE = 'admin';
@@ -75,6 +81,11 @@ function maskSensitiveMember(member) {
 async function getPrivateMode(db) {
   const row = await db.prepare("SELECT value FROM settings WHERE key = 'private_mode' LIMIT 1").first();
   return row ? (row.value === 'true') : true;
+}
+
+async function getSiteConfig(db) {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ? LIMIT 1").bind(SITE_CONFIG_SETTING_KEY).first();
+  return parseSiteConfigValue(row?.value);
 }
 
 function validateUsername(username) {
@@ -560,9 +571,10 @@ app.post('/auth/change-password', async (c) => {
 app.get('/settings', async (c) => {
   try {
     const isPrivateMode = await getPrivateMode(c.env.DB);
-    return c.json({ success: true, privateMode: isPrivateMode });
+    const siteConfig = await getSiteConfig(c.env.DB);
+    return c.json({ success: true, privateMode: isPrivateMode, siteConfig });
   } catch (err) {
-    return c.json({ success: false, privateMode: true, error: err.message });
+    return c.json({ success: false, privateMode: true, siteConfig: parseSiteConfigValue(), error: err.message });
   }
 });
 
@@ -574,14 +586,27 @@ app.post('/settings', async (c) => {
   }
 
   try {
-    const { privateMode } = await c.req.json();
-    const valueStr = privateMode ? 'true' : 'false';
+    const payload = await c.req.json();
+    const hasPrivateMode = Object.prototype.hasOwnProperty.call(payload, 'privateMode');
+    const hasSiteConfig = Object.prototype.hasOwnProperty.call(payload, 'siteConfig');
+    const currentPrivateMode = await getPrivateMode(c.env.DB);
+    const nextPrivateMode = hasPrivateMode ? Boolean(payload.privateMode) : currentPrivateMode;
+    let nextSiteConfig = await getSiteConfig(c.env.DB);
 
-    await c.env.DB.prepare(
-      "INSERT INTO settings (key, value, updatedAt) VALUES ('private_mode', ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updatedAt=excluded.updatedAt"
-    ).bind(valueStr).run();
+    if (hasPrivateMode) {
+      await c.env.DB.prepare(
+        "INSERT INTO settings (key, value, updatedAt) VALUES ('private_mode', ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updatedAt=excluded.updatedAt"
+      ).bind(nextPrivateMode ? 'true' : 'false').run();
+    }
 
-    return c.json({ success: true, privateMode });
+    if (hasSiteConfig) {
+      nextSiteConfig = validateSiteConfigInput(payload.siteConfig);
+      await c.env.DB.prepare(
+        "INSERT INTO settings (key, value, updatedAt) VALUES (?, ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updatedAt=excluded.updatedAt"
+      ).bind(SITE_CONFIG_SETTING_KEY, serializeSiteConfig(nextSiteConfig)).run();
+    }
+
+    return c.json({ success: true, privateMode: nextPrivateMode, siteConfig: nextSiteConfig });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }

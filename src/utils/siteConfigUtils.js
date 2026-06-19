@@ -1,0 +1,87 @@
+export const SITE_CONFIG_SETTING_KEY = "site_config";
+
+export const DEFAULT_SITE_CONFIG = {
+  familyName: "Trần Công",
+  familyLabel: "Gia Phả Họ",
+  siteTitle: "Gia phả họ Trần Công",
+  shortName: "TC",
+  logoUrl: "/tranconglogo.png",
+  heroTitle: "Lưu giữ cội nguồn",
+  heroSubtitle: "Kết nối muôn đời con cháu",
+  heroDescription: "Gia phả là sợi dây thiêng liêng kết nối quá khứ, hiện tại và tương lai. Cùng nhau gìn giữ cội nguồn, vun đắp truyền thống cho muôn đời con cháu.",
+  primaryCtaLabel: "Khám phá gia phả",
+  secondaryCtaLabel: "Tìm người thân",
+  mainTreeTitle: "Cây gia phả dòng chính",
+  loginDescription: "Hệ thống yêu cầu mật khẩu để xem thông tin chi tiết gia phả dòng họ.",
+  footerQuote: "Cội nguồn là nơi bắt đầu - Ký ức là sợi dây - Tương lai là nơi tiếp nối.",
+  footerMessage: "Nguyện cùng nhau gìn giữ, để dòng họ Trần Công mãi bền vững và tỏa sáng."
+};
+
+const SITE_CONFIG_TEXT_LIMITS = {
+  familyName: 80,
+  familyLabel: 80,
+  siteTitle: 120,
+  shortName: 16,
+  logoUrl: 500,
+  heroTitle: 120,
+  heroSubtitle: 160,
+  heroDescription: 500,
+  primaryCtaLabel: 80,
+  secondaryCtaLabel: 80,
+  mainTreeTitle: 120,
+  loginDescription: 300,
+  footerQuote: 250,
+  footerMessage: 300
+};
+
+export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG);
+
+const normalizeString = (value, fallback = "", maxLength = 300) => {
+  const text = String(value ?? "").trim();
+  return (text || fallback).slice(0, maxLength);
+};
+
+export function normalizeSiteConfig(config = {}) {
+  return SITE_CONFIG_FIELDS.reduce((acc, field) => {
+    acc[field] = normalizeString(
+      config[field],
+      DEFAULT_SITE_CONFIG[field],
+      SITE_CONFIG_TEXT_LIMITS[field]
+    );
+    return acc;
+  }, {});
+}
+
+export function parseSiteConfigValue(value) {
+  if (!value) return DEFAULT_SITE_CONFIG;
+
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    return normalizeSiteConfig(parsed && typeof parsed === "object" ? parsed : {});
+  } catch {
+    return DEFAULT_SITE_CONFIG;
+  }
+}
+
+export function serializeSiteConfig(config = {}) {
+  return JSON.stringify(normalizeSiteConfig(config));
+}
+
+export function validateSiteConfigInput(config = {}) {
+  const normalized = normalizeSiteConfig(config);
+
+  if (!normalized.familyName) {
+    throw new Error("Tên dòng họ không được để trống.");
+  }
+
+  if (!normalized.siteTitle) {
+    throw new Error("Tiêu đề website không được để trống.");
+  }
+
+  const logoUrl = normalized.logoUrl;
+  if (logoUrl && !/^(\/|https?:\/\/|data:image\/)/i.test(logoUrl)) {
+    throw new Error("Logo phải là đường dẫn nội bộ, URL http/https hoặc data image.");
+  }
+
+  return normalized;
+}

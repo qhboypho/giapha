@@ -3,6 +3,7 @@ import { Download, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Uploa
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
 const emptyForm = {
   username: "",
@@ -20,10 +21,19 @@ const emptyPasswordForm = {
 
 const ROOT_ADMIN_USERNAME = "admin";
 
-export default function AccountAdminPage({ currentUser, members = [], mode = "manage", onToast, onMembersSynced }) {
+export default function AccountAdminPage({
+  currentUser,
+  members = [],
+  mode = "manage",
+  siteConfig = DEFAULT_SITE_CONFIG,
+  onToast,
+  onSiteConfigSave,
+  onMembersSynced
+}) {
   const canManage = isAdmin(currentUser);
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(emptyForm);
+  const [siteConfigDraft, setSiteConfigDraft] = useState(null);
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(canManage);
@@ -44,6 +54,8 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
     () => new Map(scopeOptions.map((option) => [option.id, option.label])),
     [scopeOptions]
   );
+  const normalizedSiteConfig = useMemo(() => normalizeSiteConfig(siteConfig), [siteConfig]);
+  const siteConfigForm = siteConfigDraft || normalizedSiteConfig;
   const selectedScopeLabel = form.editScopeRootId ? scopeLabelById.get(form.editScopeRootId) : "";
   const currentUserIsRootAdmin = currentUser?.username === ROOT_ADMIN_USERNAME && currentUser?.role === "admin";
 
@@ -197,6 +209,23 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
       onToast?.("Lỗi kết nối máy chủ.");
     } finally {
       setPasswordSaving(false);
+    }
+  };
+
+  const handleSiteConfigChange = (field, value) => {
+    setSiteConfigDraft((prev) => ({ ...(prev || normalizedSiteConfig), [field]: value }));
+  };
+
+  const handleSiteConfigSubmit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      const result = await onSiteConfigSave?.(siteConfigForm);
+      if (result?.success) {
+        setSiteConfigDraft(null);
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -435,88 +464,159 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
       )}
 
       {mode !== "password" && (
-        <section className="member-sync-card glass">
-          <div className="account-form-title">
-            <ShieldCheck size={18} strokeWidth={2.2} />
-            <h2>Đồng bộ cây gia phả</h2>
-          </div>
-          <p>
-            Xuất file JSON từ local rồi nhập lên production để đồng bộ riêng dữ liệu thành viên. Tài khoản, phiên đăng nhập và lịch sử dòng họ không bị thay đổi.
-          </p>
-          <div className="member-sync-actions">
-            <button className="btn btn-secondary" type="button" onClick={exportMembers} disabled={syncBusy}>
-              <Download size={16} strokeWidth={2.2} />
-              Xuất dữ liệu cây
-            </button>
-            <button className="btn btn-secondary" type="button" onClick={downloadMemberSample} disabled={syncBusy}>
-              <Download size={16} strokeWidth={2.2} />
-              Tải JSON mẫu
-            </button>
-            <button className="btn btn-secondary" type="button" onClick={downloadAiPrompt} disabled={syncBusy}>
-              <Download size={16} strokeWidth={2.2} />
-              Tải prompt AI
-            </button>
-            <label className={`btn btn-primary member-sync-import ${syncBusy ? "disabled" : ""}`}>
-              <Upload size={16} strokeWidth={2.2} />
-              Chọn file nhập
-              <input type="file" accept="application/json,.json" onChange={handleSyncFileChange} disabled={syncBusy} />
-            </label>
-          </div>
-
-          {syncPreview && (
-            <div className="member-sync-preview">
-              <div className="member-sync-file">
-                <strong>{syncFileName}</strong>
-                <span>{syncPreview.totalIncoming} thành viên trong file</span>
-              </div>
-              <div className="member-sync-stats">
-                <span><strong>{syncPreview.toCreate}</strong> thêm mới</span>
-                <span><strong>{syncPreview.toUpdate}</strong> cập nhật</span>
-                <span><strong>{syncPreview.unchanged}</strong> không đổi</span>
-                <span><strong>{syncPreview.toDelete}</strong> sẽ xóa khỏi prod</span>
-              </div>
-              <div className="member-sync-detail-grid">
-                {[
-                  ["Thêm mới", syncPreview.creates || [], "create"],
-                  ["Cập nhật", syncPreview.updates || [], "update"],
-                  ["Xóa khỏi prod", syncPreview.deletes || [], "delete"]
-                ].map(([title, items, tone]) => (
-                  <div className={`member-sync-detail-section ${tone}`} key={title}>
-                    <strong>{title}</strong>
-                    {items.length > 0 ? (
-                      <div className="member-sync-detail-list">
-                        {items.slice(0, 6).map((item) => (
-                          <span key={`${tone}-${item.id}`}>
-                            <b>{item.name}</b>
-                            <small>
-                              Đời {item.generation}
-                              {item.changedFields?.length ? ` · đổi ${item.changedFields.join(", ")}` : ""}
-                            </small>
-                          </span>
-                        ))}
-                        {items.length > 6 && <em>Còn {items.length - 6} người khác.</em>}
-                      </div>
-                    ) : (
-                      <small>Không có thay đổi.</small>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {syncErrors.length > 0 ? (
-                <div className="member-sync-errors">
-                  {syncErrors.slice(0, 6).map((error) => (
-                    <span key={error}>{error}</span>
-                  ))}
-                  {syncErrors.length > 6 && <span>Còn {syncErrors.length - 6} lỗi khác.</span>}
-                </div>
-              ) : (
-                <button className="btn btn-primary" type="button" onClick={importMembers} disabled={syncBusy}>
-                  Ghi đè cây gia phả trên production
-                </button>
-              )}
+        <>
+          <form className="site-config-card glass" onSubmit={handleSiteConfigSubmit}>
+            <div className="account-form-title">
+              <Save size={18} strokeWidth={2.2} />
+              <h2>Cấu hình website/CMS</h2>
             </div>
-          )}
-        </section>
+            <p>
+              Đổi tên dòng họ, logo và nội dung trang chủ để tái sử dụng base này cho dòng họ khác mà không cần sửa source.
+            </p>
+            <div className="site-config-grid">
+              <label>
+                Nhãn nhỏ trên logo
+                <input className="form-input" value={siteConfigForm.familyLabel} onChange={(event) => handleSiteConfigChange("familyLabel", event.target.value)} />
+              </label>
+              <label>
+                Tên dòng họ
+                <input className="form-input" value={siteConfigForm.familyName} onChange={(event) => handleSiteConfigChange("familyName", event.target.value)} required />
+              </label>
+              <label>
+                Tiêu đề website
+                <input className="form-input" value={siteConfigForm.siteTitle} onChange={(event) => handleSiteConfigChange("siteTitle", event.target.value)} required />
+              </label>
+              <label>
+                Logo URL
+                <input className="form-input" value={siteConfigForm.logoUrl} onChange={(event) => handleSiteConfigChange("logoUrl", event.target.value)} placeholder="/tranconglogo.png" />
+              </label>
+              <label>
+                Hero dòng 1
+                <input className="form-input" value={siteConfigForm.heroTitle} onChange={(event) => handleSiteConfigChange("heroTitle", event.target.value)} />
+              </label>
+              <label>
+                Hero dòng 2
+                <input className="form-input" value={siteConfigForm.heroSubtitle} onChange={(event) => handleSiteConfigChange("heroSubtitle", event.target.value)} />
+              </label>
+              <label className="site-config-wide">
+                Mô tả hero
+                <textarea className="form-input" rows={3} value={siteConfigForm.heroDescription} onChange={(event) => handleSiteConfigChange("heroDescription", event.target.value)} />
+              </label>
+              <label>
+                CTA chính
+                <input className="form-input" value={siteConfigForm.primaryCtaLabel} onChange={(event) => handleSiteConfigChange("primaryCtaLabel", event.target.value)} />
+              </label>
+              <label>
+                CTA phụ
+                <input className="form-input" value={siteConfigForm.secondaryCtaLabel} onChange={(event) => handleSiteConfigChange("secondaryCtaLabel", event.target.value)} />
+              </label>
+              <label>
+                Tiêu đề cây mini
+                <input className="form-input" value={siteConfigForm.mainTreeTitle} onChange={(event) => handleSiteConfigChange("mainTreeTitle", event.target.value)} />
+              </label>
+              <label className="site-config-wide">
+                Mô tả đăng nhập
+                <textarea className="form-input" rows={2} value={siteConfigForm.loginDescription} onChange={(event) => handleSiteConfigChange("loginDescription", event.target.value)} />
+              </label>
+              <label className="site-config-wide">
+                Câu footer
+                <textarea className="form-input" rows={2} value={siteConfigForm.footerQuote} onChange={(event) => handleSiteConfigChange("footerQuote", event.target.value)} />
+              </label>
+              <label className="site-config-wide">
+                Lời nhắn footer
+                <textarea className="form-input" rows={2} value={siteConfigForm.footerMessage} onChange={(event) => handleSiteConfigChange("footerMessage", event.target.value)} />
+              </label>
+            </div>
+            <div className="account-form-actions">
+              <button className="btn btn-primary" type="submit" disabled={saving}>
+                {saving ? "Đang lưu..." : "Lưu cấu hình website"}
+              </button>
+            </div>
+          </form>
+
+          <section className="member-sync-card glass">
+            <div className="account-form-title">
+              <ShieldCheck size={18} strokeWidth={2.2} />
+              <h2>Đồng bộ cây gia phả</h2>
+            </div>
+            <p>
+              Xuất file JSON từ local rồi nhập lên production để đồng bộ riêng dữ liệu thành viên. Tài khoản, phiên đăng nhập và lịch sử dòng họ không bị thay đổi.
+            </p>
+            <div className="member-sync-actions">
+              <button className="btn btn-secondary" type="button" onClick={exportMembers} disabled={syncBusy}>
+                <Download size={16} strokeWidth={2.2} />
+                Xuất dữ liệu cây
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={downloadMemberSample} disabled={syncBusy}>
+                <Download size={16} strokeWidth={2.2} />
+                Tải JSON mẫu
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={downloadAiPrompt} disabled={syncBusy}>
+                <Download size={16} strokeWidth={2.2} />
+                Tải prompt AI
+              </button>
+              <label className={`btn btn-primary member-sync-import ${syncBusy ? "disabled" : ""}`}>
+                <Upload size={16} strokeWidth={2.2} />
+                Chọn file nhập
+                <input type="file" accept="application/json,.json" onChange={handleSyncFileChange} disabled={syncBusy} />
+              </label>
+            </div>
+
+            {syncPreview && (
+              <div className="member-sync-preview">
+                <div className="member-sync-file">
+                  <strong>{syncFileName}</strong>
+                  <span>{syncPreview.totalIncoming} thành viên trong file</span>
+                </div>
+                <div className="member-sync-stats">
+                  <span><strong>{syncPreview.toCreate}</strong> thêm mới</span>
+                  <span><strong>{syncPreview.toUpdate}</strong> cập nhật</span>
+                  <span><strong>{syncPreview.unchanged}</strong> không đổi</span>
+                  <span><strong>{syncPreview.toDelete}</strong> sẽ xóa khỏi prod</span>
+                </div>
+                <div className="member-sync-detail-grid">
+                  {[
+                    ["Thêm mới", syncPreview.creates || [], "create"],
+                    ["Cập nhật", syncPreview.updates || [], "update"],
+                    ["Xóa khỏi prod", syncPreview.deletes || [], "delete"]
+                  ].map(([title, items, tone]) => (
+                    <div className={`member-sync-detail-section ${tone}`} key={title}>
+                      <strong>{title}</strong>
+                      {items.length > 0 ? (
+                        <div className="member-sync-detail-list">
+                          {items.slice(0, 6).map((item) => (
+                            <span key={`${tone}-${item.id}`}>
+                              <b>{item.name}</b>
+                              <small>
+                                Đời {item.generation}
+                                {item.changedFields?.length ? ` · đổi ${item.changedFields.join(", ")}` : ""}
+                              </small>
+                            </span>
+                          ))}
+                          {items.length > 6 && <em>Còn {items.length - 6} người khác.</em>}
+                        </div>
+                      ) : (
+                        <small>Không có thay đổi.</small>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {syncErrors.length > 0 ? (
+                  <div className="member-sync-errors">
+                    {syncErrors.slice(0, 6).map((error) => (
+                      <span key={error}>{error}</span>
+                    ))}
+                    {syncErrors.length > 6 && <span>Còn {syncErrors.length - 6} lỗi khác.</span>}
+                  </div>
+                ) : (
+                  <button className="btn btn-primary" type="button" onClick={importMembers} disabled={syncBusy}>
+                    Ghi đè cây gia phả trên production
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+        </>
       )}
 
       <div className="accounts-layout">

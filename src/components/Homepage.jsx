@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { buildUpcomingAnniversaries, getCurrentLunarDateLabel, getYearsString } from "../utils/anniversaryUtils";
 import { buildHomepageHistoryEvents, formatHistoryEventDate } from "../utils/familyHistoryUtils";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
 import "./Homepage.css";
 import {
@@ -92,7 +93,8 @@ function HeritageIcon({ type }) {
   );
 }
 
-export default function Homepage({ onNavigate, onOpenPerson, members = [], historyEvents = [], isLoading = false, activeViewersCount = 0 }) {
+export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate, onOpenPerson, members = [], historyEvents = [], isLoading = false, activeViewersCount = 0 }) {
+  const config = normalizeSiteConfig(siteConfig);
   const currentLunarDateLabel = getCurrentLunarDateLabel();
   const homepageHistoryEvents = buildHomepageHistoryEvents(historyEvents);
 
@@ -313,31 +315,30 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], histo
         <div className="home-hero-copy">
           <span className="hero-cloud-mark" aria-hidden="true" />
           <h1 className="hero-title serif">
-            Lưu giữ cội nguồn
-            <span>Kết nối muôn đời con cháu</span>
+            {config.heroTitle}
+            <span>{config.heroSubtitle}</span>
           </h1>
           <span className="hero-divider" aria-hidden="true" />
           <p className="hero-description">
-            Gia phả là sợi dây thiêng liêng kết nối quá khứ, hiện tại và tương lai.
-            Cùng nhau gìn giữ cội nguồn, vun đắp truyền thống cho muôn đời con cháu.
+            {config.heroDescription}
           </p>
           <div className="hero-cta-buttons">
             <button className="heritage-btn heritage-btn-primary" onClick={() => onNavigate("tree")}>
               <HeritageIcon type="branch" />
-              Khám phá gia phả
+              {config.primaryCtaLabel}
             </button>
             <button className="heritage-btn heritage-btn-secondary" onClick={() => onNavigate("list")}>
               <HeritageIcon type="people" />
-              Tìm người thân
+              {config.secondaryCtaLabel}
             </button>
           </div>
         </div>
 
         <aside className="hero-tree-panel">
           <div className="panel-heading">
-            <strong>Cây gia phả dòng chính</strong>
+            <strong>{config.mainTreeTitle}</strong>
             <button className="panel-link" onClick={() => onNavigate("tree")}>
-              Xem toàn bộ cây phả
+              Xem toàn bộ cây
               <span aria-hidden="true">→</span>
             </button>
           </div>
@@ -721,8 +722,8 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], histo
 
       <footer className="traditional-footer">
         <p className="footer-quote serif">
-          Cội nguồn là nơi bắt đầu - Ký ức là sợi dây - Tương lai là nơi tiếp nối.
-          <span>Nguyện cùng nhau gìn giữ, để dòng họ Trần Công mãi bền vững và tỏa sáng.</span>
+          {config.footerQuote}
+          <span>{config.footerMessage}</span>
         </p>
       </footer>
     </main>

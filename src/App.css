@@ -3695,7 +3695,8 @@
   padding: 18px;
 }
 
-.member-sync-card {
+.member-sync-card,
+.site-config-card {
   display: grid;
   gap: 14px;
   margin-top: 18px;
@@ -3703,15 +3704,37 @@
 }
 
 .account-password-card p,
-.member-sync-card p {
+.member-sync-card p,
+.site-config-card p {
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.5;
 }
 
 .account-password-card strong,
-.member-sync-card strong {
+.member-sync-card strong,
+.site-config-card strong {
   color: var(--text-primary);
+}
+
+.site-config-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.site-config-grid label {
+  min-width: 0;
+}
+
+.site-config-wide {
+  grid-column: 1 / -1;
+}
+
+.site-config-grid textarea.form-input {
+  min-height: auto;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 .member-sync-actions {
@@ -4572,6 +4595,7 @@
   .history-admin-layout,
   .accounts-grid,
   .account-password-grid,
+  .site-config-grid,
   .member-sync-stats,
   .member-sync-detail-grid {
     grid-template-columns: 1fr;

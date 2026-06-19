@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
-export default function LoginModal({ isOpen, onClose, onLogin }) {
+export default function LoginModal({ isOpen, onClose, onLogin, siteConfig = DEFAULT_SITE_CONFIG }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
   const canShowDemoAccounts = import.meta.env.DEV;
+  const config = normalizeSiteConfig(siteConfig);
 
   if (!isOpen) return null;
 
@@ -53,7 +55,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }) {
         <form onSubmit={handleSubmit}>
           <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textAlign: "center" }}>
-              Hệ thống yêu cầu mật khẩu để xem thông tin chi tiết gia phả dòng họ.
+              {config.loginDescription}
             </p>
 
             {/* Error Message */}

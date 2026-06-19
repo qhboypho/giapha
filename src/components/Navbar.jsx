@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getRoleLabel, isAdmin } from "../utils/authRoles";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
 const normalizeSearchText = (value = "") => (
   String(value)
@@ -71,6 +72,7 @@ const pageSearchItems = [
 ];
 
 export default function Navbar({
+  siteConfig = DEFAULT_SITE_CONFIG,
   searchQuery,
   setSearchQuery,
   members = [],
@@ -104,6 +106,7 @@ export default function Navbar({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const config = normalizeSiteConfig(siteConfig);
   const userMenuRef = useRef(null);
   const desktopNotificationRef = useRef(null);
   const mobileNotificationRef = useRef(null);
@@ -503,11 +506,11 @@ export default function Navbar({
         aria-label="Về trang chủ"
       >
         <span className="logo-icon">
-          <img src="/tranconglogo.png" alt="" aria-hidden="true" />
+          <img src={config.logoUrl} alt="" aria-hidden="true" />
         </span>
-        <span className="logo-text" aria-label="Gia Phả Họ Trần Công">
-          <span className="logo-text-kicker">Gia Phả Họ</span>
-          <span className="logo-text-main">Trần Công</span>
+        <span className="logo-text" aria-label={config.siteTitle}>
+          <span className="logo-text-kicker">{config.familyLabel}</span>
+          <span className="logo-text-main">{config.familyName}</span>
         </span>
       </button>
 

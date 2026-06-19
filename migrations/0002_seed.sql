@@ -13,7 +13,8 @@ INSERT INTO users (username, password, role, fullName) VALUES
 
 -- 3. Insert initial settings
 INSERT INTO settings (key, value) VALUES
-('private_mode', 'true');
+('private_mode', 'true'),
+('site_config', '{"familyName":"Trần Công","familyLabel":"Gia Phả Họ","siteTitle":"Gia phả họ Trần Công","shortName":"TC","logoUrl":"/tranconglogo.png","heroTitle":"Lưu giữ cội nguồn","heroSubtitle":"Kết nối muôn đời con cháu","heroDescription":"Gia phả là sợi dây thiêng liêng kết nối quá khứ, hiện tại và tương lai. Cùng nhau gìn giữ cội nguồn, vun đắp truyền thống cho muôn đời con cháu.","primaryCtaLabel":"Khám phá gia phả","secondaryCtaLabel":"Tìm người thân","mainTreeTitle":"Cây gia phả dòng chính","loginDescription":"Hệ thống yêu cầu mật khẩu để xem thông tin chi tiết gia phả dòng họ.","footerQuote":"Cội nguồn là nơi bắt đầu - Ký ức là sợi dây - Tương lai là nơi tiếp nối.","footerMessage":"Nguyện cùng nhau gìn giữ, để dòng họ Trần Công mãi bền vững và tỏa sáng."}');
 
 -- 4. Insert Trần Công family members (45 members)
 INSERT INTO members (id, name, gender, generation, isDeceased, birthDate, deathDate, birthPlace, restingPlace, occupation, bio, phone, address, spouseIds, fatherId, motherId) VALUES

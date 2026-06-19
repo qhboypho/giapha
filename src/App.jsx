@@ -14,6 +14,7 @@ import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
 import { canEditMembers, getRoleLabel, isAuthenticatedViewer } from "./utils/authRoles";
 import { buildFamilyNotifications } from "./utils/notificationUtils";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "./utils/siteConfigUtils";
 import { getPreviousView, pushViewHistory } from "./utils/viewHistory";
 import "./App.css";
 
@@ -48,6 +49,7 @@ export default function App() {
   // Privacy mode status (locked/unlocked)
   const [isPrivateMode, setIsPrivateMode] = useState(true);
   const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
+  const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG);
 
   // Local theme state
   const [theme, setTheme] = useState(() => {
@@ -88,6 +90,10 @@ export default function App() {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("giapha_tc_theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.title = siteConfig.siteTitle;
+  }, [siteConfig.siteTitle]);
 
   const buildMembersUrl = useCallback((revealSensitive) => {
     const shouldReveal = Boolean(revealSensitive);
@@ -151,6 +157,7 @@ export default function App() {
         if (settingsData.success) {
           pMode = settingsData.privateMode;
           setIsPrivateMode(pMode);
+          setSiteConfig(normalizeSiteConfig(settingsData.siteConfig));
         }
       } catch (err) {
         console.error("Settings fetch failed:", err);
@@ -224,6 +231,7 @@ export default function App() {
       if (settingsData.success) {
         pMode = settingsData.privateMode;
         setIsPrivateMode(pMode);
+        setSiteConfig(normalizeSiteConfig(settingsData.siteConfig));
       }
 
       const isLocked = pMode && !isAuthenticatedViewer(user);
@@ -265,6 +273,7 @@ export default function App() {
 
       if (data.success) {
         setIsPrivateMode(newVal);
+        if (data.siteConfig) setSiteConfig(normalizeSiteConfig(data.siteConfig));
         const revealSensitive = shouldRevealSensitiveByDefault(currentUser, newVal);
         setShowSensitiveInfo(revealSensitive);
         showToast(newVal ? "Đã chuyển sang chế độ riêng tư." : "Đã chuyển sang chế độ công khai.");
@@ -286,6 +295,29 @@ export default function App() {
       }
     } catch {
       showToast("Lỗi kết nối máy chủ.");
+    }
+  };
+
+  const handleSiteConfigSave = async (nextConfig) => {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteConfig: nextConfig })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setSiteConfig(normalizeSiteConfig(data.siteConfig));
+        showToast("Đã cập nhật cấu hình website.");
+        return { success: true };
+      }
+
+      showToast(data.error || "Không thể cập nhật cấu hình website.");
+      return { success: false, error: data.error };
+    } catch {
+      showToast("Lỗi kết nối máy chủ.");
+      return { success: false, error: "network" };
     }
   };
 
@@ -544,6 +576,7 @@ export default function App() {
     >
       {/* Top Navbar */}
       <Navbar
+        siteConfig={siteConfig}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         members={members}
@@ -582,7 +615,7 @@ export default function App() {
               <span className="lock-icon">🔒</span>
               <h2>Gia Phả Đang Khóa Riêng Tư</h2>
               <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                Hệ thống gia phả họ Trần Công hiện đang ở chế độ bảo mật nội bộ.
+                {siteConfig.siteTitle} hiện đang ở chế độ bảo mật nội bộ.
                 Chỉ các thành viên có tài khoản được cấp phép mới có quyền truy cập xem thông tin.
               </p>
               <button
@@ -600,6 +633,7 @@ export default function App() {
             <div className="viewport-container">
               {activeView === "home" ? (
                 <Homepage
+                  siteConfig={siteConfig}
                   onNavigate={handleViewChange}
                   onOpenPerson={handleOpenPersonInTree}
                   members={members}
@@ -642,7 +676,9 @@ export default function App() {
                   currentUser={currentUser}
                   members={members}
                   mode={accountPageMode}
+                  siteConfig={siteConfig}
                   onToast={showToast}
+                  onSiteConfigSave={handleSiteConfigSave}
                   onMembersSynced={() => loadMembers(showSensitiveInfo)}
                 />
               ) : activeView === "history-admin" ? (
@@ -687,6 +723,7 @@ export default function App() {
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onLogin={handleLogin}
+        siteConfig={siteConfig}
       />
 
       {isMemberModalOpen && (
