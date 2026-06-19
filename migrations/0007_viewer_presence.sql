@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS viewer_presence (
+  id TEXT PRIMARY KEY,
+  userAgent TEXT,
+  lastSeenAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_viewer_presence_last_seen ON viewer_presence(lastSeenAt);

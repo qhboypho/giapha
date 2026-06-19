@@ -11,6 +11,7 @@ import {
   Landmark,
   Network,
   TreeDeciduous,
+  UserRoundCheck,
   Users
 } from "lucide-react";
 import paperBg from "../assets/homepage-design/paper-bg.png";
@@ -78,7 +79,8 @@ const heritageIconMap = {
   calendar: CalendarDays,
   tree: TreeDeciduous,
   record: FileText,
-  memory: Images
+  memory: Images,
+  viewer: UserRoundCheck
 };
 
 function HeritageIcon({ type }) {
@@ -90,7 +92,7 @@ function HeritageIcon({ type }) {
   );
 }
 
-export default function Homepage({ onNavigate, onOpenPerson, members = [], historyEvents = [], isLoading = false }) {
+export default function Homepage({ onNavigate, onOpenPerson, members = [], historyEvents = [], isLoading = false, activeViewersCount = 0 }) {
   const currentLunarDateLabel = getCurrentLunarDateLabel();
   const homepageHistoryEvents = buildHomepageHistoryEvents(historyEvents);
 
@@ -284,9 +286,10 @@ export default function Homepage({ onNavigate, onOpenPerson, members = [], histo
 
   const stats = [
     { value: String(generations), label: "Đời", note: "Lịch sử dòng họ", tone: "green", icon: "temple" },
-    { value: membersCount.toLocaleString("vi-VN"), label: "Thành viên", note: "Đã ghi danh", tone: "red", icon: "people" },
     { value: String(branchesCount), label: "Chi nhánh", note: "Đang kết nối", tone: "gold", icon: "branch" },
-    { value: String(upcomingAnniversariesCount).padStart(2, "0"), label: "Ngày giỗ sắp tới", note: "Trong 30 ngày tới", tone: "green", icon: "calendar" }
+    { value: membersCount.toLocaleString("vi-VN"), label: "Thành viên", note: "Đã ghi danh", tone: "red", icon: "people" },
+    { value: String(upcomingAnniversariesCount).padStart(2, "0"), label: "Ngày giỗ sắp tới", note: "Trong 30 ngày tới", tone: "green", icon: "calendar" },
+    { value: activeViewersCount.toLocaleString("vi-VN"), label: "Người đang xem", note: "Người đang xem gia phả", tone: "teal", icon: "viewer" }
   ];
 
   return (

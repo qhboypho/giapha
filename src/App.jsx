@@ -22,6 +22,18 @@ const shouldIgnoreSwipeTarget = (target) => (
   )
 );
 
+const VIEWER_ID_STORAGE_KEY = "giapha_tc_viewer_id";
+const VIEWER_ID_PATTERN = /^[a-zA-Z0-9_-]{16,80}$/;
+
+const getOrCreateViewerId = () => {
+  const existing = localStorage.getItem(VIEWER_ID_STORAGE_KEY);
+  if (existing && VIEWER_ID_PATTERN.test(existing)) return existing;
+
+  const nextId = crypto.randomUUID?.() || `viewer_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  localStorage.setItem(VIEWER_ID_STORAGE_KEY, nextId);
+  return nextId;
+};
+
 export default function App() {
   // Family tree members from database
   const [members, setMembers] = useState([]);
@@ -47,6 +59,7 @@ export default function App() {
   const [accountPageMode, setAccountPageMode] = useState("manage");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState(null);
+  const [activeViewersCount, setActiveViewersCount] = useState(0);
   const swipeStartRef = useRef(null);
 
   // Modals visibility
@@ -368,6 +381,70 @@ export default function App() {
   const canRevealSensitiveInfo = isPrivateMode && canEditMembers(currentUser);
   const canGoBack = viewHistory.length > 0;
 
+  useEffect(() => {
+    let cancelled = false;
+    let intervalId = null;
+    let viewerId = null;
+
+    const sendLeave = () => {
+      if (!viewerId) return;
+      const body = JSON.stringify({ viewerId });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon("/api/viewer-presence/leave", new Blob([body], { type: "application/json" }));
+        return;
+      }
+      fetch("/api/viewer-presence/leave", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: true
+      }).catch(() => {});
+    };
+
+    const sendHeartbeat = async () => {
+      if (document.visibilityState === "hidden") return;
+      try {
+        const res = await fetch("/api/viewer-presence/heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ viewerId })
+        });
+        const data = await res.json();
+        if (!cancelled && data.success) {
+          setActiveViewersCount(Number(data.activeViewers || 0));
+        }
+      } catch (err) {
+        console.error("Viewer presence heartbeat failed:", err);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        sendLeave();
+      } else {
+        sendHeartbeat();
+      }
+    };
+
+    if (isLocked) {
+      return undefined;
+    }
+
+    viewerId = getOrCreateViewerId();
+    sendHeartbeat();
+    intervalId = window.setInterval(sendHeartbeat, 25000);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", sendLeave);
+
+    return () => {
+      cancelled = true;
+      if (intervalId) window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", sendLeave);
+      sendLeave();
+    };
+  }, [isLocked]);
+
   const handleTouchStart = useCallback((event) => {
     const touch = event.touches[0];
     const isMobileWidth = window.matchMedia?.("(max-width: 768px)")?.matches ?? window.innerWidth <= 768;
@@ -474,6 +551,7 @@ export default function App() {
                   members={members}
                   historyEvents={historyEvents}
                   isLoading={loading}
+                  activeViewersCount={activeViewersCount}
                 />
               ) : activeView === "tree" ? (
                 <TreeChart

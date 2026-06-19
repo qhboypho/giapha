@@ -15,6 +15,7 @@ const SENSITIVE_LOCATION_MASK = 'Đã ẩn địa chỉ';
 const HISTORY_IMAGE_LIMIT = 8;
 const HISTORY_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 const ALLOWED_HISTORY_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const ACTIVE_VIEWER_WINDOW_SECONDS = 90;
 
 function isAuthenticatedViewer(user) {
   return Boolean(user && user.role !== 'guest');
@@ -173,6 +174,30 @@ function safeDecodePath(value = '') {
   } catch {
     return value;
   }
+}
+
+function normalizeViewerId(value = '') {
+  const id = String(value || '').trim();
+  return /^[a-zA-Z0-9_-]{16,80}$/.test(id) ? id : null;
+}
+
+async function ensureViewerPresenceTable(db) {
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS viewer_presence (
+      id TEXT PRIMARY KEY,
+      userAgent TEXT,
+      lastSeenAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare("CREATE INDEX IF NOT EXISTS idx_viewer_presence_last_seen ON viewer_presence(lastSeenAt)").run();
+}
+
+async function countActiveViewers(db) {
+  const row = await db.prepare(
+    "SELECT COUNT(*) AS count FROM viewer_presence WHERE lastSeenAt >= datetime('now', ?)"
+  ).bind(`-${ACTIVE_VIEWER_WINDOW_SECONDS} seconds`).first();
+  return Number(row?.count || 0);
 }
 
 function buildMediaUrl(key = '') {
@@ -487,6 +512,51 @@ app.post('/settings', async (c) => {
     ).bind(valueStr).run();
 
     return c.json({ success: true, privateMode });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 6. POST /api/viewer-presence/heartbeat - Track active family tree viewers
+app.post('/viewer-presence/heartbeat', async (c) => {
+  try {
+    const payload = await c.req.json().catch(() => ({}));
+    const viewerId = normalizeViewerId(payload.viewerId);
+    if (!viewerId) {
+      return c.json({ success: false, error: 'Viewer id không hợp lệ.' }, 400);
+    }
+
+    await ensureViewerPresenceTable(c.env.DB);
+    await c.env.DB.prepare("DELETE FROM viewer_presence WHERE lastSeenAt < datetime('now', '-1 day')").run();
+    await c.env.DB.prepare(`
+      INSERT INTO viewer_presence (id, userAgent, lastSeenAt, createdAt)
+      VALUES (?, ?, datetime('now'), datetime('now'))
+      ON CONFLICT(id) DO UPDATE SET
+        userAgent = excluded.userAgent,
+        lastSeenAt = excluded.lastSeenAt
+    `).bind(
+      viewerId,
+      String(c.req.header('user-agent') || '').slice(0, 240)
+    ).run();
+
+    return c.json({ success: true, activeViewers: await countActiveViewers(c.env.DB) });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 7. POST /api/viewer-presence/leave - Remove a viewer when the page closes
+app.post('/viewer-presence/leave', async (c) => {
+  try {
+    const payload = await c.req.json().catch(() => ({}));
+    const viewerId = normalizeViewerId(payload.viewerId);
+    if (!viewerId) {
+      return c.json({ success: false, error: 'Viewer id không hợp lệ.' }, 400);
+    }
+
+    await ensureViewerPresenceTable(c.env.DB);
+    await c.env.DB.prepare("DELETE FROM viewer_presence WHERE id = ?").bind(viewerId).run();
+    return c.json({ success: true, activeViewers: await countActiveViewers(c.env.DB) });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }
