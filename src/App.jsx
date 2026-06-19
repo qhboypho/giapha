@@ -492,7 +492,7 @@ export default function App() {
                 <FeaturedMembersPage
                   members={members}
                   isLoading={loading}
-                  onOpenPerson={handleOpenPersonInTree}
+                  onOpenPerson={handleSelectPerson}
                 />
               ) : activeView === "anniversary" ? (
                 <AnniversaryPage
