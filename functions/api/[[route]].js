@@ -3,6 +3,13 @@ import { Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { verifyPassword, generateSecureToken, hashPassword } from '../helpers/auth';
+import {
+  buildMemberSyncExport,
+  buildMemberSyncPreview,
+  normalizeImportedMembers,
+  normalizeMemberForSync,
+  validateMemberRelations
+} from '../../src/utils/memberSyncUtils.js';
 
 const app = new Hono().basePath('/api');
 const ADMIN_ROLE = 'admin';
@@ -114,6 +121,19 @@ async function fetchFormattedMembers(db) {
   return results.map(formatMemberRow);
 }
 
+function buildMemberSyncFilename(prefix = 'giapha-members') {
+  return `${prefix}-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
+function jsonDownloadResponse(payload, filename) {
+  return new Response(JSON.stringify(payload, null, 2), {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`
+    }
+  });
+}
+
 async function fetchHistoryEvents(db, includeHidden = false) {
   const query = includeHidden
     ? "SELECT * FROM family_history_events ORDER BY eventDate ASC, sortOrder ASC, createdAt ASC"
@@ -218,6 +238,40 @@ function normalizeHistoryImage(image = {}) {
     type: String(image?.type || '').trim(),
     size: Number(image?.size || 0)
   };
+}
+
+async function replaceMembersFromSync(db, members = []) {
+  const statements = [
+    db.prepare("DELETE FROM members"),
+    ...members.map((member) => db.prepare(`
+      INSERT INTO members (
+        id, name, gender, generation, isDeceased, birthDate, deathDate,
+        birthPlace, restingPlace, occupation, bio, phone, address,
+        avatar, isFeatured, spouseIds, fatherId, motherId, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `).bind(
+      member.id,
+      member.name,
+      member.gender,
+      member.generation,
+      member.isDeceased ? 1 : 0,
+      member.birthDate || null,
+      member.deathDate || null,
+      member.birthPlace || '',
+      member.restingPlace || '',
+      member.occupation || '',
+      member.bio || '',
+      member.phone || '',
+      member.address || '',
+      member.avatar || null,
+      member.isFeatured ? 1 : 0,
+      JSON.stringify(member.spouseIds || []),
+      member.fatherId || null,
+      member.motherId || null
+    ))
+  ];
+
+  await db.batch(statements);
 }
 
 function getMediaKeyFromRequest(c) {
@@ -898,7 +952,91 @@ app.delete('/members/:id', async (c) => {
   }
 });
 
-// 14. GET /api/history-events - Fetch family history milestones
+// 14. GET /api/member-sync/export - Export the family tree members as JSON (Admin only)
+app.get('/member-sync/export', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được xuất dữ liệu cây gia phả.' }, 403);
+  }
+
+  try {
+    const members = await fetchFormattedMembers(c.env.DB);
+    const payload = buildMemberSyncExport(members, {
+      exportedBy: user.username || user.fullName || 'admin'
+    });
+    return jsonDownloadResponse(payload, buildMemberSyncFilename());
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 15. POST /api/member-sync/preview - Validate and preview a family tree import file (Admin only)
+app.post('/member-sync/preview', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được kiểm tra file đồng bộ.' }, 403);
+  }
+
+  try {
+    const payload = await c.req.json();
+    const incomingMembers = normalizeImportedMembers(payload);
+    const relationResult = validateMemberRelations(incomingMembers);
+    const existingMembers = await fetchFormattedMembers(c.env.DB);
+    const preview = buildMemberSyncPreview(existingMembers, incomingMembers);
+
+    return c.json({
+      success: true,
+      valid: relationResult.valid,
+      errors: relationResult.errors,
+      preview
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 400);
+  }
+});
+
+// 16. POST /api/member-sync/import - Replace production members from a validated JSON file (Admin only)
+app.post('/member-sync/import', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được nhập dữ liệu cây gia phả.' }, 403);
+  }
+
+  try {
+    const payload = await c.req.json();
+    const incomingMembers = normalizeImportedMembers(payload);
+    const relationResult = validateMemberRelations(incomingMembers);
+
+    if (!relationResult.valid) {
+      return c.json({
+        success: false,
+        error: 'File có quan hệ thành viên chưa hợp lệ.',
+        errors: relationResult.errors
+      }, 400);
+    }
+
+    const existingMembers = await fetchFormattedMembers(c.env.DB);
+    const backup = buildMemberSyncExport(existingMembers, {
+      exportedBy: `backup-before-import:${user.username || 'admin'}`,
+      exportedAt: new Date().toISOString()
+    });
+    const preview = buildMemberSyncPreview(existingMembers, incomingMembers);
+
+    await replaceMembersFromSync(c.env.DB, incomingMembers.map(normalizeMemberForSync));
+
+    return c.json({
+      success: true,
+      message: 'Đã đồng bộ dữ liệu cây gia phả.',
+      backup,
+      backupFilename: buildMemberSyncFilename('backup-before-member-import'),
+      preview
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 17. GET /api/history-events - Fetch family history milestones
 app.get('/history-events', async (c) => {
   try {
     const isPrivateMode = await getPrivateMode(c.env.DB);
@@ -916,7 +1054,7 @@ app.get('/history-events', async (c) => {
   }
 });
 
-// 15. GET /api/media/* - Serve private R2 media through the app access rules
+// 18. GET /api/media/* - Serve private R2 media through the app access rules
 app.get('/media/*', async (c) => {
   try {
     const isPrivateMode = await getPrivateMode(c.env.DB);

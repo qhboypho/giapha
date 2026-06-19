@@ -3672,6 +3672,7 @@
 
 .account-form,
 .account-password-card,
+.member-sync-card,
 .accounts-list {
   border: 1px solid var(--border-card);
   background: var(--bg-card);
@@ -3694,14 +3695,114 @@
   padding: 18px;
 }
 
-.account-password-card p {
+.member-sync-card {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.account-password-card p,
+.member-sync-card p {
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.5;
 }
 
-.account-password-card strong {
+.account-password-card strong,
+.member-sync-card strong {
   color: var(--text-primary);
+}
+
+.member-sync-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.member-sync-actions .btn {
+  min-height: 42px;
+  justify-content: center;
+  gap: 8px;
+}
+
+.member-sync-import {
+  position: relative;
+  overflow: hidden;
+}
+
+.member-sync-import input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.member-sync-import.disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.member-sync-preview {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(215, 169, 77, 0.34);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+}
+
+.member-sync-file {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.member-sync-file strong {
+  overflow-wrap: anywhere;
+}
+
+.member-sync-file span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.member-sync-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.member-sync-stats span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.member-sync-stats strong {
+  color: var(--color-brand-accent);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.member-sync-errors {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(192, 57, 43, 0.34);
+  border-radius: var(--radius-md);
+  background: rgba(192, 57, 43, 0.1);
+  color: var(--color-red);
+  font-size: 0.8rem;
+  font-weight: 800;
 }
 
 .account-password-grid {
@@ -4403,7 +4504,8 @@
   .accounts-layout,
   .history-admin-layout,
   .accounts-grid,
-  .account-password-grid {
+  .account-password-grid,
+  .member-sync-stats {
     grid-template-columns: 1fr;
   }
 

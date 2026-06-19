@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { Download, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Upload, UserRound } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
@@ -18,7 +18,7 @@ const emptyPasswordForm = {
   confirmPassword: ""
 };
 
-export default function AccountAdminPage({ currentUser, members = [], mode = "manage", onToast }) {
+export default function AccountAdminPage({ currentUser, members = [], mode = "manage", onToast, onMembersSynced }) {
   const canManage = isAdmin(currentUser);
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -27,6 +27,11 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
   const [loading, setLoading] = useState(canManage);
   const [saving, setSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [syncFileName, setSyncFileName] = useState("");
+  const [syncPayload, setSyncPayload] = useState(null);
+  const [syncPreview, setSyncPreview] = useState(null);
+  const [syncErrors, setSyncErrors] = useState([]);
+  const [syncBusy, setSyncBusy] = useState(false);
 
   const adminCount = useMemo(
     () => users.filter((user) => user.role === "admin").length,
@@ -182,6 +187,125 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
     }
   };
 
+  const downloadJson = (payload, filename) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportMembers = async () => {
+    setSyncBusy(true);
+    try {
+      const res = await fetch("/api/member-sync/export");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onToast?.(data.error || "Không thể xuất dữ liệu cây gia phả.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `giapha-members-${new Date().toISOString().slice(0, 10)}.json`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      onToast?.("Đã xuất dữ liệu cây gia phả.");
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi xuất dữ liệu.");
+    } finally {
+      setSyncBusy(false);
+    }
+  };
+
+  const previewMemberImport = async (payload, filename) => {
+    setSyncBusy(true);
+    setSyncPreview(null);
+    setSyncErrors([]);
+    try {
+      const res = await fetch("/api/member-sync/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSyncPayload(payload);
+        setSyncFileName(filename);
+        setSyncPreview(data.preview);
+        setSyncErrors(data.errors || []);
+        onToast?.(data.valid ? "File hợp lệ, có thể nhập dữ liệu." : "File còn lỗi quan hệ, cần kiểm tra lại.");
+      } else {
+        setSyncPayload(null);
+        onToast?.(data.error || "Không thể kiểm tra file đồng bộ.");
+      }
+    } catch {
+      setSyncPayload(null);
+      onToast?.("Lỗi kết nối máy chủ khi kiểm tra file.");
+    } finally {
+      setSyncBusy(false);
+    }
+  };
+
+  const handleSyncFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      await previewMemberImport(JSON.parse(text), file.name);
+    } catch {
+      setSyncPayload(null);
+      setSyncPreview(null);
+      setSyncErrors([]);
+      onToast?.("File JSON không đọc được.");
+    }
+  };
+
+  const importMembers = async () => {
+    if (!syncPayload || syncErrors.length > 0) return;
+    if (!window.confirm("Nhập file này sẽ ghi đè toàn bộ cây gia phả hiện tại. Tiếp tục?")) return;
+
+    setSyncBusy(true);
+    try {
+      const res = await fetch("/api/member-sync/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(syncPayload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.backup) {
+          downloadJson(data.backup, data.backupFilename || "backup-before-member-import.json");
+        }
+        setSyncPayload(null);
+        setSyncPreview(null);
+        setSyncErrors([]);
+        setSyncFileName("");
+        await onMembersSynced?.();
+        onToast?.("Đã nhập dữ liệu cây gia phả. Backup prod đã được tải xuống.");
+      } else {
+        setSyncErrors(data.errors || []);
+        onToast?.(data.error || "Không thể nhập dữ liệu cây gia phả.");
+      }
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi nhập dữ liệu.");
+    } finally {
+      setSyncBusy(false);
+    }
+  };
+
   if (!canManage) {
     return (
       <div className="accounts-page">
@@ -268,6 +392,56 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
             </button>
           </div>
         </form>
+      )}
+
+      {mode !== "password" && (
+        <section className="member-sync-card glass">
+          <div className="account-form-title">
+            <ShieldCheck size={18} strokeWidth={2.2} />
+            <h2>Đồng bộ cây gia phả</h2>
+          </div>
+          <p>
+            Xuất file JSON từ local rồi nhập lên production để đồng bộ riêng dữ liệu thành viên. Tài khoản, phiên đăng nhập và lịch sử dòng họ không bị thay đổi.
+          </p>
+          <div className="member-sync-actions">
+            <button className="btn btn-secondary" type="button" onClick={exportMembers} disabled={syncBusy}>
+              <Download size={16} strokeWidth={2.2} />
+              Xuất dữ liệu cây
+            </button>
+            <label className={`btn btn-primary member-sync-import ${syncBusy ? "disabled" : ""}`}>
+              <Upload size={16} strokeWidth={2.2} />
+              Chọn file nhập
+              <input type="file" accept="application/json,.json" onChange={handleSyncFileChange} disabled={syncBusy} />
+            </label>
+          </div>
+
+          {syncPreview && (
+            <div className="member-sync-preview">
+              <div className="member-sync-file">
+                <strong>{syncFileName}</strong>
+                <span>{syncPreview.totalIncoming} thành viên trong file</span>
+              </div>
+              <div className="member-sync-stats">
+                <span><strong>{syncPreview.toCreate}</strong> thêm mới</span>
+                <span><strong>{syncPreview.toUpdate}</strong> cập nhật</span>
+                <span><strong>{syncPreview.unchanged}</strong> không đổi</span>
+                <span><strong>{syncPreview.toDelete}</strong> sẽ xóa khỏi prod</span>
+              </div>
+              {syncErrors.length > 0 ? (
+                <div className="member-sync-errors">
+                  {syncErrors.slice(0, 6).map((error) => (
+                    <span key={error}>{error}</span>
+                  ))}
+                  {syncErrors.length > 6 && <span>Còn {syncErrors.length - 6} lỗi khác.</span>}
+                </div>
+              ) : (
+                <button className="btn btn-primary" type="button" onClick={importMembers} disabled={syncBusy}>
+                  Ghi đè cây gia phả trên production
+                </button>
+              )}
+            </div>
+          )}
+        </section>
       )}
 
       <div className="accounts-layout">

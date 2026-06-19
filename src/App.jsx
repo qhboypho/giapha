@@ -643,6 +643,7 @@ export default function App() {
                   members={members}
                   mode={accountPageMode}
                   onToast={showToast}
+                  onMembersSynced={() => loadMembers(showSensitiveInfo)}
                 />
               ) : activeView === "history-admin" ? (
                 <HistoryAdminPage
