@@ -43,7 +43,7 @@ function MemberAvatar({ member, className = "" }) {
 
 const features = [
   {
-    title: "Cây phả hệ",
+    title: "Cây gia phả",
     text: "Khám phá sơ đồ gia phả trực quan, dễ dàng theo dõi các đời.",
     icon: "tree",
     tone: "green",

@@ -1111,7 +1111,7 @@
   overscroll-behavior: contain;
   padding-right: 0.22rem;
   scrollbar-width: thin;
-  scrollbar-color: var(--home-scroll-thumb) var(--home-scroll-track);
+  scrollbar-color: var(--border-card) transparent;
 }
 
 .panel-events .anniversaries-list {
@@ -1123,13 +1123,17 @@
 }
 
 .anniversaries-list::-webkit-scrollbar-track {
-  background: var(--home-scroll-track);
+  background: transparent;
   border-radius: 999px;
 }
 
 .anniversaries-list::-webkit-scrollbar-thumb {
-  background: var(--home-scroll-thumb);
+  background: var(--border-card);
   border-radius: 999px;
+}
+
+.anniversaries-list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-primary);
 }
 
 .anniversary-item {
@@ -1227,7 +1231,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: var(--home-scroll-thumb) transparent;
+  scrollbar-color: var(--border-card) transparent;
   padding: 0.12rem 0.2rem 0.08rem 0;
   position: relative;
 }
@@ -1238,7 +1242,15 @@
 
 .history-timeline::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: var(--home-scroll-thumb);
+  background: var(--border-card);
+}
+
+.history-timeline::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.history-timeline::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-primary);
 }
 
 .timeline-node {
