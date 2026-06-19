@@ -23,6 +23,7 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
   const [loading, setLoading] = useState(canManage);
   const [saving, setSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [isImageDragging, setIsImageDragging] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
   const memberOptions = useMemo(() => (
@@ -124,9 +125,8 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
     setForm((prev) => ({ ...prev, eventDate: value }));
   };
 
-  const handleImageUpload = async (event) => {
-    const files = Array.from(event.target.files || []);
-    event.target.value = "";
+  const uploadHistoryImages = async (selectedFiles) => {
+    const files = Array.from(selectedFiles || []).filter((file) => file.type?.startsWith("image/"));
     if (files.length === 0) return;
 
     const slotsLeft = MAX_HISTORY_IMAGES - form.images.length;
@@ -174,6 +174,32 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
     } finally {
       setImageUploading(false);
     }
+  };
+
+  const handleImageUpload = async (event) => {
+    const files = event.target.files;
+    event.target.value = "";
+    await uploadHistoryImages(files);
+  };
+
+  const handleImageDragOver = (event) => {
+    event.preventDefault();
+    if (imageUploading || form.images.length >= MAX_HISTORY_IMAGES) return;
+    event.dataTransfer.dropEffect = "copy";
+    setIsImageDragging(true);
+  };
+
+  const handleImageDragLeave = (event) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setIsImageDragging(false);
+    }
+  };
+
+  const handleImageDrop = async (event) => {
+    event.preventDefault();
+    setIsImageDragging(false);
+    if (imageUploading || form.images.length >= MAX_HISTORY_IMAGES) return;
+    await uploadHistoryImages(event.dataTransfer.files);
   };
 
   const removeImage = (key) => {
@@ -379,7 +405,13 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
 
           <label>
             Ảnh sự kiện
-            <span className="history-upload-box">
+            <span
+              className={`history-upload-box ${isImageDragging ? "is-dragging" : ""} ${imageUploading || form.images.length >= MAX_HISTORY_IMAGES ? "is-disabled" : ""}`}
+              onDragEnter={handleImageDragOver}
+              onDragOver={handleImageDragOver}
+              onDragLeave={handleImageDragLeave}
+              onDrop={handleImageDrop}
+            >
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/gif"
@@ -388,7 +420,7 @@ export default function HistoryAdminPage({ currentUser, members = [], onToast, o
                 disabled={imageUploading || form.images.length >= MAX_HISTORY_IMAGES}
               />
               <Upload size={18} strokeWidth={2.2} />
-              <span>{imageUploading ? "Đang tải ảnh..." : "Chọn ảnh để tải lên R2"}</span>
+              <span>{imageUploading ? "Đang tải ảnh..." : "Chọn hoặc kéo ảnh vào đây"}</span>
             </span>
             <span className="account-field-hint">
               Tối đa {MAX_HISTORY_IMAGES} ảnh. Ảnh sẽ được nén trước khi gửi lên R2, D1 chỉ lưu đường dẫn.
