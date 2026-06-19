@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Award,
   Bell,
   BookOpenText,
   CalendarDays,
   ChevronDown,
+  CheckCheck,
+  Clock3,
   Eye,
   EyeOff,
+  History,
   LogOut,
   LockKeyhole,
   MapPin,
@@ -17,6 +21,7 @@ import {
   ScrollText,
   Sun,
   UserCog,
+  UserRoundCheck,
   UserRound,
   Users,
   X
@@ -87,13 +92,21 @@ export default function Navbar({
   onToggleSensitiveInfo,
   onOpenAccounts,
   onOpenHistoryAdmin,
-  onSearchSelectMember
+  onSearchSelectMember,
+  notifications = [],
+  unreadNotificationCount = 0,
+  readNotificationIds = [],
+  onNotificationAction,
+  onMarkAllNotificationsRead
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userMenuOpenView, setUserMenuOpenView] = useState(null);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const userMenuRef = useRef(null);
+  const desktopNotificationRef = useRef(null);
+  const mobileNotificationRef = useRef(null);
   const mobileDrawerTouchStartRef = useRef(null);
   const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
   const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
@@ -101,6 +114,8 @@ export default function Navbar({
   const normalizedQuery = normalizeSearchText(searchQuery.trim());
   const shouldShowSearchPanel = isSearchOpen && searchQuery.trim().length >= 2;
   const isUserMenuOpen = userMenuOpenView === activeView;
+  const readNotificationSet = useMemo(() => new Set(readNotificationIds), [readNotificationIds]);
+  const hasNotifications = notifications.length > 0;
 
   useEffect(() => {
     if (!isUserMenuOpen) return undefined;
@@ -125,6 +140,32 @@ export default function Navbar({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isUserMenuOpen]);
+
+  useEffect(() => {
+    if (!isNotificationOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      const isInsideDesktop = desktopNotificationRef.current?.contains(event.target);
+      const isInsideMobile = mobileNotificationRef.current?.contains(event.target);
+      if (!isInsideDesktop && !isInsideMobile) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isNotificationOpen]);
 
   const memberById = useMemo(
     () => new Map(members.map((member) => [member.id, member])),
@@ -260,6 +301,102 @@ export default function Navbar({
     setIsMobileMenuOpen(false);
     setIsMobileSearchOpen(false);
     setActiveView(view);
+  };
+
+  const getNotificationIcon = (type) => {
+    if (type === "anniversary") return <CalendarDays size={17} strokeWidth={2.2} />;
+    if (type === "history") return <History size={17} strokeWidth={2.2} />;
+    if (type === "featured") return <Award size={17} strokeWidth={2.2} />;
+    if (type === "security") return <ShieldCheck size={17} strokeWidth={2.2} />;
+    if (type === "presence") return <UserRoundCheck size={17} strokeWidth={2.2} />;
+    return <Clock3 size={17} strokeWidth={2.2} />;
+  };
+
+  const openNotification = (notification) => {
+    onNotificationAction?.(notification);
+    setIsNotificationOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
+  const toggleNotificationPanel = () => {
+    setIsSearchOpen(false);
+    setUserMenuOpenView(null);
+    setIsNotificationOpen((prev) => !prev);
+  };
+
+  const renderNotificationButton = (className = "") => (
+    <button
+      className={`btn-bell notification-trigger ${isNotificationOpen ? "active" : ""} ${className}`}
+      aria-label={`Thông báo${unreadNotificationCount > 0 ? `, ${unreadNotificationCount} chưa đọc` : ""}`}
+      aria-haspopup="dialog"
+      aria-expanded={isNotificationOpen}
+      type="button"
+      onClick={toggleNotificationPanel}
+    >
+      <Bell aria-hidden="true" strokeWidth={2.2} />
+      {unreadNotificationCount > 0 && (
+        <span className="notification-badge">
+          {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
+        </span>
+      )}
+    </button>
+  );
+
+  const renderNotificationPanel = () => {
+    if (suppressOverlays || !isNotificationOpen) return null;
+
+    return (
+      <div className="notification-panel glass" role="dialog" aria-label="Thông báo gia phả">
+        <div className="notification-head">
+          <div>
+            <strong>Thông báo</strong>
+            <span>{unreadNotificationCount > 0 ? `${unreadNotificationCount} mục chưa đọc` : "Đã cập nhật mới nhất"}</span>
+          </div>
+          <button
+            className="notification-read-all"
+            type="button"
+            onClick={onMarkAllNotificationsRead}
+            disabled={!hasNotifications}
+          >
+            <CheckCheck size={15} strokeWidth={2.3} />
+            Đã đọc
+          </button>
+        </div>
+
+        {hasNotifications ? (
+          <div className="notification-list">
+            {notifications.map((notification) => {
+              const isUnread = !readNotificationSet.has(notification.id);
+              return (
+                <button
+                  key={notification.id}
+                  type="button"
+                  className={`notification-item notification-${notification.tone || "info"} ${isUnread ? "is-unread" : ""}`}
+                  onClick={() => openNotification(notification)}
+                >
+                  <span className="notification-icon">
+                    {getNotificationIcon(notification.type)}
+                  </span>
+                  <span className="notification-copy">
+                    <span className="notification-title-row">
+                      <strong>{notification.title}</strong>
+                      {isUnread && <i aria-label="Chưa đọc" />}
+                    </span>
+                    <small>{notification.description}</small>
+                    <em>{notification.timeLabel}</em>
+                  </span>
+                  <span className="notification-action">{notification.actionLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="notification-empty">
+            Chưa có thông báo quan trọng.
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handleSearchKeyDown = (event) => {
@@ -438,9 +575,10 @@ export default function Navbar({
           {renderSearchPanel()}
         </div>
 
-        <button className="btn-bell" aria-label="Thông báo" type="button">
-          <Bell aria-hidden="true" strokeWidth={2.2} />
-        </button>
+        <div className="notification-wrap" ref={desktopNotificationRef}>
+          {renderNotificationButton()}
+          {renderNotificationPanel()}
+        </div>
 
         {/* Theme Switcher */}
         <button className="btn-icon" onClick={toggleTheme} title={theme === "light" ? "Chuyển sang giao diện tối" : "Chuyển sang giao diện sáng"}>
@@ -607,6 +745,11 @@ export default function Navbar({
         >
           <Search aria-hidden="true" strokeWidth={2.3} />
         </button>
+
+        <div className="notification-wrap mobile-notification-wrap" ref={mobileNotificationRef}>
+          {renderNotificationButton("mobile-notification-btn")}
+          {renderNotificationPanel()}
+        </div>
 
         {/* Hamburger Menu button */}
         <button className="hamburger-btn" onClick={toggleMobileMenu} aria-label="Toggle menu">

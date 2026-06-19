@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import Navbar from "./components/Navbar";
 import Homepage from "./components/Homepage";
 import TreeChart from "./components/TreeChart";
@@ -13,6 +13,7 @@ import Sidebar from "./components/Sidebar";
 import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
 import { canEditMembers, getRoleLabel, isAuthenticatedViewer } from "./utils/authRoles";
+import { buildFamilyNotifications } from "./utils/notificationUtils";
 import { getPreviousView, pushViewHistory } from "./utils/viewHistory";
 import "./App.css";
 
@@ -24,6 +25,7 @@ const shouldIgnoreSwipeTarget = (target) => (
 
 const VIEWER_ID_STORAGE_KEY = "giapha_tc_viewer_id";
 const VIEWER_ID_PATTERN = /^[a-zA-Z0-9_-]{16,80}$/;
+const READ_NOTIFICATION_STORAGE_KEY = "giapha_tc_read_notifications";
 
 const getOrCreateViewerId = () => {
   const existing = localStorage.getItem(VIEWER_ID_STORAGE_KEY);
@@ -60,6 +62,14 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const [activeViewersCount, setActiveViewersCount] = useState(0);
+  const [readNotificationIds, setReadNotificationIds] = useState(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(READ_NOTIFICATION_STORAGE_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  });
   const swipeStartRef = useRef(null);
 
   // Modals visibility
@@ -380,6 +390,45 @@ export default function App() {
   const isLocked = isPrivateMode && !isAuthenticatedViewer(currentUser);
   const canRevealSensitiveInfo = isPrivateMode && canEditMembers(currentUser);
   const canGoBack = viewHistory.length > 0;
+  const notifications = useMemo(() => buildFamilyNotifications({
+    members,
+    historyEvents,
+    currentUser,
+    isPrivateMode,
+    activeViewersCount
+  }), [activeViewersCount, currentUser, historyEvents, isPrivateMode, members]);
+
+  const unreadNotificationCount = useMemo(() => {
+    const readSet = new Set(readNotificationIds);
+    return notifications.filter((item) => !readSet.has(item.id)).length;
+  }, [notifications, readNotificationIds]);
+
+  const markNotificationsRead = useCallback((ids) => {
+    const nextIds = Array.isArray(ids) ? ids : [ids];
+    setReadNotificationIds((prev) => {
+      const next = Array.from(new Set([...prev, ...nextIds.filter(Boolean)]));
+      localStorage.setItem(READ_NOTIFICATION_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const markAllNotificationsRead = useCallback(() => {
+    markNotificationsRead(notifications.map((item) => item.id));
+  }, [markNotificationsRead, notifications]);
+
+  const handleNotificationAction = useCallback((notification) => {
+    if (!notification) return;
+    markNotificationsRead(notification.id);
+
+    if (notification.action?.type === "member") {
+      setSelectedPersonId(notification.action.memberId);
+      return;
+    }
+
+    if (notification.action?.type === "view" && notification.action.view) {
+      handleViewChange(notification.action.view);
+    }
+  }, [handleViewChange, markNotificationsRead]);
 
   useEffect(() => {
     let cancelled = false;
@@ -517,6 +566,11 @@ export default function App() {
         onOpenAccounts={handleOpenAccounts}
         onOpenHistoryAdmin={handleOpenHistoryAdmin}
         onSearchSelectMember={handleOpenPersonInTree}
+        notifications={notifications}
+        unreadNotificationCount={unreadNotificationCount}
+        readNotificationIds={readNotificationIds}
+        onNotificationAction={handleNotificationAction}
+        onMarkAllNotificationsRead={markAllNotificationsRead}
       />
 
       {/* Main split display */}
