@@ -28,4 +28,8 @@ dist-ssr
 
 # Playwright MCP files
 .playwright-mcp
+.playwright-cli
 
+# Local code indexing / tours
+.codegraph
+.tours

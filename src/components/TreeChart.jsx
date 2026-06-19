@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { buildLayout } from "../utils/treeLayout";
 import { getAge } from "../utils/mockData";
@@ -17,7 +17,7 @@ export default function TreeChart({
   const containerRef = useRef(null);
 
   // Compute the family tree layout
-  const { nodes, links, width } = buildLayout(members);
+  const { nodes, links, width } = useMemo(() => buildLayout(members), [members]);
 
   // Center the layout on load
   useEffect(() => {
@@ -27,6 +27,31 @@ export default function TreeChart({
       setPan({ x: Math.max(20, xOffset), y: 30 });
     }
   }, [width, zoom]);
+
+  useEffect(() => {
+    if (!selectedPersonId || !containerRef.current) return;
+
+    const selectedNode = nodes.find((node) => node.id === selectedPersonId);
+    if (!selectedNode) return;
+
+    const container = containerRef.current;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const isMobileSheet = window.matchMedia("(max-width: 768px)").matches;
+    const targetViewportX = containerWidth / 2;
+    const targetViewportY = isMobileSheet
+      ? Math.max(100, Math.min(containerHeight * 0.28, 220))
+      : containerHeight / 2;
+    const nodeCenterX = selectedNode.x + selectedNode.width / 2;
+    const nodeCenterY = selectedNode.y + selectedNode.height / 2;
+
+    window.requestAnimationFrame(() => {
+      setPan({
+        x: targetViewportX - nodeCenterX * zoom,
+        y: targetViewportY - nodeCenterY * zoom
+      });
+    });
+  }, [nodes, selectedPersonId, zoom]);
 
   // Handle Dragging / Panning
   const handleMouseDown = (e) => {

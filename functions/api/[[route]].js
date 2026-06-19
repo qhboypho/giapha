@@ -18,6 +18,7 @@ const ADMIN_ROLE = 'admin';
 const EDITOR_ROLE = 'editor';
 const VIEWER_ROLE = 'member';
 const LEGACY_VIEWER_ROLE = 'viewer';
+const ROOT_ADMIN_USERNAME = 'admin';
 const ALLOWED_USER_ROLES = new Set([ADMIN_ROLE, EDITOR_ROLE, VIEWER_ROLE, LEGACY_VIEWER_ROLE]);
 const SENSITIVE_PHONE_MASK = 'Đã ẩn số điện thoại';
 const SENSITIVE_LOCATION_MASK = 'Đã ẩn địa chỉ';
@@ -36,6 +37,10 @@ function canEditMembers(user) {
 
 function isAdmin(user) {
   return Boolean(user && user.role === ADMIN_ROLE);
+}
+
+function isRootAdminUser(user) {
+  return Boolean(user && user.username === ROOT_ADMIN_USERNAME && user.role === ADMIN_ROLE);
 }
 
 function normalizeUserRole(role) {
@@ -706,6 +711,9 @@ app.put('/users/:username', async (c) => {
     if (!existing) {
       return c.json({ success: false, error: 'Không tìm thấy tài khoản.' }, 404);
     }
+    if (username === ROOT_ADMIN_USERNAME && !isRootAdminUser(user)) {
+      return c.json({ success: false, error: 'Chỉ admin gốc mới được sửa tài khoản admin gốc.' }, 403);
+    }
 
     const data = await c.req.json();
     const role = normalizeUserRole(data.role);
@@ -761,6 +769,9 @@ app.delete('/users/:username', async (c) => {
     if (username === user.username) {
       return c.json({ success: false, error: 'Không thể xóa tài khoản đang đăng nhập.' }, 400);
     }
+    if (username === ROOT_ADMIN_USERNAME) {
+      return c.json({ success: false, error: 'Không thể xóa tài khoản admin gốc.' }, 403);
+    }
 
     const existing = await c.env.DB.prepare("SELECT username, role FROM users WHERE username = ? LIMIT 1").bind(username).first();
     if (!existing) {
@@ -797,7 +808,7 @@ app.get('/members', async (c) => {
 
     const formatted = await fetchFormattedMembers(c.env.DB);
     const wantsSensitiveReveal = c.req.query('revealSensitive') === 'true';
-    const canRevealSensitiveInfo = isPrivateMode && isAuthenticatedViewer(user);
+    const canRevealSensitiveInfo = isPrivateMode && canEditMembers(user);
     const revealSensitiveInfo = wantsSensitiveReveal && canRevealSensitiveInfo;
     const editableScopeIds = user?.role === EDITOR_ROLE && user.editScopeRootId
       ? Array.from(getUserScopeIds(user, formatted) || [])
@@ -1026,7 +1037,7 @@ app.post('/member-sync/preview', async (c) => {
   }
 });
 
-// 16. POST /api/member-sync/import - Replace production members from a validated JSON file (Admin only)
+// 18. POST /api/member-sync/import - Replace production members from a validated JSON file (Admin only)
 app.post('/member-sync/import', async (c) => {
   const user = await getAuthenticatedUser(c);
   if (!isAdmin(user)) {
@@ -1067,7 +1078,7 @@ app.post('/member-sync/import', async (c) => {
   }
 });
 
-// 17. GET /api/history-events - Fetch family history milestones
+// 19. GET /api/history-events - Fetch family history milestones
 app.get('/history-events', async (c) => {
   try {
     const isPrivateMode = await getPrivateMode(c.env.DB);
@@ -1085,7 +1096,7 @@ app.get('/history-events', async (c) => {
   }
 });
 
-// 18. GET /api/media/* - Serve private R2 media through the app access rules
+// 20. GET /api/media/* - Serve private R2 media through the app access rules
 app.get('/media/*', async (c) => {
   try {
     const isPrivateMode = await getPrivateMode(c.env.DB);

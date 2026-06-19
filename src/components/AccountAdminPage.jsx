@@ -18,6 +18,8 @@ const emptyPasswordForm = {
   confirmPassword: ""
 };
 
+const ROOT_ADMIN_USERNAME = "admin";
+
 export default function AccountAdminPage({ currentUser, members = [], mode = "manage", onToast, onMembersSynced }) {
   const canManage = isAdmin(currentUser);
   const [users, setUsers] = useState([]);
@@ -43,6 +45,7 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
     [scopeOptions]
   );
   const selectedScopeLabel = form.editScopeRootId ? scopeLabelById.get(form.editScopeRootId) : "";
+  const currentUserIsRootAdmin = currentUser?.username === ROOT_ADMIN_USERNAME && currentUser?.role === "admin";
 
   const loadUsers = useCallback(async () => {
     try {
@@ -85,6 +88,11 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
   };
 
   const handleEdit = (user) => {
+    if (user.username === ROOT_ADMIN_USERNAME && !currentUserIsRootAdmin) {
+      onToast?.("Chỉ admin gốc mới được sửa tài khoản admin gốc.");
+      return;
+    }
+
     setEditing(user.username);
     setForm({
       username: user.username,
@@ -130,6 +138,11 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
   };
 
   const handleDelete = async (username) => {
+    if (username === ROOT_ADMIN_USERNAME) {
+      onToast?.("Không thể xóa tài khoản admin gốc.");
+      return;
+    }
+
     if (!window.confirm(`Xóa tài khoản ${username}?`)) return;
 
     setSaving(true);
@@ -608,6 +621,8 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
           <div className="accounts-grid">
             {users.map((user) => {
               const isSelf = user.username === currentUser?.username;
+              const isRootAdminAccount = user.username === ROOT_ADMIN_USERNAME && user.role === "admin";
+              const rootAdminLocked = isRootAdminAccount && !currentUserIsRootAdmin;
               const cannotDeleteLastAdmin = user.role === "admin" && adminCount <= 1;
               return (
                 <article className="account-card" key={user.username}>
@@ -621,15 +636,27 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
                     <div className="account-title-row">
                       <h3>{user.fullName || user.username}</h3>
                       <div className="account-actions">
-                        <button className="btn-icon" type="button" onClick={() => handleEdit(user)} title="Sửa tài khoản">
+                        <button
+                          className="btn-icon"
+                          type="button"
+                          onClick={() => handleEdit(user)}
+                          disabled={rootAdminLocked || saving}
+                          title={rootAdminLocked ? "Chỉ admin gốc mới được sửa tài khoản này" : "Sửa tài khoản"}
+                        >
                           <KeyRound size={16} strokeWidth={2.2} />
                         </button>
                         <button
                           className="btn-icon danger"
                           type="button"
                           onClick={() => handleDelete(user.username)}
-                          disabled={isSelf || cannotDeleteLastAdmin || saving}
-                          title={isSelf ? "Không thể xóa tài khoản đang đăng nhập" : "Xóa tài khoản"}
+                          disabled={isSelf || isRootAdminAccount || cannotDeleteLastAdmin || saving}
+                          title={
+                            isRootAdminAccount
+                              ? "Không thể xóa tài khoản admin gốc"
+                              : isSelf
+                                ? "Không thể xóa tài khoản đang đăng nhập"
+                                : "Xóa tài khoản"
+                          }
                         >
                           <Trash2 size={16} strokeWidth={2.2} />
                         </button>
@@ -642,6 +669,9 @@ export default function AccountAdminPage({ currentUser, members = [], mode = "ma
                     <span className={`account-role role-${user.role}`}>
                       {getRoleLabel(user.role)}
                     </span>
+                    {isRootAdminAccount && (
+                      <span className="account-scope">Admin gốc</span>
+                    )}
                     {user.role === "editor" && (
                       <span className="account-scope">
                         {user.editScopeRootId
