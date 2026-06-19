@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import Navbar from "./components/Navbar";
 import Homepage from "./components/Homepage";
 import TreeChart from "./components/TreeChart";
@@ -12,8 +12,15 @@ import FamilyHistoryPage from "./components/FamilyHistoryPage";
 import Sidebar from "./components/Sidebar";
 import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
-import { getRoleLabel, isAuthenticatedViewer } from "./utils/authRoles";
+import { canEditMembers, getRoleLabel, isAuthenticatedViewer } from "./utils/authRoles";
+import { getPreviousView, pushViewHistory } from "./utils/viewHistory";
 import "./App.css";
+
+const shouldIgnoreSwipeTarget = (target) => (
+  target?.closest?.(
+    ".mobile-drawer, .mobile-search-overlay, .modal-overlay, .sidebar, .sidebar-backdrop, .modal-content"
+  )
+);
 
 export default function App() {
   // Family tree members from database
@@ -36,9 +43,11 @@ export default function App() {
 
   // View states
   const [activeView, setActiveView] = useState("home");
+  const [viewHistory, setViewHistory] = useState([]);
   const [accountPageMode, setAccountPageMode] = useState("manage");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState(null);
+  const swipeStartRef = useRef(null);
 
   // Modals visibility
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -60,6 +69,10 @@ export default function App() {
   const buildMembersUrl = useCallback((revealSensitive) => {
     const shouldReveal = Boolean(revealSensitive);
     return shouldReveal ? "/api/members?revealSensitive=true" : "/api/members";
+  }, []);
+
+  const shouldRevealSensitiveByDefault = useCallback((user, privateMode) => {
+    return Boolean(privateMode && canEditMembers(user));
   }, []);
 
   const loadMembers = useCallback(async (revealSensitive = false) => {
@@ -124,7 +137,7 @@ export default function App() {
       const isLocked = pMode && !isAuthenticatedViewer(user);
       if (!isLocked) {
         try {
-          await loadMembers(false);
+          await loadMembers(shouldRevealSensitiveByDefault(user, pMode));
           await loadHistoryEvents();
         } catch (err) {
           console.error("Initial data fetch failed:", err);
@@ -134,7 +147,7 @@ export default function App() {
     };
 
     initApp();
-  }, [loadHistoryEvents, loadMembers]);
+  }, [loadHistoryEvents, loadMembers, shouldRevealSensitiveByDefault]);
 
   const showToast = (message) => {
     setToast(message);
@@ -145,24 +158,35 @@ export default function App() {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  const handleViewChange = (view) => {
+  const handleViewChange = useCallback((view) => {
     closeTransientOverlays();
     if (view !== "accounts") {
       setAccountPageMode("manage");
     }
+    setViewHistory((history) => pushViewHistory(history, activeView, view));
     setActiveView(view);
-  };
+  }, [activeView, closeTransientOverlays]);
+
+  const handleGoBack = useCallback(() => {
+    if (!viewHistory.length) return;
+
+    closeTransientOverlays();
+    const { previousView, history } = getPreviousView(viewHistory, activeView);
+    setViewHistory(history);
+    if (previousView !== "accounts") {
+      setAccountPageMode("manage");
+    }
+    setActiveView(previousView);
+  }, [activeView, closeTransientOverlays, viewHistory]);
 
   const handleOpenAccounts = (mode = "manage") => {
-    closeTransientOverlays();
     setAccountPageMode(mode);
-    setActiveView("accounts");
+    handleViewChange("accounts");
   };
 
   const handleOpenHistoryAdmin = () => {
-    closeTransientOverlays();
     setAccountPageMode("manage");
-    setActiveView("history-admin");
+    handleViewChange("history-admin");
   };
 
   const handleLogin = async (user) => {
@@ -181,7 +205,7 @@ export default function App() {
 
       const isLocked = pMode && !isAuthenticatedViewer(user);
       if (!isLocked) {
-        await loadMembers(false);
+        await loadMembers(shouldRevealSensitiveByDefault(user, pMode));
         await loadHistoryEvents();
       } else {
         setMembers([]);
@@ -218,13 +242,14 @@ export default function App() {
 
       if (data.success) {
         setIsPrivateMode(newVal);
-        setShowSensitiveInfo(false);
+        const revealSensitive = shouldRevealSensitiveByDefault(currentUser, newVal);
+        setShowSensitiveInfo(revealSensitive);
         showToast(newVal ? "Đã chuyển sang chế độ riêng tư." : "Đã chuyển sang chế độ công khai.");
         
         // Reload family tree data based on new lock state
         const isLocked = newVal && !isAuthenticatedViewer(currentUser);
         if (!isLocked) {
-          const memData = await loadMembers(false);
+          const memData = await loadMembers(revealSensitive);
           if (!memData.success) showToast(memData.error || "Không thể tải dữ liệu gia phả.");
           const historyData = await loadHistoryEvents();
           if (!historyData.success) showToast(historyData.error || "Không thể tải lịch sử dòng họ.");
@@ -261,8 +286,7 @@ export default function App() {
   };
 
   const handleOpenPersonInTree = (id) => {
-    closeTransientOverlays();
-    setActiveView("tree");
+    handleViewChange("tree");
     setSelectedPersonId(id);
   };
 
@@ -341,10 +365,57 @@ export default function App() {
 
   // Determine if application is locked under Private Mode
   const isLocked = isPrivateMode && !isAuthenticatedViewer(currentUser);
-  const canRevealSensitiveInfo = isPrivateMode && isAuthenticatedViewer(currentUser);
+  const canRevealSensitiveInfo = isPrivateMode && canEditMembers(currentUser);
+  const canGoBack = viewHistory.length > 0;
+
+  const handleTouchStart = useCallback((event) => {
+    const touch = event.touches[0];
+    const isMobileWidth = window.matchMedia?.("(max-width: 768px)")?.matches ?? window.innerWidth <= 768;
+
+    if (
+      !canGoBack ||
+      !isMobileWidth ||
+      isLoginModalOpen ||
+      isMemberModalOpen ||
+      selectedPersonId ||
+      shouldIgnoreSwipeTarget(event.target) ||
+      touch.clientX > 24
+    ) {
+      swipeStartRef.current = null;
+      return;
+    }
+
+    swipeStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    };
+  }, [canGoBack, isLoginModalOpen, isMemberModalOpen, selectedPersonId]);
+
+  const handleTouchEnd = useCallback((event) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start || shouldIgnoreSwipeTarget(event.target)) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = Math.abs(touch.clientY - start.y);
+    const elapsed = Date.now() - start.time;
+
+    if (deltaX >= 72 && deltaY <= 48 && elapsed <= 900) {
+      handleGoBack();
+    }
+  }, [handleGoBack]);
 
   return (
-    <div className="app-container">
+    <div
+      className="app-container"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={() => {
+        swipeStartRef.current = null;
+      }}
+    >
       {/* Top Navbar */}
       <Navbar
         searchQuery={searchQuery}
@@ -352,7 +423,9 @@ export default function App() {
         members={members}
         activeView={activeView}
         setActiveView={handleViewChange}
-        suppressOverlays={Boolean(selectedPersonId || isLoginModalOpen || isMemberModalOpen)}
+        canGoBack={canGoBack}
+        onBack={handleGoBack}
+        suppressOverlays={Boolean(isLoginModalOpen || isMemberModalOpen)}
         currentUser={currentUser}
         setIsLoginModalOpen={setIsLoginModalOpen}
         onLogout={handleLogout}

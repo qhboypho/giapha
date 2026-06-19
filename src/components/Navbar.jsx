@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   Bell,
   BookOpenText,
   CalendarDays,
@@ -70,6 +71,8 @@ export default function Navbar({
   members = [],
   activeView,
   setActiveView,
+  canGoBack = false,
+  onBack,
   suppressOverlays = false,
   currentUser,
   setIsLoginModalOpen,
@@ -91,6 +94,7 @@ export default function Navbar({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const userMenuRef = useRef(null);
+  const mobileDrawerTouchStartRef = useRef(null);
   const userDisplayName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || "";
   const userAvatar = currentUser?.avatar || currentUser?.photoURL || currentUser?.image;
   const canAddTopLevelMember = currentUser?.role === "admin" || (currentUser?.role === "editor" && !currentUser?.editScopeRootId);
@@ -180,6 +184,41 @@ export default function Navbar({
     setIsMobileMenuOpen((prev) => !prev);
   };
 
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+    mobileDrawerTouchStartRef.current = null;
+  };
+
+  const handleMobileDrawerTouchStart = (event) => {
+    const touch = event.touches[0];
+
+    if (touch.clientX > 36) {
+      mobileDrawerTouchStartRef.current = null;
+      return;
+    }
+
+    mobileDrawerTouchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    };
+  };
+
+  const handleMobileDrawerTouchEnd = (event) => {
+    const start = mobileDrawerTouchStartRef.current;
+    mobileDrawerTouchStartRef.current = null;
+    if (!start) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = Math.abs(touch.clientY - start.y);
+    const elapsed = Date.now() - start.time;
+
+    if (deltaX >= 72 && deltaY <= 48 && elapsed <= 900) {
+      closeMobileMenu();
+    }
+  };
+
   const openMobileSearch = () => {
     setIsMobileMenuOpen(false);
     setIsMobileSearchOpen(true);
@@ -193,6 +232,16 @@ export default function Navbar({
 
   const handleSearchBlur = () => {
     window.setTimeout(() => setIsSearchOpen(false), 120);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+    setIsSearchOpen(true);
+  };
+
+  const clearSearchQuery = () => {
+    setSearchQuery("");
+    setIsSearchOpen(false);
   };
 
   const openSearchMember = (member) => {
@@ -361,14 +410,27 @@ export default function Navbar({
 
         {/* Search bar */}
         <div className="search-box">
-          <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
+          {searchQuery ? (
+            <button
+              className="search-icon search-clear-btn"
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={clearSearchQuery}
+              aria-label="Xóa tìm kiếm"
+            >
+              <X size={16} strokeWidth={2.4} aria-hidden="true" />
+            </button>
+          ) : (
+            <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
+          )}
           <input
             type="text"
             className="search-input"
             placeholder="Tìm kiếm thành viên, đời, sự kiện..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             onFocus={() => setIsSearchOpen(true)}
+            onClick={() => setIsSearchOpen(true)}
             onBlur={handleSearchBlur}
             onKeyDown={handleSearchKeyDown}
             autoComplete="off"
@@ -507,6 +569,18 @@ export default function Navbar({
 
       {/* Mobile Navigation Toggle (Visible on Mobile) */}
       <div className="mobile-nav-toggle">
+        {canGoBack && (
+          <button
+            className="mobile-back-btn"
+            onClick={onBack}
+            aria-label="Quay lại trang trước"
+            title="Quay lại"
+            type="button"
+          >
+            <ArrowLeft aria-hidden="true" strokeWidth={2.4} />
+          </button>
+        )}
+
         {/* View Toggle */}
         <div className="btn-group" style={{ padding: "2px" }}>
           <button
@@ -552,14 +626,27 @@ export default function Navbar({
             </div>
             <div className="search-box mobile-search-box">
               <div className="mobile-search-input-wrap">
-                <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
+                {searchQuery ? (
+                  <button
+                    className="search-icon search-clear-btn"
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={clearSearchQuery}
+                    aria-label="Xóa tìm kiếm"
+                  >
+                    <X size={16} strokeWidth={2.4} aria-hidden="true" />
+                  </button>
+                ) : (
+                  <Search className="search-icon" aria-hidden="true" strokeWidth={2.3} />
+                )}
                 <input
                   type="text"
                   className="search-input"
                   placeholder="Nhập tên, đời, địa danh..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchChange}
                   onFocus={() => setIsSearchOpen(true)}
+                  onClick={() => setIsSearchOpen(true)}
                   onKeyDown={handleSearchKeyDown}
                   autoComplete="off"
                   autoFocus
@@ -574,11 +661,18 @@ export default function Navbar({
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && !suppressOverlays && (
         <>
-          <div className="modal-overlay" style={{ zIndex: 140 }} onClick={() => setIsMobileMenuOpen(false)} />
-          <div className="mobile-drawer glass animate-slide-right">
+          <div className="modal-overlay" style={{ zIndex: 140 }} onClick={closeMobileMenu} />
+          <div
+            className="mobile-drawer glass animate-slide-right"
+            onTouchStart={handleMobileDrawerTouchStart}
+            onTouchEnd={handleMobileDrawerTouchEnd}
+            onTouchCancel={() => {
+              mobileDrawerTouchStartRef.current = null;
+            }}
+          >
             <div className="mobile-drawer-header">
               <h3>Menu tiện ích</h3>
-              <button className="sidebar-close" onClick={() => setIsMobileMenuOpen(false)}>
+              <button className="sidebar-close" onClick={closeMobileMenu}>
                 Đóng
               </button>
             </div>

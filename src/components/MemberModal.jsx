@@ -138,13 +138,20 @@ export default function MemberModal({
     (m) => m.id !== editPerson?.id && m.gender !== formData.gender && isAllowedRelationOption(m)
   );
 
-  const title = editPerson ? "Chỉnh sửa thành viên" : addRelativeOf ? `Thêm thân nhân cho ${addRelativeOf.name}` : "Thêm thành viên mới";
+  const title = editPerson ? "Chỉnh sửa thành viên" : "Thêm thành viên mới";
 
   return (
     <div className="modal-overlay">
       <div className="modal-content glass animate-scale-up">
         <div className="modal-header">
-          <h3>📋 {title}</h3>
+          {addRelativeOf && !editPerson ? (
+            <h3 className="member-modal-title">
+              <span>📋 Thêm nhân thân cho</span>
+              <strong>{addRelativeOf.name}</strong>
+            </h3>
+          ) : (
+            <h3 className="member-modal-title">📋 {title}</h3>
+          )}
           <button className="sidebar-close" onClick={onClose}>
             ❌
           </button>
@@ -310,7 +317,7 @@ export default function MemberModal({
               )}
 
               {!formData.isDeceased && (
-                <div className="form-group" style={{ gridColumn: "span 2" }}>
+                <div className="form-group form-group-wide">
                   <label>Địa chỉ hiện tại</label>
                   <input
                     type="text"
@@ -374,7 +381,7 @@ export default function MemberModal({
                 </select>
               </div>
 
-              <div className="form-group" style={{ gridColumn: "span 2" }}>
+              <div className="form-group form-group-wide">
                 <label>Bạn đời (Vợ / Chồng)</label>
                 <select
                   name="spouseIds"
