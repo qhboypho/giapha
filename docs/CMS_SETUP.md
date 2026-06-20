@@ -14,6 +14,18 @@ Tai lieu nay mo ta quy trinh don gian nhat de clone base, tao website gia pha ch
 npx wrangler login
 ```
 
+## Cach De Nhat: Provision Wizard
+
+Neu muon cai dat de hon cho dev hoac nguoi khong chuyen ky thuat, chay wizard ben ngoai app:
+
+```powershell
+npm run provision:wizard
+```
+
+Wizard se hoi ten khach/project, sinh `wrangler.generated.jsonc`, `AI_CONFIG_SECRET`, checklist tao Cloudflare D1/R2/Pages va huong dan deploy trong thu muc `.provision/<slug>/`.
+
+Sau khi deploy xong, admin vao app mo `Setup Wizard` de cau hinh noi dung website va nhap du lieu.
+
 ## 2. Clone Source
 
 ```powershell

@@ -14,6 +14,7 @@ Gia Phả TC CMS là base website gia phả trực tuyến dùng React, Cloudfla
 - Export/import media package cho ảnh lịch sử trong R2.
 - AI-assisted import v2: tải ảnh/PDF, gọi OpenAI để tạo JSON, preview rồi nhập vào cây; vẫn hỗ trợ copy prompt/paste JSON thủ công.
 - Setup Wizard trong app cho admin/non-tech cấu hình website, AI và nhập dữ liệu theo từng bước.
+- Provision Wizard ngoài app để sinh lệnh/cấu hình Cloudflare cho khách mới.
 - Script bootstrap để setup nhanh khách mới.
 
 ## Tech Stack
@@ -106,6 +107,30 @@ npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a
 
 `AI_CONFIG_SECRET` nên là chuỗi ngẫu nhiên dài ít nhất 24 ký tự. Sau khi có secret này, quản trị viên có thể vào `Cấu hình AI` trong app để chọn OpenAI/Gemini/Claude, nhập API key provider và lưu mã hóa trong D1. Nếu muốn dùng fallback cũ cho OpenAI, vẫn có thể set thêm `OPENAI_API_KEY`.
 
+## Provision Wizard Cho Khách Mới
+
+Dùng khi muốn có quy trình dễ hơn cho dev hoặc người không chuyên kỹ thuật. Wizard sẽ hỏi tên khách/project, sinh `wrangler.generated.jsonc`, secret AI, checklist Cloudflare và hướng dẫn deploy trong thư mục `.provision/<slug>/`.
+
+Chạy tương tác:
+
+```powershell
+npm run provision:wizard
+```
+
+Chạy nhanh bằng tham số:
+
+```powershell
+npm run provision:wizard -- --family-name "Trần Công" --slug tran-cong
+```
+
+Mặc định wizard **không ghi đè** `wrangler.jsonc`. Nếu dev muốn áp dụng luôn cấu hình sinh ra:
+
+```powershell
+npm run provision:wizard -- --family-name "Trần Công" --slug tran-cong --write-wrangler
+```
+
+Sau khi deploy xong, admin vào app dùng `Setup Wizard` để cấu hình nội dung website và nhập dữ liệu.
+
 ## Setup Khách Mới Bằng CMS Package
 
 Quy trình đầy đủ nằm trong:
@@ -188,6 +213,7 @@ node scripts/test-media-package-utils.mjs
 node scripts/test-site-config-utils.mjs
 node scripts/test-member-sync-utils.mjs
 npm run test:ai-config
+node scripts/test-provision-wizard.mjs
 npm run lint
 npm run build
 ```
