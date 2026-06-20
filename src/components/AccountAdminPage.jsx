@@ -1058,6 +1058,14 @@ export default function AccountAdminPage({
                   Mô tả hero
                   <textarea className="form-input" rows={3} value={siteConfigForm.heroDescription} onChange={(event) => handleSiteConfigChange("heroDescription", event.target.value)} />
                 </label>
+                <label className="site-config-wide">
+                  Câu footer
+                  <textarea className="form-input" rows={2} value={siteConfigForm.footerQuote} onChange={(event) => handleSiteConfigChange("footerQuote", event.target.value)} />
+                </label>
+                <label className="site-config-wide">
+                  Lời nhắn footer
+                  <textarea className="form-input" rows={2} value={siteConfigForm.footerMessage} onChange={(event) => handleSiteConfigChange("footerMessage", event.target.value)} />
+                </label>
               </div>
               <div className="account-form-actions">
                 <button className="btn btn-secondary" type="button" onClick={goWizardNext}>
