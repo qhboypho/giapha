@@ -3699,6 +3699,7 @@
 .cms-package-card,
 .media-package-card,
 .ai-import-card,
+.ai-config-card,
 .site-config-card {
   display: grid;
   gap: 14px;
@@ -3711,6 +3712,7 @@
 .cms-package-card p,
 .media-package-card p,
 .ai-import-card p,
+.ai-config-card p,
 .site-config-card p {
   margin: 0;
   color: var(--text-secondary);
@@ -3722,8 +3724,50 @@
 .cms-package-card strong,
 .media-package-card strong,
 .ai-import-card strong,
+.ai-config-card strong,
 .site-config-card strong {
   color: var(--text-primary);
+}
+
+.ai-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.ai-config-wide {
+  grid-column: 1 / -1;
+}
+
+.ai-config-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-config-status span,
+.ai-config-warning {
+  padding: 8px 10px;
+  border: 1px solid rgba(215, 169, 77, 0.24);
+  border-radius: var(--radius-md);
+  background: rgba(215, 169, 77, 0.08);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.ai-config-warning {
+  border-color: rgba(255, 91, 125, 0.42);
+  background: rgba(255, 91, 125, 0.08);
+}
+
+.ai-config-clear {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-weight: 800;
 }
 
 .ai-source-dropzone {
@@ -4701,6 +4745,7 @@
   .accounts-grid,
   .account-password-grid,
   .site-config-grid,
+  .ai-config-grid,
   .member-sync-stats,
   .member-sync-detail-grid {
     grid-template-columns: 1fr;

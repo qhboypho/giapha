@@ -141,6 +141,9 @@ git checkout -b customer/khach-a</code></pre>
         </ul>
         <pre><code>npx wrangler d1 create giapha-khach-a-db
 npx wrangler r2 bucket create giapha-khach-a-media</code></pre>
+        <p>Nếu dùng AI nhận diện ảnh/PDF trong app, đặt secret mã hóa một lần cho Pages project:</p>
+        <pre><code>npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a</code></pre>
+        <p class="note">Sau bước này, admin có thể vào Cấu hình AI để chọn OpenAI/Gemini/Claude và lưu API key provider đã mã hóa trong D1.</p>
       </section>
 
       <section>

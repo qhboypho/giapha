@@ -44,6 +44,14 @@ npx wrangler d1 create giapha-khach-a-db
 npx wrangler r2 bucket create giapha-khach-a-media
 ```
 
+Nếu muốn quản trị viên nhập API key AI ngay trong app, cần đặt secret mã hóa một lần cho Pages project:
+
+```powershell
+npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a
+```
+
+`AI_CONFIG_SECRET` nên là chuỗi ngẫu nhiên dài ít nhất 24 ký tự. Sau đó vào trang quản trị, mở `Cấu hình AI`, chọn OpenAI/Gemini/Claude, nhập API key provider và bấm lưu. Key provider sẽ được mã hóa trước khi lưu vào D1.
+
 ## 4. Cap Nhat `wrangler.jsonc`
 
 Sua cac gia tri trong `wrangler.jsonc` theo tai nguyen cua khach:

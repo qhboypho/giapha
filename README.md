@@ -97,13 +97,13 @@ npx wrangler d1 create giapha-khach-a-db
 npx wrangler r2 bucket create giapha-khach-a-media
 ```
 
-Nếu dùng chức năng AI nhận diện gia phả từ ảnh/PDF, cấu hình secret cho Pages project:
+Nếu dùng chức năng AI nhận diện gia phả từ ảnh/PDF, cấu hình secret mã hóa cho Pages project:
 
 ```powershell
-npx wrangler pages secret put OPENAI_API_KEY --project-name giapha-khach-a
+npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a
 ```
 
-Có thể đổi model bằng biến `OPENAI_MODEL`; nếu không đặt, hệ thống dùng model mặc định trong code.
+`AI_CONFIG_SECRET` nên là chuỗi ngẫu nhiên dài ít nhất 24 ký tự. Sau khi có secret này, quản trị viên có thể vào `Cấu hình AI` trong app để chọn OpenAI/Gemini/Claude, nhập API key provider và lưu mã hóa trong D1. Nếu muốn dùng fallback cũ cho OpenAI, vẫn có thể set thêm `OPENAI_API_KEY`.
 
 ## Setup Khách Mới Bằng CMS Package
 
@@ -169,6 +169,7 @@ CMS package v1 là file JSON gồm:
 Trong UI quản trị:
 
 - `Cấu hình website/CMS`: sửa cấu hình site.
+- `Cấu hình AI`: chọn OpenAI/Gemini/Claude, lưu API key đã mã hóa, kiểm tra kết nối.
 - `Gói CMS website`: export/import full package.
 - `Gói media R2`: export/import ảnh lịch sử đang lưu trong R2.
 - `Nhập gia phả bằng AI`: tải ảnh/PDF để AI tự nhận diện thành JSON, hoặc copy prompt/paste JSON thủ công, rồi preview trước khi nhập.
@@ -184,6 +185,7 @@ node scripts/test-cms-package-utils.mjs
 node scripts/test-media-package-utils.mjs
 node scripts/test-site-config-utils.mjs
 node scripts/test-member-sync-utils.mjs
+npm run test:ai-config
 npm run lint
 npm run build
 ```

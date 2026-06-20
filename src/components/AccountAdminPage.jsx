@@ -4,6 +4,7 @@ import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../uti
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
+import { AI_PROVIDERS, getAiProviderConfig } from "../utils/aiConfigUtils";
 
 const emptyForm = {
   username: "",
@@ -20,6 +21,12 @@ const emptyPasswordForm = {
 };
 
 const ROOT_ADMIN_USERNAME = "admin";
+const defaultAiConfigForm = {
+  provider: "openai",
+  model: AI_PROVIDERS.openai.defaultModel,
+  apiKey: "",
+  clearApiKey: false
+};
 
 export default function AccountAdminPage({
   currentUser,
@@ -35,6 +42,10 @@ export default function AccountAdminPage({
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [siteConfigDraft, setSiteConfigDraft] = useState(null);
+  const [aiConfig, setAiConfig] = useState(null);
+  const [aiConfigForm, setAiConfigForm] = useState(defaultAiConfigForm);
+  const [aiConfigBusy, setAiConfigBusy] = useState(false);
+  const [aiConfigTesting, setAiConfigTesting] = useState(false);
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(canManage);
@@ -93,6 +104,32 @@ export default function AccountAdminPage({
     }
   }, [onToast]);
 
+  const applyAiConfigToForm = useCallback((config) => {
+    const provider = config?.provider || "openai";
+    const providerDefaults = getAiProviderConfig(provider);
+    setAiConfigForm({
+      provider,
+      model: config?.model || providerDefaults.defaultModel,
+      apiKey: "",
+      clearApiKey: false
+    });
+  }, []);
+
+  const loadAiConfig = useCallback(async () => {
+    try {
+      const res = await fetch("/api/ai-config");
+      const data = await res.json();
+      if (data.success) {
+        setAiConfig(data.config);
+        applyAiConfigToForm(data.config);
+      } else {
+        onToast?.(data.error || "Không thể tải cấu hình AI.");
+      }
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi tải cấu hình AI.");
+    }
+  }, [applyAiConfigToForm, onToast]);
+
   useEffect(() => {
     if (!canManage) {
       return;
@@ -103,6 +140,7 @@ export default function AccountAdminPage({
       await Promise.resolve();
       if (!cancelled) {
         await loadUsers();
+        await loadAiConfig();
       }
     };
 
@@ -110,7 +148,7 @@ export default function AccountAdminPage({
     return () => {
       cancelled = true;
     };
-  }, [canManage, loadUsers]);
+  }, [canManage, loadAiConfig, loadUsers]);
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -244,6 +282,58 @@ export default function AccountAdminPage({
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAiProviderChange = (provider) => {
+    const providerDefaults = getAiProviderConfig(provider);
+    setAiConfigForm((prev) => ({
+      ...prev,
+      provider,
+      model: providerDefaults.defaultModel,
+      apiKey: "",
+      clearApiKey: false
+    }));
+  };
+
+  const handleAiConfigSubmit = async (event) => {
+    event.preventDefault();
+    setAiConfigBusy(true);
+    try {
+      const res = await fetch("/api/ai-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiConfigForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAiConfig(data.config);
+        applyAiConfigToForm(data.config);
+        onToast?.("Đã lưu cấu hình AI.");
+      } else {
+        onToast?.(data.error || "Không thể lưu cấu hình AI.");
+      }
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi lưu cấu hình AI.");
+    } finally {
+      setAiConfigBusy(false);
+    }
+  };
+
+  const testAiConfig = async () => {
+    setAiConfigTesting(true);
+    try {
+      const res = await fetch("/api/ai-config/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiConfigForm)
+      });
+      const data = await res.json();
+      onToast?.(data.success ? "Kết nối AI hợp lệ." : (data.error || "Không kiểm tra được cấu hình AI."));
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi kiểm tra AI.");
+    } finally {
+      setAiConfigTesting(false);
     }
   };
 
@@ -944,6 +1034,79 @@ export default function AccountAdminPage({
             <div className="account-form-actions">
               <button className="btn btn-primary" type="submit" disabled={saving}>
                 {saving ? "Đang lưu..." : "Lưu cấu hình website"}
+              </button>
+            </div>
+          </form>
+
+          <form className="ai-config-card glass" onSubmit={handleAiConfigSubmit}>
+            <div className="account-form-title">
+              <KeyRound size={18} strokeWidth={2.2} />
+              <h2>Cấu hình AI</h2>
+            </div>
+            <p>
+              Lưu API key AI đã mã hóa để admin có thể nhận diện gia phả từ ảnh/PDF ngay trong app.
+            </p>
+            {aiConfig && !aiConfig.encryptionReady && (
+              <div className="ai-config-warning">
+                Cần cấu hình secret <strong>AI_CONFIG_SECRET</strong> trên Cloudflare Pages trước khi lưu API key trong app.
+              </div>
+            )}
+            <div className="ai-config-status">
+              <span>
+                Provider hiện tại: <strong>{aiConfig?.providerLabel || "OpenAI"}</strong>
+              </span>
+              <span>
+                API key: <strong>{aiConfig?.hasApiKey ? (aiConfig.keyPreview || "Đã cấu hình") : "Chưa cấu hình"}</strong>
+              </span>
+              {aiConfig?.envFallback && <span>Đang dùng fallback từ <strong>OPENAI_API_KEY</strong></span>}
+            </div>
+            <div className="ai-config-grid">
+              <label>
+                Provider
+                <select className="form-input" value={aiConfigForm.provider} onChange={(event) => handleAiProviderChange(event.target.value)}>
+                  {Object.entries(AI_PROVIDERS).map(([value, provider]) => (
+                    <option value={value} key={value}>{provider.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Model
+                <input
+                  className="form-input"
+                  value={aiConfigForm.model}
+                  onChange={(event) => setAiConfigForm((prev) => ({ ...prev, model: event.target.value }))}
+                  placeholder={getAiProviderConfig(aiConfigForm.provider).defaultModel}
+                  required
+                />
+              </label>
+              <label className="ai-config-wide">
+                API key mới
+                <input
+                  className="form-input"
+                  type="password"
+                  value={aiConfigForm.apiKey}
+                  onChange={(event) => setAiConfigForm((prev) => ({ ...prev, apiKey: event.target.value, clearApiKey: false }))}
+                  placeholder={aiConfig?.hasApiKey ? "Để trống nếu không đổi key" : "Nhập API key của provider đã chọn"}
+                  autoComplete="off"
+                />
+              </label>
+              {aiConfig?.hasApiKey && (
+                <label className="ai-config-clear">
+                  <input
+                    type="checkbox"
+                    checked={aiConfigForm.clearApiKey}
+                    onChange={(event) => setAiConfigForm((prev) => ({ ...prev, clearApiKey: event.target.checked, apiKey: event.target.checked ? "" : prev.apiKey }))}
+                  />
+                  Xóa API key hiện tại
+                </label>
+              )}
+            </div>
+            <div className="account-form-actions">
+              <button className="btn btn-secondary" type="button" onClick={testAiConfig} disabled={aiConfigTesting || aiConfigBusy}>
+                {aiConfigTesting ? "Đang kiểm tra..." : "Kiểm tra kết nối"}
+              </button>
+              <button className="btn btn-primary" type="submit" disabled={aiConfigBusy}>
+                {aiConfigBusy ? "Đang lưu..." : "Lưu cấu hình AI"}
               </button>
             </div>
           </form>

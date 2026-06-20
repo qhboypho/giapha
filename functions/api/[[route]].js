@@ -4,6 +4,15 @@ import { handle } from 'hono/cloudflare-pages';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { verifyPassword, generateSecureToken, hashPassword } from '../helpers/auth';
 import {
+  AI_CONFIG_SETTING_KEY,
+  buildKeyPreview,
+  buildPublicAiConfig,
+  getAiProviderConfig,
+  parseAiConfigValue,
+  serializeAiConfig,
+  validateAiConfigInput
+} from '../../src/utils/aiConfigUtils.js';
+import {
   buildCmsPackage,
   buildCmsPackagePreview,
   normalizeImportedCmsPackage,
@@ -46,9 +55,13 @@ const ACTIVE_VIEWER_WINDOW_SECONDS = 90;
 const AI_IMPORT_MAX_FILES = 8;
 const AI_IMPORT_MAX_FILE_BYTES = 8 * 1024 * 1024;
 const AI_IMPORT_MAX_TOTAL_BYTES = 24 * 1024 * 1024;
-const AI_IMPORT_DEFAULT_MODEL = 'gpt-5.5';
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const OPENAI_FILES_URL = 'https://api.openai.com/v1/files';
+const GEMINI_GENERATE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const CLAUDE_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
+const CLAUDE_MODELS_URL = 'https://api.anthropic.com/v1/models';
+const CLAUDE_API_VERSION = '2023-06-01';
 const ALLOWED_AI_SOURCE_TYPES = new Set([
   'application/pdf',
   'image/jpeg',
@@ -110,6 +123,11 @@ async function getPrivateMode(db) {
 async function getSiteConfig(db) {
   const row = await db.prepare("SELECT value FROM settings WHERE key = ? LIMIT 1").bind(SITE_CONFIG_SETTING_KEY).first();
   return parseSiteConfigValue(row?.value);
+}
+
+async function getStoredAiConfig(db) {
+  const row = await db.prepare("SELECT value FROM settings WHERE key = ? LIMIT 1").bind(AI_CONFIG_SETTING_KEY).first();
+  return parseAiConfigValue(row?.value);
 }
 
 function validateUsername(username) {
@@ -316,6 +334,66 @@ function base64ToUint8Array(base64 = '') {
     bytes[index] = binary.charCodeAt(index);
   }
   return bytes;
+}
+
+async function getAiConfigCryptoKey(secret) {
+  const rawSecret = String(secret || '').trim();
+  if (!rawSecret || rawSecret.length < 24) {
+    throw new Error('AI_CONFIG_SECRET cần có ít nhất 24 ký tự để mã hóa API key.');
+  }
+
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawSecret));
+  return crypto.subtle.importKey('raw', digest, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+
+async function encryptAiApiKey(apiKey, secret) {
+  const key = await getAiConfigCryptoKey(secret);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipherBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    new TextEncoder().encode(String(apiKey || '').trim())
+  );
+
+  return {
+    version: 1,
+    algorithm: 'AES-GCM',
+    iv: arrayBufferToBase64(iv),
+    data: arrayBufferToBase64(cipherBuffer)
+  };
+}
+
+async function decryptAiApiKey(encrypted, secret) {
+  if (!encrypted?.iv || !encrypted?.data) {
+    return '';
+  }
+
+  const key = await getAiConfigCryptoKey(secret);
+  const plainBuffer = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: base64ToUint8Array(encrypted.iv) },
+    key,
+    base64ToUint8Array(encrypted.data)
+  );
+  return new TextDecoder().decode(plainBuffer);
+}
+
+function parseJsonFromModelText(text = '') {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) {
+    throw new Error('AI không trả về JSON dữ liệu gia phả.');
+  }
+
+  const withoutFence = trimmed
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+  const firstBrace = withoutFence.indexOf('{');
+  const lastBrace = withoutFence.lastIndexOf('}');
+  const candidate = firstBrace >= 0 && lastBrace > firstBrace
+    ? withoutFence.slice(firstBrace, lastBrace + 1)
+    : withoutFence;
+
+  return JSON.parse(candidate);
 }
 
 function buildMemberSyncAiSchema() {
@@ -531,10 +609,195 @@ async function callOpenAiMemberExtraction(apiKey, model, sources) {
       throw new Error('OpenAI không trả về JSON dữ liệu gia phả.');
     }
 
-    return JSON.parse(text);
+    return parseJsonFromModelText(text);
   } finally {
     await Promise.all(uploadedFileIds.map((fileId) => deleteOpenAiFile(apiKey, fileId)));
   }
+}
+
+async function buildInlineSourceParts(sources) {
+  const parts = [];
+  for (const source of sources) {
+    const buffer = await source.file.arrayBuffer();
+    parts.push({
+      source,
+      base64: arrayBufferToBase64(buffer)
+    });
+  }
+  return parts;
+}
+
+async function callGeminiMemberExtraction(apiKey, model, sources) {
+  const inlineSources = await buildInlineSourceParts(sources);
+  const response = await fetch(`${GEMINI_GENERATE_URL}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: [
+                'Bạn là chuyên gia nhập liệu gia phả Việt Nam. Chỉ trả về JSON thuần, không bọc Markdown.',
+                buildMemberSyncAiPrompt(),
+                'Hãy đọc toàn bộ ảnh/PDF đính kèm và gộp thành một cây gia phả duy nhất.'
+              ].join('\n\n')
+            },
+            ...inlineSources.map((item) => ({
+              inlineData: {
+                mimeType: item.source.type,
+                data: item.base64
+              }
+            }))
+          ]
+        }
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json'
+      }
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message || 'Gemini không xử lý được nguồn gia phả.');
+  }
+
+  const text = (data.candidates || [])
+    .flatMap((candidate) => candidate?.content?.parts || [])
+    .map((part) => part.text || '')
+    .join('\n')
+    .trim();
+  return parseJsonFromModelText(text);
+}
+
+async function callClaudeMemberExtraction(apiKey, model, sources) {
+  const inlineSources = await buildInlineSourceParts(sources);
+  const content = [
+    {
+      type: 'text',
+      text: [
+        buildMemberSyncAiPrompt(),
+        '',
+        'Hãy đọc toàn bộ ảnh/PDF đính kèm và chỉ trả về JSON thuần, không bọc Markdown, không giải thích.'
+      ].join('\n')
+    },
+    ...inlineSources.map((item) => {
+      if (item.source.type === 'application/pdf') {
+        return {
+          type: 'document',
+          source: {
+            type: 'base64',
+            media_type: item.source.type,
+            data: item.base64
+          }
+        };
+      }
+
+      return {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: item.source.type,
+          data: item.base64
+        }
+      };
+    })
+  ];
+
+  const response = await fetch(CLAUDE_MESSAGES_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': CLAUDE_API_VERSION
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 8192,
+      system: 'Bạn là chuyên gia nhập liệu gia phả Việt Nam. Không tự bịa dữ liệu, chỉ trích xuất thông tin đọc được từ nguồn.',
+      messages: [
+        {
+          role: 'user',
+          content
+        }
+      ]
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message || 'Claude không xử lý được nguồn gia phả.');
+  }
+
+  const text = (data.content || [])
+    .map((part) => part.text || '')
+    .join('\n')
+    .trim();
+  return parseJsonFromModelText(text);
+}
+
+async function callConfiguredAiMemberExtraction(config, apiKey, sources) {
+  if (config.provider === 'gemini') {
+    return callGeminiMemberExtraction(apiKey, config.model, sources);
+  }
+  if (config.provider === 'claude') {
+    return callClaudeMemberExtraction(apiKey, config.model, sources);
+  }
+  return callOpenAiMemberExtraction(apiKey, config.model, sources);
+}
+
+async function resolveAiRuntimeConfig(c) {
+  const storedConfig = await getStoredAiConfig(c.env.DB);
+  const hasEnvOpenAiKey = Boolean(String(c.env.OPENAI_API_KEY || '').trim());
+  let apiKey = '';
+
+  if (storedConfig.encryptedApiKey) {
+    apiKey = await decryptAiApiKey(storedConfig.encryptedApiKey, c.env.AI_CONFIG_SECRET);
+  } else if (storedConfig.provider === 'openai' && hasEnvOpenAiKey) {
+    apiKey = String(c.env.OPENAI_API_KEY || '').trim();
+  }
+
+  return {
+    config: {
+      ...storedConfig,
+      model: storedConfig.model || getAiProviderConfig(storedConfig.provider).defaultModel
+    },
+    apiKey,
+    hasEnvOpenAiKey
+  };
+}
+
+async function testAiProviderKey(provider, apiKey) {
+  if (provider === 'gemini') {
+    const response = await fetch(`${GEMINI_MODELS_URL}?key=${encodeURIComponent(apiKey)}`);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error?.message || 'Gemini API key chưa hợp lệ.');
+    return;
+  }
+
+  if (provider === 'claude') {
+    const response = await fetch(CLAUDE_MODELS_URL, {
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': CLAUDE_API_VERSION
+      }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error?.message || 'Claude API key chưa hợp lệ.');
+    return;
+  }
+
+  const response = await fetch('https://api.openai.com/v1/models', {
+    headers: {
+      Authorization: `Bearer ${apiKey}`
+    }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error?.message || 'OpenAI API key chưa hợp lệ.');
 }
 
 function getHistoryMediaItems(historyEvents = []) {
@@ -1343,6 +1606,102 @@ app.get('/member-sync/ai-prompt', async (c) => {
   return textDownloadResponse(buildMemberSyncAiPrompt(), 'giapha-ai-import-prompt.txt');
 });
 
+// 17. GET /api/ai-config - Fetch safe AI provider configuration (Admin only)
+app.get('/ai-config', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được xem cấu hình AI.' }, 403);
+  }
+
+  try {
+    const config = await getStoredAiConfig(c.env.DB);
+    return c.json({
+      success: true,
+      config: buildPublicAiConfig(config, {
+        encryptionReady: Boolean(String(c.env.AI_CONFIG_SECRET || '').trim()),
+        hasEnvApiKey: Boolean(String(c.env.OPENAI_API_KEY || '').trim())
+      })
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 18. POST /api/ai-config - Save encrypted AI provider API key and model (Admin only)
+app.post('/ai-config', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được sửa cấu hình AI.' }, 403);
+  }
+
+  try {
+    const data = await c.req.json();
+    const existing = await getStoredAiConfig(c.env.DB);
+    const nextConfig = validateAiConfigInput(data, existing);
+    const apiKey = String(data.apiKey || '').trim();
+    const shouldClearApiKey = Boolean(data.clearApiKey);
+
+    if (apiKey) {
+      nextConfig.encryptedApiKey = await encryptAiApiKey(apiKey, c.env.AI_CONFIG_SECRET);
+      nextConfig.keyPreview = buildKeyPreview(apiKey);
+    } else if (shouldClearApiKey) {
+      nextConfig.encryptedApiKey = null;
+      nextConfig.keyPreview = '';
+    } else if (existing.encryptedApiKey && existing.provider !== nextConfig.provider) {
+      return c.json({ success: false, error: 'Khi đổi provider AI, vui lòng nhập API key mới hoặc chọn xóa key hiện tại.' }, 400);
+    } else {
+      nextConfig.encryptedApiKey = existing.encryptedApiKey || null;
+      nextConfig.keyPreview = existing.keyPreview || '';
+    }
+
+    nextConfig.updatedAt = new Date().toISOString();
+    await c.env.DB.prepare(
+      "INSERT INTO settings (key, value, updatedAt) VALUES (?, ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updatedAt=excluded.updatedAt"
+    ).bind(AI_CONFIG_SETTING_KEY, serializeAiConfig(nextConfig)).run();
+
+    return c.json({
+      success: true,
+      config: buildPublicAiConfig(nextConfig, {
+        encryptionReady: Boolean(String(c.env.AI_CONFIG_SECRET || '').trim()),
+        hasEnvApiKey: Boolean(String(c.env.OPENAI_API_KEY || '').trim())
+      })
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 400);
+  }
+});
+
+// 19. POST /api/ai-config/test - Validate the active or submitted AI API key (Admin only)
+app.post('/ai-config/test', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được kiểm tra cấu hình AI.' }, 403);
+  }
+
+  try {
+    const data = await c.req.json().catch(() => ({}));
+    const existing = await getStoredAiConfig(c.env.DB);
+    const provider = data.provider ? validateAiConfigInput(data, existing).provider : existing.provider;
+    const submittedKey = String(data.apiKey || '').trim();
+    let apiKey = submittedKey;
+
+    if (!apiKey && existing.encryptedApiKey && existing.provider === provider) {
+      apiKey = await decryptAiApiKey(existing.encryptedApiKey, c.env.AI_CONFIG_SECRET);
+    }
+    if (!apiKey && provider === 'openai') {
+      apiKey = String(c.env.OPENAI_API_KEY || '').trim();
+    }
+    if (!apiKey) {
+      return c.json({ success: false, error: 'Chưa có API key để kiểm tra.' }, 400);
+    }
+
+    await testAiProviderKey(provider, apiKey);
+    return c.json({ success: true, message: 'Kết nối AI hợp lệ.' });
+  } catch (err) {
+    return c.json({ success: false, error: err.message || 'Không kiểm tra được API key.' }, 400);
+  }
+});
+
 // 17. POST /api/member-sync/ai-extract - Extract family tree members from image/PDF sources using OpenAI (Admin only)
 app.post('/member-sync/ai-extract', async (c) => {
   const user = await getAuthenticatedUser(c);
@@ -1350,12 +1709,12 @@ app.post('/member-sync/ai-extract', async (c) => {
     return c.json({ success: false, error: 'Chỉ quản trị viên mới được dùng AI nhận diện gia phả.' }, 403);
   }
 
-  const apiKey = String(c.env.OPENAI_API_KEY || '').trim();
-  if (!apiKey) {
-    return c.json({ success: false, error: 'Chưa cấu hình OPENAI_API_KEY cho hệ thống.' }, 500);
-  }
-
   try {
+    const { config, apiKey } = await resolveAiRuntimeConfig(c);
+    if (!apiKey) {
+      return c.json({ success: false, error: 'Chưa cấu hình API key AI. Vào Quản trị > Cấu hình AI để lưu key trước.' }, 400);
+    }
+
     const form = await c.req.formData();
     const sources = form.getAll('sources').map(normalizeAiSourceFile).filter(Boolean);
 
@@ -1381,8 +1740,7 @@ app.post('/member-sync/ai-extract', async (c) => {
       return c.json({ success: false, error: `File ${oversizedSource.name} vượt quá giới hạn 8MB.` }, 400);
     }
 
-    const model = String(c.env.OPENAI_MODEL || AI_IMPORT_DEFAULT_MODEL).trim() || AI_IMPORT_DEFAULT_MODEL;
-    const payload = await callOpenAiMemberExtraction(apiKey, model, sources);
+    const payload = await callConfiguredAiMemberExtraction(config, apiKey, sources);
     const incomingMembers = normalizeImportedMembers(payload);
     const relationResult = validateMemberRelations(incomingMembers);
     const existingMembers = await fetchFormattedMembers(c.env.DB);
@@ -1390,7 +1748,8 @@ app.post('/member-sync/ai-extract', async (c) => {
 
     return c.json({
       success: true,
-      model,
+      provider: config.provider,
+      model: config.model,
       payload: {
         ...payload,
         memberCount: incomingMembers.length
