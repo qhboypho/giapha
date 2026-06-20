@@ -13,6 +13,7 @@ Gia Phả TC CMS là base website gia phả trực tuyến dùng React, Cloudfla
 - Export/import CMS package gồm `siteConfig`, `members`, `historyEvents`.
 - Export/import media package cho ảnh lịch sử trong R2.
 - AI-assisted import v2: tải ảnh/PDF, gọi OpenAI để tạo JSON, preview rồi nhập vào cây; vẫn hỗ trợ copy prompt/paste JSON thủ công.
+- Setup Wizard trong app cho admin/non-tech cấu hình website, AI và nhập dữ liệu theo từng bước.
 - Script bootstrap để setup nhanh khách mới.
 
 ## Tech Stack
@@ -169,6 +170,7 @@ CMS package v1 là file JSON gồm:
 Trong UI quản trị:
 
 - `Cấu hình website/CMS`: sửa cấu hình site.
+- `Setup Wizard`: luồng cài đặt nhanh từng bước cho admin không cần đọc README.
 - `Cấu hình AI`: chọn OpenAI/Gemini/Claude, lưu API key đã mã hóa, kiểm tra kết nối.
 - `Gói CMS website`: export/import full package.
 - `Gói media R2`: export/import ảnh lịch sử đang lưu trong R2.

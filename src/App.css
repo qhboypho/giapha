@@ -3770,6 +3770,178 @@
   font-weight: 800;
 }
 
+.setup-wizard-card {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.setup-wizard-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.setup-wizard-head h2 {
+  margin: 8px 0 6px;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.setup-wizard-head p,
+.setup-choice span,
+.setup-import-tile span,
+.setup-review-item span {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.setup-wizard-progress {
+  display: grid;
+  gap: 3px;
+  min-width: 140px;
+  padding: 10px 12px;
+  border: 1px solid rgba(215, 169, 77, 0.24);
+  border-radius: var(--radius-md);
+  background: rgba(215, 169, 77, 0.08);
+  text-align: right;
+}
+
+.setup-wizard-progress strong {
+  color: var(--color-gold);
+  font-size: 1.25rem;
+}
+
+.setup-wizard-progress span {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.setup-wizard-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.setup-wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: rgba(44, 29, 19, 0.58);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.setup-wizard-step span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  background: rgba(215, 169, 77, 0.12);
+  color: var(--color-gold);
+  font-weight: 900;
+}
+
+.setup-wizard-step strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.setup-wizard-step.active,
+.setup-wizard-step.done {
+  border-color: rgba(215, 169, 77, 0.48);
+  background: rgba(215, 169, 77, 0.11);
+  color: var(--text-primary);
+}
+
+.setup-wizard-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.setup-choice-grid,
+.setup-import-grid,
+.setup-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.setup-import-grid {
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+}
+
+.setup-choice,
+.setup-import-tile,
+.setup-review-item,
+.setup-import-status {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: rgba(44, 29, 19, 0.68);
+}
+
+.setup-import-tile {
+  position: relative;
+  min-height: 150px;
+  cursor: pointer;
+}
+
+.setup-import-tile input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.setup-import-tile.disabled {
+  opacity: 0.58;
+  pointer-events: none;
+}
+
+.setup-import-tile svg,
+.setup-choice strong,
+.setup-import-tile strong,
+.setup-review-item strong {
+  color: var(--color-gold);
+}
+
+.setup-review-item.ok {
+  border-color: rgba(58, 116, 78, 0.38);
+  background: rgba(58, 116, 78, 0.1);
+}
+
+.setup-import-status {
+  background: rgba(215, 169, 77, 0.08);
+  color: var(--text-secondary);
+  font-weight: 800;
+}
+
+.setup-ai-form {
+  display: grid;
+  gap: 12px;
+}
+
+.setup-wizard-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(215, 169, 77, 0.16);
+}
+
 .ai-source-dropzone {
   position: relative;
   display: flex;
@@ -3858,6 +4030,12 @@
   font-size: 0.84rem;
   font-weight: 800;
   line-height: 1.4;
+}
+
+.site-config-help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .site-config-grid label {
@@ -4746,9 +4924,26 @@
   .account-password-grid,
   .site-config-grid,
   .ai-config-grid,
+  .setup-choice-grid,
+  .setup-import-grid,
+  .setup-review-grid,
   .member-sync-stats,
   .member-sync-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .setup-wizard-head,
+  .setup-wizard-footer {
+    flex-direction: column;
+  }
+
+  .setup-wizard-progress {
+    width: 100%;
+    text-align: left;
+  }
+
+  .setup-wizard-steps {
+    grid-template-columns: 1fr 1fr;
   }
 
   .accounts-hero {

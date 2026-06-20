@@ -24,6 +24,7 @@ import {
   UserRoundCheck,
   UserRound,
   Users,
+  Wand2,
   X
 } from "lucide-react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
@@ -630,6 +631,17 @@ export default function Navbar({
                       className="user-menu-item"
                       type="button"
                       onClick={() => {
+                        onOpenAccounts?.("setup");
+                        setUserMenuOpenView(null);
+                      }}
+                    >
+                      <Wand2 size={17} strokeWidth={2.2} />
+                      Setup Wizard
+                    </button>
+                    <button
+                      className="user-menu-item"
+                      type="button"
+                      onClick={() => {
                         onOpenAccounts?.("manage");
                         setUserMenuOpenView(null);
                       }}
@@ -858,6 +870,20 @@ export default function Navbar({
                   style={{ width: "100%", justifyContent: "center" }}
                 >
                   Thêm thành viên
+                </button>
+              )}
+
+              {isAdmin(currentUser) && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    onOpenAccounts?.("setup");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+                >
+                  <Wand2 size={16} strokeWidth={2.2} />
+                  Setup Wizard
                 </button>
               )}
 

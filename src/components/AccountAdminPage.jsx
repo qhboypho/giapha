@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Download, ExternalLink, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Upload, UserRound } from "lucide-react";
+import { Copy, Download, ExternalLink, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Upload, UserRound, Wand2 } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 import { AI_PROVIDERS, getAiProviderConfig } from "../utils/aiConfigUtils";
+import { SETUP_WIZARD_STEPS, SETUP_WIZARD_STORAGE_KEY, getSetupProgress } from "../utils/setupWizardUtils";
 
 const emptyForm = {
   username: "",
@@ -33,8 +34,11 @@ export default function AccountAdminPage({
   members = [],
   mode = "manage",
   siteConfig = DEFAULT_SITE_CONFIG,
+  isPrivateMode = true,
   onToast,
   onSiteConfigSave,
+  onPrivateModeChange,
+  onOpenSetupWizard,
   onCmsPackageImported,
   onMembersSynced
 }) {
@@ -46,6 +50,8 @@ export default function AccountAdminPage({
   const [aiConfigForm, setAiConfigForm] = useState(defaultAiConfigForm);
   const [aiConfigBusy, setAiConfigBusy] = useState(false);
   const [aiConfigTesting, setAiConfigTesting] = useState(false);
+  const [wizardStep, setWizardStep] = useState("site");
+  const [wizardDone, setWizardDone] = useState(() => localStorage.getItem(SETUP_WIZARD_STORAGE_KEY) === "true");
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(canManage);
@@ -85,6 +91,12 @@ export default function AccountAdminPage({
   );
   const normalizedSiteConfig = useMemo(() => normalizeSiteConfig(siteConfig), [siteConfig]);
   const siteConfigForm = siteConfigDraft || normalizedSiteConfig;
+  const setupProgress = useMemo(
+    () => getSetupProgress({ siteConfig: siteConfigForm, aiConfig, members }),
+    [aiConfig, members, siteConfigForm]
+  );
+  const wizardStepIndex = Math.max(0, SETUP_WIZARD_STEPS.findIndex((step) => step.id === wizardStep));
+  const currentWizardStep = SETUP_WIZARD_STEPS[wizardStepIndex] || SETUP_WIZARD_STEPS[0];
   const selectedScopeLabel = form.editScopeRootId ? scopeLabelById.get(form.editScopeRootId) : "";
   const currentUserIsRootAdmin = currentUser?.username === ROOT_ADMIN_USERNAME && currentUser?.role === "admin";
 
@@ -335,6 +347,28 @@ export default function AccountAdminPage({
     } finally {
       setAiConfigTesting(false);
     }
+  };
+
+  const goToWizardStep = (stepId) => {
+    if (SETUP_WIZARD_STEPS.some((step) => step.id === stepId)) {
+      setWizardStep(stepId);
+    }
+  };
+
+  const goWizardNext = () => {
+    const nextStep = SETUP_WIZARD_STEPS[Math.min(wizardStepIndex + 1, SETUP_WIZARD_STEPS.length - 1)];
+    setWizardStep(nextStep.id);
+  };
+
+  const goWizardBack = () => {
+    const prevStep = SETUP_WIZARD_STEPS[Math.max(wizardStepIndex - 1, 0)];
+    setWizardStep(prevStep.id);
+  };
+
+  const finishSetupWizard = () => {
+    localStorage.setItem(SETUP_WIZARD_STORAGE_KEY, "true");
+    setWizardDone(true);
+    onToast?.("Đã hoàn tất setup cơ bản.");
   };
 
   const downloadJson = (payload, filename) => {
@@ -892,10 +926,12 @@ export default function AccountAdminPage({
             <ShieldCheck size={16} strokeWidth={2.2} />
             Quản trị hệ thống
           </span>
-          <h1>{mode === "password" ? "Đổi mật khẩu" : "Tài khoản"}</h1>
+          <h1>{mode === "password" ? "Đổi mật khẩu" : mode === "setup" ? "Setup Wizard" : "Tài khoản"}</h1>
           <p>
             {mode === "password"
               ? "Cập nhật mật khẩu tài khoản đang đăng nhập trước khi tiếp tục quản trị hệ thống."
+              : mode === "setup"
+                ? "Thiết lập website gia phả theo từng bước: cấu hình, bảo mật, AI và nhập dữ liệu."
               : "Tạo tài khoản xem nội bộ, cấp quyền biên tập và giữ ít nhất một quản trị viên hoạt động."}
           </p>
         </div>
@@ -960,7 +996,269 @@ export default function AccountAdminPage({
         </form>
       )}
 
-      {mode !== "password" && (
+      {mode === "setup" ? (
+        <section className="setup-wizard-card glass">
+          <div className="setup-wizard-head">
+            <div>
+              <span className="accounts-eyebrow">
+                <Wand2 size={16} strokeWidth={2.2} />
+                Quy trình cài đặt nhanh
+              </span>
+              <h2>{currentWizardStep.title}</h2>
+              <p>{currentWizardStep.description}</p>
+            </div>
+            <div className="setup-wizard-progress">
+              <strong>{wizardStepIndex + 1}/{SETUP_WIZARD_STEPS.length}</strong>
+              <span>{wizardDone ? "Đã hoàn tất" : `${setupProgress.completedCount}/${setupProgress.requiredCount} mục bắt buộc`}</span>
+            </div>
+          </div>
+
+          <div className="setup-wizard-steps">
+            {SETUP_WIZARD_STEPS.map((step, index) => (
+              <button
+                className={`setup-wizard-step ${step.id === wizardStep ? "active" : ""} ${index < wizardStepIndex ? "done" : ""}`}
+                type="button"
+                onClick={() => goToWizardStep(step.id)}
+                key={step.id}
+              >
+                <span>{index + 1}</span>
+                <strong>{step.title}</strong>
+              </button>
+            ))}
+          </div>
+
+          {wizardStep === "site" && (
+            <form className="setup-wizard-panel" onSubmit={handleSiteConfigSubmit}>
+              <div className="site-config-grid">
+                <label>
+                  Tên dòng họ
+                  <input className="form-input" value={siteConfigForm.familyName} onChange={(event) => handleSiteConfigChange("familyName", event.target.value)} required />
+                </label>
+                <label>
+                  Tiêu đề website
+                  <input className="form-input" value={siteConfigForm.siteTitle} onChange={(event) => handleSiteConfigChange("siteTitle", event.target.value)} required />
+                </label>
+                <label>
+                  Logo URL
+                  <input className="form-input" value={siteConfigForm.logoUrl} onChange={(event) => handleSiteConfigChange("logoUrl", event.target.value)} placeholder="/tranconglogo.png" />
+                </label>
+                <label>
+                  Hero dòng 1
+                  <input className="form-input" value={siteConfigForm.heroTitle} onChange={(event) => handleSiteConfigChange("heroTitle", event.target.value)} />
+                </label>
+                <label>
+                  Hero dòng 2
+                  <input className="form-input" value={siteConfigForm.heroSubtitle} onChange={(event) => handleSiteConfigChange("heroSubtitle", event.target.value)} />
+                </label>
+                <label>
+                  Tiêu đề cây mini
+                  <input className="form-input" value={siteConfigForm.mainTreeTitle} onChange={(event) => handleSiteConfigChange("mainTreeTitle", event.target.value)} />
+                </label>
+                <label className="site-config-wide">
+                  Mô tả hero
+                  <textarea className="form-input" rows={3} value={siteConfigForm.heroDescription} onChange={(event) => handleSiteConfigChange("heroDescription", event.target.value)} />
+                </label>
+              </div>
+              <div className="account-form-actions">
+                <button className="btn btn-secondary" type="button" onClick={goWizardNext}>
+                  Bỏ qua
+                </button>
+                <button className="btn btn-primary" type="submit" disabled={saving}>
+                  {saving ? "Đang lưu..." : "Lưu cấu hình website"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {wizardStep === "security" && (
+            <div className="setup-wizard-panel">
+              <div className="setup-choice-grid">
+                <div className="setup-choice">
+                  <strong>Chế độ riêng tư</strong>
+                  <span>{isPrivateMode ? "Website yêu cầu đăng nhập để xem dữ liệu." : "Website đang mở công khai cho người truy cập."}</span>
+                  <button className="btn btn-secondary" type="button" onClick={() => onPrivateModeChange?.(!isPrivateMode)}>
+                    {isPrivateMode ? "Chuyển sang công khai" : "Bật riêng tư"}
+                  </button>
+                </div>
+                <div className="setup-choice">
+                  <strong>AI nhận diện gia phả</strong>
+                  <span>{aiConfig?.hasApiKey ? `${aiConfig.providerLabel} đã có API key.` : "Có thể cấu hình sau nếu chưa dùng ảnh/PDF."}</span>
+                  <button className="btn btn-secondary" type="button" onClick={() => goToWizardStep("data")}>
+                    Nhập dữ liệu trước
+                  </button>
+                </div>
+              </div>
+
+              <form className="setup-ai-form" onSubmit={handleAiConfigSubmit}>
+                {aiConfig && !aiConfig.encryptionReady && (
+                  <div className="ai-config-warning">
+                    Cần cấu hình secret <strong>AI_CONFIG_SECRET</strong> trên Cloudflare Pages trước khi lưu API key trong app.
+                  </div>
+                )}
+                <div className="ai-config-grid">
+                  <label>
+                    Provider
+                    <select className="form-input" value={aiConfigForm.provider} onChange={(event) => handleAiProviderChange(event.target.value)}>
+                      {Object.entries(AI_PROVIDERS).map(([value, provider]) => (
+                        <option value={value} key={value}>{provider.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Model
+                    <input
+                      className="form-input"
+                      value={aiConfigForm.model}
+                      onChange={(event) => setAiConfigForm((prev) => ({ ...prev, model: event.target.value }))}
+                      placeholder={getAiProviderConfig(aiConfigForm.provider).defaultModel}
+                      required
+                    />
+                  </label>
+                  <label className="ai-config-wide">
+                    API key mới
+                    <input
+                      className="form-input"
+                      type="password"
+                      value={aiConfigForm.apiKey}
+                      onChange={(event) => setAiConfigForm((prev) => ({ ...prev, apiKey: event.target.value, clearApiKey: false }))}
+                      placeholder={aiConfig?.hasApiKey ? "Để trống nếu không đổi key" : "Nhập API key của provider đã chọn"}
+                      autoComplete="off"
+                    />
+                  </label>
+                </div>
+                <div className="account-form-actions">
+                  <button className="btn btn-secondary" type="button" onClick={testAiConfig} disabled={aiConfigTesting || aiConfigBusy}>
+                    {aiConfigTesting ? "Đang kiểm tra..." : "Kiểm tra kết nối"}
+                  </button>
+                  <button className="btn btn-primary" type="submit" disabled={aiConfigBusy}>
+                    {aiConfigBusy ? "Đang lưu..." : "Lưu cấu hình AI"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {wizardStep === "data" && (
+            <div className="setup-wizard-panel">
+              <div className="setup-import-grid">
+                <label className={`setup-import-tile ${cmsPackageBusy ? "disabled" : ""}`}>
+                  <Upload size={20} strokeWidth={2.2} />
+                  <strong>Nhập gói CMS</strong>
+                  <span>Website config, cây gia phả và lịch sử dòng họ.</span>
+                  <input type="file" accept="application/json,.json" onChange={handleCmsPackageFileChange} disabled={cmsPackageBusy} />
+                </label>
+                <label className={`setup-import-tile ${syncBusy ? "disabled" : ""}`}>
+                  <Upload size={20} strokeWidth={2.2} />
+                  <strong>Nhập JSON cây</strong>
+                  <span>Chỉ thay dữ liệu thành viên cây gia phả.</span>
+                  <input type="file" accept="application/json,.json" onChange={handleSyncFileChange} disabled={syncBusy} />
+                </label>
+                <label className={`setup-import-tile ${mediaPackageBusy ? "disabled" : ""}`}>
+                  <Upload size={20} strokeWidth={2.2} />
+                  <strong>Nhập gói media</strong>
+                  <span>Upload ảnh lịch sử vào R2.</span>
+                  <input type="file" accept="application/json,.json" onChange={handleMediaPackageFileChange} disabled={mediaPackageBusy} />
+                </label>
+                <label className={`setup-import-tile ${aiBusy ? "disabled" : ""}`}>
+                  <ShieldCheck size={20} strokeWidth={2.2} />
+                  <strong>AI đọc ảnh/PDF</strong>
+                  <span>Kéo ảnh/PDF giấy gia phả để tạo JSON.</span>
+                  <input type="file" accept="image/*,application/pdf" multiple onChange={handleAiSourceChange} disabled={aiBusy} />
+                </label>
+              </div>
+
+              {(cmsPackagePreview || syncPreview || mediaPackagePreview || aiSourceFiles.length > 0) && (
+                <div className="setup-import-status">
+                  {cmsPackagePreview && <span>Gói CMS: {cmsPackagePreview.members.totalIncoming} thành viên, {cmsPackagePreview.historyEvents.totalIncoming} mốc lịch sử.</span>}
+                  {syncPreview && <span>JSON cây: {syncPreview.totalIncoming} thành viên.</span>}
+                  {mediaPackagePreview && <span>Media: {mediaPackagePreview.totalIncoming} ảnh.</span>}
+                  {aiSourceFiles.length > 0 && <span>AI: đã chọn {aiSourceFiles.length} file nguồn.</span>}
+                </div>
+              )}
+
+              <div className="account-form-actions">
+                {cmsPackagePreview && cmsPackageErrors.length === 0 && (
+                  <button className="btn btn-primary" type="button" onClick={importCmsPackage} disabled={cmsPackageBusy}>
+                    Nhập gói CMS
+                  </button>
+                )}
+                {syncPreview && syncErrors.length === 0 && (
+                  <button className="btn btn-primary" type="button" onClick={importMembers} disabled={syncBusy}>
+                    Nhập JSON cây
+                  </button>
+                )}
+                {mediaPackagePreview && mediaPackageErrors.length === 0 && (
+                  <button className="btn btn-primary" type="button" onClick={importMediaPackage} disabled={mediaPackageBusy}>
+                    Nhập media
+                  </button>
+                )}
+                {aiSourceFiles.length > 0 && (
+                  <button className="btn btn-primary" type="button" onClick={extractAiMembers} disabled={aiBusy}>
+                    AI tự nhận diện
+                  </button>
+                )}
+              </div>
+
+              {aiPreview && (
+                <div className="setup-import-status">
+                  <span>AI đã tạo preview {aiPreview.totalIncoming} thành viên.</span>
+                  {aiErrors.length === 0 && (
+                    <button className="btn btn-primary" type="button" onClick={importAiMembers} disabled={aiBusy}>
+                      Nhập JSON AI vào cây
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {wizardStep === "review" && (
+            <div className="setup-wizard-panel">
+              <div className="setup-review-grid">
+                <div className={`setup-review-item ${setupProgress.hasSiteName ? "ok" : ""}`}>
+                  <strong>Tên dòng họ</strong>
+                  <span>{setupProgress.hasSiteName ? siteConfigForm.familyName : "Chưa nhập"}</span>
+                </div>
+                <div className={`setup-review-item ${setupProgress.hasSiteTitle ? "ok" : ""}`}>
+                  <strong>Tiêu đề website</strong>
+                  <span>{setupProgress.hasSiteTitle ? siteConfigForm.siteTitle : "Chưa nhập"}</span>
+                </div>
+                <div className={`setup-review-item ${setupProgress.hasMembers ? "ok" : ""}`}>
+                  <strong>Dữ liệu cây</strong>
+                  <span>{setupProgress.hasMembers ? `${members.length} thành viên` : "Chưa có thành viên"}</span>
+                </div>
+                <div className={`setup-review-item ${setupProgress.hasAiConfig ? "ok" : ""}`}>
+                  <strong>Cấu hình AI</strong>
+                  <span>{setupProgress.hasAiConfig ? `${aiConfig?.providerLabel} đã sẵn sàng` : "Có thể cấu hình sau"}</span>
+                </div>
+              </div>
+              <div className="account-form-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => goToWizardStep("site")}>
+                  Xem lại từ đầu
+                </button>
+                <button className="btn btn-primary" type="button" onClick={finishSetupWizard}>
+                  Hoàn tất setup
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="setup-wizard-footer">
+            <button className="btn btn-secondary" type="button" onClick={goWizardBack} disabled={wizardStepIndex === 0}>
+              Quay lại
+            </button>
+            {wizardStep !== "review" ? (
+              <button className="btn btn-primary" type="button" onClick={goWizardNext}>
+                Tiếp tục
+              </button>
+            ) : (
+              <button className="btn btn-secondary" type="button" onClick={() => setWizardDone(false)}>
+                Mở lại wizard
+              </button>
+            )}
+          </div>
+        </section>
+      ) : mode !== "password" && (
         <>
           <form className="site-config-card glass" onSubmit={handleSiteConfigSubmit}>
             <div className="account-form-title">
@@ -972,10 +1270,16 @@ export default function AccountAdminPage({
             </p>
             <div className="site-config-help">
               <span>Setup khách mới bằng CMS package, bootstrap script và Cloudflare Pages.</span>
-              <a className="btn btn-secondary" href="/cms-setup-guide.html" target="_blank" rel="noreferrer">
-                <ExternalLink size={16} strokeWidth={2.2} />
-                Mở hướng dẫn setup
-              </a>
+              <div className="site-config-help-actions">
+                <button className="btn btn-primary" type="button" onClick={onOpenSetupWizard}>
+                  <Wand2 size={16} strokeWidth={2.2} />
+                  Mở Setup Wizard
+                </button>
+                <a className="btn btn-secondary" href="/cms-setup-guide.html" target="_blank" rel="noreferrer">
+                  <ExternalLink size={16} strokeWidth={2.2} />
+                  Mở hướng dẫn setup
+                </a>
+              </div>
             </div>
             <div className="site-config-grid">
               <label>

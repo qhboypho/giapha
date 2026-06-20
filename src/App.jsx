@@ -699,8 +699,11 @@ export default function App() {
                   members={members}
                   mode={accountPageMode}
                   siteConfig={siteConfig}
+                  isPrivateMode={isPrivateMode}
                   onToast={showToast}
                   onSiteConfigSave={handleSiteConfigSave}
+                  onPrivateModeChange={handleTogglePrivateMode}
+                  onOpenSetupWizard={() => setAccountPageMode("setup")}
                   onCmsPackageImported={handleCmsPackageImported}
                   onMembersSynced={() => loadMembers(showSensitiveInfo)}
                 />
