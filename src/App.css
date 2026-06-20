@@ -3726,6 +3726,25 @@
   gap: 12px;
 }
 
+.site-config-help {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(215, 169, 77, 0.24);
+  border-radius: var(--radius-md);
+  background: rgba(215, 169, 77, 0.08);
+}
+
+.site-config-help span {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
 .site-config-grid label {
   min-width: 0;
 }
@@ -4623,6 +4642,16 @@
   .history-admin-hero-actions {
     width: 100%;
     justify-content: stretch;
+  }
+
+  .site-config-help {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .site-config-help .btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .history-preview-btn {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Upload, UserRound } from "lucide-react";
+import { Download, ExternalLink, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Upload, UserRound } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
@@ -586,6 +586,13 @@ export default function AccountAdminPage({
             <p>
               Đổi tên dòng họ, logo và nội dung trang chủ để tái sử dụng base này cho dòng họ khác mà không cần sửa source.
             </p>
+            <div className="site-config-help">
+              <span>Setup khách mới bằng CMS package, bootstrap script và Cloudflare Pages.</span>
+              <a className="btn btn-secondary" href="/cms-setup-guide.html" target="_blank" rel="noreferrer">
+                <ExternalLink size={16} strokeWidth={2.2} />
+                Mở hướng dẫn setup
+              </a>
+            </div>
             <div className="site-config-grid">
               <label>
                 Nhãn nhỏ trên logo

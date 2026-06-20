@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Huong dan setup CMS gia pha</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #120b07;
+        --panel: #21150e;
+        --text: #fff8ef;
+        --muted: #c8b8a7;
+        --gold: #d7a94d;
+        --red: #c83f34;
+        --border: rgba(215, 169, 77, 0.28);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, rgba(139, 13, 11, 0.24), transparent 36%), var(--bg);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.65;
+      }
+
+      main {
+        width: min(980px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0 72px;
+      }
+
+      header {
+        padding: 28px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(33, 21, 14, 0.88);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.2;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        color: var(--gold);
+        font-size: clamp(2rem, 5vw, 3.4rem);
+      }
+
+      h2 {
+        margin-top: 34px;
+        color: var(--gold);
+        font-size: 1.35rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+      }
+
+      a {
+        color: var(--gold);
+      }
+
+      section {
+        margin-top: 18px;
+        padding: 22px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: rgba(33, 21, 14, 0.72);
+      }
+
+      code {
+        color: #ffe4a6;
+      }
+
+      pre {
+        overflow-x: auto;
+        padding: 14px;
+        border: 1px solid rgba(215, 169, 77, 0.2);
+        border-radius: 8px;
+        background: #0b0705;
+      }
+
+      pre code {
+        color: #fff2ca;
+      }
+
+      .note {
+        border-color: rgba(200, 63, 52, 0.42);
+        color: #ffd8d3;
+      }
+
+      .step-list {
+        padding-left: 1.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Huong dan setup CMS gia pha cho khach moi</h1>
+        <p>
+          Quy trinh nay dung khi clone base gia pha, tao tai nguyen Cloudflare moi,
+          import CMS package va deploy website cho mot dong ho/khach moi.
+        </p>
+      </header>
+
+      <section>
+        <h2>1. Chuan bi</h2>
+        <ul class="step-list">
+          <li>Node.js 20+ va npm.</li>
+          <li>Git.</li>
+          <li>Tai khoan Cloudflare co quyen tao Pages, D1, R2.</li>
+          <li>File CMS package <code>.json</code> cua khach.</li>
+        </ul>
+        <pre><code>npx wrangler login</code></pre>
+      </section>
+
+      <section>
+        <h2>2. Clone source</h2>
+        <pre><code>git clone https://github.com/qhboypho/giapha.git giapha-khach-a
+cd giapha-khach-a
+npm install
+git checkout giapha-cms
+git checkout -b customer/khach-a</code></pre>
+      </section>
+
+      <section>
+        <h2>3. Tao Cloudflare resources</h2>
+        <p>Tao rieng cho moi khach:</p>
+        <ul class="step-list">
+          <li>Pages project, vi du <code>giapha-khach-a</code>.</li>
+          <li>D1 database, vi du <code>giapha-khach-a-db</code>.</li>
+          <li>R2 bucket, vi du <code>giapha-khach-a-media</code>.</li>
+        </ul>
+        <pre><code>npx wrangler d1 create giapha-khach-a-db
+npx wrangler r2 bucket create giapha-khach-a-media</code></pre>
+      </section>
+
+      <section>
+        <h2>4. Sua wrangler.jsonc</h2>
+        <p>Cap nhat <code>name</code>, <code>database_name</code>, <code>database_id</code>, <code>bucket_name</code> theo khach.</p>
+        <pre><code>{
+  "name": "giapha-khach-a",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "giapha-khach-a-db",
+      "database_id": "D1_DATABASE_ID_CUA_KHACH",
+      "preview_database_id": "D1_DATABASE_ID_CUA_KHACH"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "giapha-khach-a-media",
+      "preview_bucket_name": "giapha-khach-a-media-preview"
+    }
+  ]
+}</code></pre>
+      </section>
+
+      <section>
+        <h2>5. Kiem tra CMS package</h2>
+        <p>Lenh dry-run chi validate va sinh SQL, chua ghi DB.</p>
+        <pre><code>node scripts/cms-bootstrap.mjs --package=./data/khach-a-package.json</code></pre>
+        <p>Neu chay qua npm tren Windows/PowerShell:</p>
+        <pre><code>npm run cms:bootstrap -- -- --package=./data/khach-a-package.json</code></pre>
+      </section>
+
+      <section>
+        <h2>6. Import local de test</h2>
+        <pre><code>node scripts/cms-bootstrap.mjs --package=./data/khach-a-package.json --migrate --admin-password="mat-khau-admin-local" --yes</code></pre>
+        <p>Lenh nay apply migrations, import config/members/history va tao/update admin.</p>
+      </section>
+
+      <section>
+        <h2>7. Chay app local</h2>
+        <pre><code>npm run build
+npm run dev:cf</code></pre>
+        <p>Mo <code>http://localhost:8788</code>, dang nhap bang <code>admin</code> va mat khau vua set.</p>
+      </section>
+
+      <section>
+        <h2>8. Kiem tra trong UI quan tri</h2>
+        <ul class="step-list">
+          <li>Logo, ten dong ho, hero, footer.</li>
+          <li>Cay gia pha, thanh vien, nguoi tieu bieu.</li>
+          <li>Lich gio va lich su dong ho.</li>
+          <li>Mobile layout.</li>
+          <li>Export backup bang <code>Xuat goi CMS</code>.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>9. Import production</h2>
+        <pre><code>node scripts/cms-bootstrap.mjs --package=./data/khach-a-package.json --remote --migrate --admin-password="mat-khau-admin-prod" --yes</code></pre>
+        <p class="note">Lenh co <code>--remote</code> va <code>--yes</code> se ghi vao D1 tren Cloudflare. Chi chay sau khi local da on.</p>
+      </section>
+
+      <section>
+        <h2>10. Deploy Pages</h2>
+        <pre><code>npm run build
+npx wrangler pages deploy ./dist --project-name giapha-khach-a</code></pre>
+        <p>Sau khi deploy, gan custom domain neu khach co ten mien.</p>
+      </section>
+
+      <section>
+        <h2>11. Ban giao</h2>
+        <ul class="step-list">
+          <li>URL website.</li>
+          <li>Tai khoan admin va mat khau tam thoi.</li>
+          <li>Yeu cau khach doi mat khau sau khi nhan.</li>
+          <li>Huong dan export/import CMS package de backup/restore.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Ghi chu ve anh R2</h2>
+        <p>
+          CMS package v1 chua dong goi binary anh R2. Anh lich su nen upload qua UI sau khi setup,
+          hoac xu ly media package o giai doan sau.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
