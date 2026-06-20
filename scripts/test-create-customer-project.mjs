@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
-import { buildCustomerProjectPlan } from "./create-customer-project.mjs";
+import { buildCustomerProjectPlan, resolveCustomerTargetDir } from "./create-customer-project.mjs";
 
 const plan = buildCustomerProjectPlan({
   familyName: "Trần Xuân",
@@ -37,5 +37,14 @@ assert.equal(defaultPlan.slug, "ho-nguyen");
 assert.equal(defaultPlan.targetDir, resolve("..", "giapha-ho-nguyen"));
 assert.equal(defaultPlan.gitBranch, "customer/ho-nguyen");
 assert.equal(defaultPlan.commitMessage, "chore: initialize Họ Nguyễn customer project");
+
+const relativeTargetPlan = buildCustomerProjectPlan({
+  familyName: "Trần Xuân",
+  slug: "tran-xuan",
+  targetDir: "giapha-tran-xuan"
+});
+assert.equal(relativeTargetPlan.targetDir, resolve("..", "giapha-tran-xuan"));
+assert.equal(resolveCustomerTargetDir("custom-folder", "..", "ignored"), resolve("..", "custom-folder"));
+assert.equal(resolveCustomerTargetDir("", "..", "tran-xuan"), resolve("..", "giapha-tran-xuan"));
 
 console.log("create customer project tests passed");

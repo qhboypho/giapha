@@ -7,7 +7,7 @@ import {
   rmSync,
   statSync
 } from "node:fs";
-import { basename, dirname, resolve } from "node:path";
+import { basename, dirname, isAbsolute, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
@@ -118,6 +118,7 @@ Examples:
 function shouldSkipCopy(path) {
   const name = basename(path);
   if (COPY_EXCLUDE_NAMES.has(name)) return true;
+  if (/^giapha-[a-z0-9-]+$/i.test(name)) return true;
   return COPY_EXCLUDE_SUFFIXES.some((suffix) => name.endsWith(suffix));
 }
 
@@ -205,7 +206,8 @@ async function collectOptions(args) {
 export function buildCustomerProjectPlan(options = {}) {
   const familyName = String(options.familyName || "Khách mới").trim();
   const slug = slugifyCustomer(options.slug || familyName);
-  const targetDir = resolve(options.targetDir || resolve(options.parentDir || DEFAULT_PARENT_DIR, `giapha-${slug}`));
+  const parentDir = options.parentDir || DEFAULT_PARENT_DIR;
+  const targetDir = resolveCustomerTargetDir(options.targetDir, parentDir, slug);
   const provision = buildProvisionPlan({
     familyName,
     slug,
@@ -233,6 +235,17 @@ export function buildCustomerProjectPlan(options = {}) {
     ],
     provision
   };
+}
+
+export function resolveCustomerTargetDir(targetDir, parentDir = DEFAULT_PARENT_DIR, slug = "khach-moi") {
+  const value = String(targetDir || "").trim();
+  if (!value) {
+    return resolve(parentDir, `giapha-${slug}`);
+  }
+  if (isAbsolute(value)) {
+    return resolve(value);
+  }
+  return resolve(parentDir, value);
 }
 
 function initializeGitRepository(plan) {

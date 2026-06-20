@@ -27,6 +27,9 @@ dist-ssr
 .wrangler
 .provision
 
+# Customer projects should live beside this repo; ignore if one is created inside by mistake
+giapha-*/
+
 # Playwright MCP files
 .playwright-mcp
 .playwright-cli
