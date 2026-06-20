@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Upload, UserRound } from "lucide-react";
+import { Copy, Download, ExternalLink, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Upload, UserRound } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
@@ -55,6 +55,13 @@ export default function AccountAdminPage({
   const [mediaPackagePreview, setMediaPackagePreview] = useState(null);
   const [mediaPackageErrors, setMediaPackageErrors] = useState([]);
   const [mediaPackageBusy, setMediaPackageBusy] = useState(false);
+  const [aiSourceFiles, setAiSourceFiles] = useState([]);
+  const [aiJsonText, setAiJsonText] = useState("");
+  const [aiPayload, setAiPayload] = useState(null);
+  const [aiPreview, setAiPreview] = useState(null);
+  const [aiErrors, setAiErrors] = useState([]);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiDragActive, setAiDragActive] = useState(false);
 
   const adminCount = useMemo(
     () => users.filter((user) => user.role === "admin").length,
@@ -306,6 +313,128 @@ export default function AccountAdminPage({
       "Đã tải prompt AI nhập liệu.",
       "Không thể tải prompt AI."
     );
+  };
+
+  const copyAiPrompt = async () => {
+    setAiBusy(true);
+    try {
+      const res = await fetch("/api/member-sync/ai-prompt");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onToast?.(data.error || "Không thể lấy prompt AI.");
+        return;
+      }
+
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      onToast?.("Đã copy prompt AI.");
+    } catch {
+      onToast?.("Không thể copy prompt AI. Hãy tải prompt để dùng thủ công.");
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const addAiSourceFiles = (files) => {
+    const nextFiles = Array.from(files || [])
+      .filter((file) => file.type.startsWith("image/") || file.type === "application/pdf")
+      .map((file) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type || "unknown"
+      }));
+
+    if (!nextFiles.length) {
+      onToast?.("Chỉ hỗ trợ ảnh hoặc PDF làm nguồn cho AI.");
+      return;
+    }
+
+    setAiSourceFiles((prev) => {
+      const existing = new Set(prev.map((file) => `${file.name}-${file.size}`));
+      return [
+        ...prev,
+        ...nextFiles.filter((file) => !existing.has(`${file.name}-${file.size}`))
+      ].slice(0, 12);
+    });
+  };
+
+  const handleAiSourceChange = (event) => {
+    addAiSourceFiles(event.target.files);
+    event.target.value = "";
+  };
+
+  const handleAiDrop = (event) => {
+    event.preventDefault();
+    setAiDragActive(false);
+    addAiSourceFiles(event.dataTransfer.files);
+  };
+
+  const clearAiImport = () => {
+    setAiJsonText("");
+    setAiPayload(null);
+    setAiPreview(null);
+    setAiErrors([]);
+  };
+
+  const previewAiJsonImport = async () => {
+    setAiBusy(true);
+    setAiPreview(null);
+    setAiErrors([]);
+    try {
+      const payload = JSON.parse(aiJsonText);
+      const res = await fetch("/api/member-sync/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAiPayload(payload);
+        setAiPreview(data.preview);
+        setAiErrors(data.errors || []);
+        onToast?.(data.valid ? "JSON AI hợp lệ, có thể nhập vào cây." : "JSON AI còn lỗi quan hệ, cần sửa lại.");
+      } else {
+        setAiPayload(null);
+        onToast?.(data.error || "Không thể kiểm tra JSON AI.");
+      }
+    } catch {
+      setAiPayload(null);
+      setAiPreview(null);
+      setAiErrors([]);
+      onToast?.("JSON AI không đọc được.");
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const importAiMembers = async () => {
+    if (!aiPayload || aiErrors.length > 0) return;
+    if (!window.confirm("Nhập JSON AI sẽ ghi đè toàn bộ cây gia phả hiện tại. Tiếp tục?")) return;
+
+    setAiBusy(true);
+    try {
+      const res = await fetch("/api/member-sync/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiPayload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.backup) {
+          downloadJson(data.backup, data.backupFilename || "backup-before-ai-import.json");
+        }
+        clearAiImport();
+        await onMembersSynced?.();
+        onToast?.("Đã nhập dữ liệu AI vào cây gia phả. Backup hiện tại đã được tải xuống.");
+      } else {
+        setAiErrors(data.errors || []);
+        onToast?.(data.error || "Không thể nhập dữ liệu AI.");
+      }
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi nhập dữ liệu AI.");
+    } finally {
+      setAiBusy(false);
+    }
   };
 
   const exportCmsPackage = async () => {
@@ -909,6 +1038,120 @@ export default function AccountAdminPage({
                 ) : (
                   <button className="btn btn-primary" type="button" onClick={importMediaPackage} disabled={mediaPackageBusy}>
                     Upload gói media vào R2
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="ai-import-card glass">
+            <div className="account-form-title">
+              <ShieldCheck size={18} strokeWidth={2.2} />
+              <h2>Nhập gia phả bằng AI</h2>
+            </div>
+            <p>
+              Dùng ảnh/PDF gia phả làm nguồn cho AI, copy prompt chuẩn rồi paste JSON AI trả về để preview trước khi nhập vào cây.
+            </p>
+            <div
+              className={`ai-source-dropzone ${aiDragActive ? "active" : ""}`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setAiDragActive(true);
+              }}
+              onDragLeave={() => setAiDragActive(false)}
+              onDrop={handleAiDrop}
+            >
+              <Upload size={20} strokeWidth={2.2} />
+              <span>Chọn hoặc kéo ảnh/PDF gia phả vào đây</span>
+              <input type="file" accept="image/*,application/pdf" multiple onChange={handleAiSourceChange} />
+            </div>
+            {aiSourceFiles.length > 0 && (
+              <div className="ai-source-list">
+                {aiSourceFiles.map((file) => (
+                  <span key={`${file.name}-${file.size}`}>
+                    <b>{file.name}</b>
+                    <small>{Math.max(1, Math.round(file.size / 1024))} KB</small>
+                  </span>
+                ))}
+                <button className="btn btn-secondary" type="button" onClick={() => setAiSourceFiles([])}>
+                  Xóa danh sách nguồn
+                </button>
+              </div>
+            )}
+            <div className="member-sync-actions">
+              <button className="btn btn-secondary" type="button" onClick={copyAiPrompt} disabled={aiBusy}>
+                <Copy size={16} strokeWidth={2.2} />
+                Copy prompt AI
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={downloadAiPrompt} disabled={syncBusy}>
+                <Download size={16} strokeWidth={2.2} />
+                Tải prompt AI
+              </button>
+              <button className="btn btn-primary" type="button" onClick={previewAiJsonImport} disabled={aiBusy || !aiJsonText.trim()}>
+                Kiểm tra JSON AI
+              </button>
+              <button className="btn btn-secondary" type="button" onClick={clearAiImport} disabled={aiBusy || (!aiJsonText && !aiPreview)}>
+                Xóa JSON
+              </button>
+            </div>
+            <textarea
+              className="form-input ai-json-input"
+              rows={8}
+              value={aiJsonText}
+              onChange={(event) => setAiJsonText(event.target.value)}
+              placeholder="Paste JSON AI trả về vào đây..."
+              spellCheck={false}
+            />
+
+            {aiPreview && (
+              <div className="member-sync-preview">
+                <div className="member-sync-file">
+                  <strong>Preview JSON AI</strong>
+                  <span>{aiPreview.totalIncoming} thành viên trong JSON</span>
+                </div>
+                <div className="member-sync-stats">
+                  <span><strong>{aiPreview.toCreate}</strong> thêm mới</span>
+                  <span><strong>{aiPreview.toUpdate}</strong> cập nhật</span>
+                  <span><strong>{aiPreview.unchanged}</strong> không đổi</span>
+                  <span><strong>{aiPreview.toDelete}</strong> sẽ xóa khỏi cây</span>
+                </div>
+                <div className="member-sync-detail-grid">
+                  {[
+                    ["Thêm mới", aiPreview.creates || [], "create"],
+                    ["Cập nhật", aiPreview.updates || [], "update"],
+                    ["Xóa khỏi cây", aiPreview.deletes || [], "delete"]
+                  ].map(([title, items, tone]) => (
+                    <div className={`member-sync-detail-section ${tone}`} key={title}>
+                      <strong>{title}</strong>
+                      {items.length > 0 ? (
+                        <div className="member-sync-detail-list">
+                          {items.slice(0, 6).map((item) => (
+                            <span key={`${tone}-${item.id}`}>
+                              <b>{item.name}</b>
+                              <small>
+                                Đời {item.generation}
+                                {item.changedFields?.length ? ` · đổi ${item.changedFields.join(", ")}` : ""}
+                              </small>
+                            </span>
+                          ))}
+                          {items.length > 6 && <em>Còn {items.length - 6} người khác.</em>}
+                        </div>
+                      ) : (
+                        <small>Không có thay đổi.</small>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {aiErrors.length > 0 ? (
+                  <div className="member-sync-errors">
+                    {aiErrors.slice(0, 6).map((error) => (
+                      <span key={error}>{error}</span>
+                    ))}
+                    {aiErrors.length > 6 && <span>Còn {aiErrors.length - 6} lỗi khác.</span>}
+                  </div>
+                ) : (
+                  <button className="btn btn-primary" type="button" onClick={importAiMembers} disabled={aiBusy}>
+                    Nhập JSON AI vào cây gia phả
                   </button>
                 )}
               </div>

@@ -12,6 +12,7 @@ Gia Phả TC CMS là base website gia phả trực tuyến dùng React, Cloudfla
 - Cấu hình website/CMS dynamic: tên dòng họ, logo, hero, footer.
 - Export/import CMS package gồm `siteConfig`, `members`, `historyEvents`.
 - Export/import media package cho ảnh lịch sử trong R2.
+- AI-assisted import v1: copy prompt, paste JSON AI trả về, preview rồi nhập vào cây.
 - Script bootstrap để setup nhanh khách mới.
 
 ## Tech Stack
@@ -162,6 +163,7 @@ Trong UI quản trị:
 - `Cấu hình website/CMS`: sửa cấu hình site.
 - `Gói CMS website`: export/import full package.
 - `Gói media R2`: export/import ảnh lịch sử đang lưu trong R2.
+- `Nhập gia phả bằng AI`: quản lý ảnh/PDF nguồn, copy prompt AI, paste JSON AI trả về và preview trước khi nhập.
 - `Đồng bộ cây gia phả`: export/import riêng members.
 
 Lưu ý: CMS package v1 chứa reference ảnh. Binary ảnh nằm trong media package riêng để dễ backup/restore R2.

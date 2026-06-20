@@ -156,6 +156,7 @@ Trong `Tai khoan / Quan tri`, co cac khoi:
 - `Cau hinh website/CMS`: sua text/logo/cau hinh site.
 - `Goi CMS website`: export/import full package.
 - `Goi media R2`: export/import anh lich su trong R2.
+- `Nhap gia pha bang AI`: copy prompt, paste JSON AI tra ve va preview truoc khi nhap vao cay.
 - `Dong bo cay gia pha`: export/import rieng members.
 
 ## 10. Import Len Production

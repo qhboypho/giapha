@@ -3698,6 +3698,7 @@
 .member-sync-card,
 .cms-package-card,
 .media-package-card,
+.ai-import-card,
 .site-config-card {
   display: grid;
   gap: 14px;
@@ -3709,6 +3710,7 @@
 .member-sync-card p,
 .cms-package-card p,
 .media-package-card p,
+.ai-import-card p,
 .site-config-card p {
   margin: 0;
   color: var(--text-secondary);
@@ -3719,8 +3721,74 @@
 .member-sync-card strong,
 .cms-package-card strong,
 .media-package-card strong,
+.ai-import-card strong,
 .site-config-card strong {
   color: var(--text-primary);
+}
+
+.ai-source-dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 78px;
+  padding: 16px;
+  border: 1px dashed rgba(215, 169, 77, 0.48);
+  border-radius: var(--radius-md);
+  background: rgba(215, 169, 77, 0.06);
+  color: var(--text-primary);
+  font-weight: 900;
+  text-align: center;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.ai-source-dropzone.active {
+  border-color: var(--color-brand-accent);
+  background: rgba(215, 169, 77, 0.14);
+  transform: translateY(-1px);
+}
+
+.ai-source-dropzone input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ai-source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-source-list span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  max-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: rgba(44, 29, 19, 0.72);
+}
+
+.ai-source-list b,
+.ai-source-list small {
+  overflow-wrap: anywhere;
+}
+
+.ai-source-list small {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.ai-json-input {
+  min-height: 180px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  line-height: 1.45;
 }
 
 .site-config-grid {
