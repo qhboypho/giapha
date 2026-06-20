@@ -50,6 +50,11 @@ export default function AccountAdminPage({
   const [cmsPackagePreview, setCmsPackagePreview] = useState(null);
   const [cmsPackageErrors, setCmsPackageErrors] = useState([]);
   const [cmsPackageBusy, setCmsPackageBusy] = useState(false);
+  const [mediaPackageFileName, setMediaPackageFileName] = useState("");
+  const [mediaPackagePayload, setMediaPackagePayload] = useState(null);
+  const [mediaPackagePreview, setMediaPackagePreview] = useState(null);
+  const [mediaPackageErrors, setMediaPackageErrors] = useState([]);
+  const [mediaPackageBusy, setMediaPackageBusy] = useState(false);
 
   const adminCount = useMemo(
     () => users.filter((user) => user.role === "admin").length,
@@ -410,6 +415,109 @@ export default function AccountAdminPage({
     }
   };
 
+  const exportMediaPackage = async () => {
+    setMediaPackageBusy(true);
+    try {
+      const res = await fetch("/api/media-package/export");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onToast?.(data.error || "Không thể xuất gói media.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `giapha-media-package-${new Date().toISOString().slice(0, 10)}.json`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      onToast?.("Đã xuất gói media.");
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi xuất gói media.");
+    } finally {
+      setMediaPackageBusy(false);
+    }
+  };
+
+  const previewMediaPackageImport = async (payload, filename) => {
+    setMediaPackageBusy(true);
+    setMediaPackagePreview(null);
+    setMediaPackageErrors([]);
+    try {
+      const res = await fetch("/api/media-package/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMediaPackagePayload(payload);
+        setMediaPackageFileName(filename);
+        setMediaPackagePreview(data.preview);
+        setMediaPackageErrors(data.errors || []);
+        onToast?.("Gói media hợp lệ, có thể nhập vào R2.");
+      } else {
+        setMediaPackagePayload(null);
+        onToast?.(data.error || "Không thể kiểm tra gói media.");
+      }
+    } catch {
+      setMediaPackagePayload(null);
+      onToast?.("Lỗi kết nối máy chủ khi kiểm tra gói media.");
+    } finally {
+      setMediaPackageBusy(false);
+    }
+  };
+
+  const handleMediaPackageFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      await previewMediaPackageImport(JSON.parse(text), file.name);
+    } catch {
+      setMediaPackagePayload(null);
+      setMediaPackagePreview(null);
+      setMediaPackageErrors([]);
+      onToast?.("File gói media không đọc được.");
+    }
+  };
+
+  const importMediaPackage = async () => {
+    if (!mediaPackagePayload || mediaPackageErrors.length > 0) return;
+    if (!window.confirm("Nhập gói media sẽ upload/ghi đè ảnh cùng key trong R2. Tiếp tục?")) return;
+
+    setMediaPackageBusy(true);
+    try {
+      const res = await fetch("/api/media-package/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mediaPackagePayload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMediaPackagePayload(null);
+        setMediaPackagePreview(null);
+        setMediaPackageErrors([]);
+        setMediaPackageFileName("");
+        onToast?.(`Đã nhập ${data.imported || 0} ảnh vào R2.`);
+      } else {
+        setMediaPackageErrors(data.errors || []);
+        onToast?.(data.error || "Không thể nhập gói media.");
+      }
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi nhập gói media.");
+    } finally {
+      setMediaPackageBusy(false);
+    }
+  };
+
   const previewMemberImport = async (payload, filename) => {
     setSyncBusy(true);
     setSyncPreview(null);
@@ -731,6 +839,76 @@ export default function AccountAdminPage({
                 ) : (
                   <button className="btn btn-primary" type="button" onClick={importCmsPackage} disabled={cmsPackageBusy}>
                     Ghi đè website bằng gói CMS
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="media-package-card glass">
+            <div className="account-form-title">
+              <ShieldCheck size={18} strokeWidth={2.2} />
+              <h2>Gói media R2</h2>
+            </div>
+            <p>
+              Xuất hoặc nhập các ảnh lịch sử đang lưu trong R2. Dùng sau khi import gói CMS để website khách mới không bị thiếu ảnh tư liệu.
+            </p>
+            <div className="member-sync-actions">
+              <button className="btn btn-secondary" type="button" onClick={exportMediaPackage} disabled={mediaPackageBusy}>
+                <Download size={16} strokeWidth={2.2} />
+                Xuất gói media
+              </button>
+              <label className={`btn btn-primary member-sync-import ${mediaPackageBusy ? "disabled" : ""}`}>
+                <Upload size={16} strokeWidth={2.2} />
+                Chọn gói media
+                <input type="file" accept="application/json,.json" onChange={handleMediaPackageFileChange} disabled={mediaPackageBusy} />
+              </label>
+            </div>
+
+            {mediaPackagePreview && (
+              <div className="member-sync-preview">
+                <div className="member-sync-file">
+                  <strong>{mediaPackageFileName}</strong>
+                  <span>{mediaPackagePreview.totalIncoming} ảnh trong gói media</span>
+                </div>
+                <div className="member-sync-stats">
+                  <span><strong>{mediaPackagePreview.toUpload}</strong> ảnh mới</span>
+                  <span><strong>{mediaPackagePreview.toOverwrite}</strong> ảnh ghi đè</span>
+                  <span><strong>{mediaPackagePreview.totalExisting}</strong> ảnh đang tham chiếu</span>
+                </div>
+                <div className="member-sync-detail-grid media-package-detail-grid">
+                  {[
+                    ["Ảnh mới", mediaPackagePreview.uploads || [], "create"],
+                    ["Ảnh ghi đè", mediaPackagePreview.overwrites || [], "update"]
+                  ].map(([title, items, tone]) => (
+                    <div className={`member-sync-detail-section ${tone}`} key={title}>
+                      <strong>{title}</strong>
+                      {items.length > 0 ? (
+                        <div className="member-sync-detail-list">
+                          {items.slice(0, 6).map((item) => (
+                            <span key={`${title}-${item.key}`}>
+                              <b>{item.name || item.key}</b>
+                              <small>{item.contentType} · {Math.round((item.size || 0) / 1024)} KB</small>
+                            </span>
+                          ))}
+                          {items.length > 6 && <em>Còn {items.length - 6} ảnh khác.</em>}
+                        </div>
+                      ) : (
+                        <small>Không có thay đổi.</small>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {mediaPackageErrors.length > 0 ? (
+                  <div className="member-sync-errors">
+                    {mediaPackageErrors.slice(0, 6).map((error) => (
+                      <span key={error}>{error}</span>
+                    ))}
+                    {mediaPackageErrors.length > 6 && <span>Còn {mediaPackageErrors.length - 6} lỗi khác.</span>}
+                  </div>
+                ) : (
+                  <button className="btn btn-primary" type="button" onClick={importMediaPackage} disabled={mediaPackageBusy}>
+                    Upload gói media vào R2
                   </button>
                 )}
               </div>

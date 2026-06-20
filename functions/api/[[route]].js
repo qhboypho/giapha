@@ -19,6 +19,11 @@ import {
   validateMemberRelations
 } from '../../src/utils/memberSyncUtils.js';
 import {
+  buildMediaPackage,
+  buildMediaPackagePreview,
+  normalizeImportedMediaPackage
+} from '../../src/utils/mediaPackageUtils.js';
+import {
   SITE_CONFIG_SETTING_KEY,
   parseSiteConfigValue,
   serializeSiteConfig,
@@ -153,6 +158,10 @@ function buildCmsPackageFilename(prefix = 'giapha-cms-package') {
   return `${prefix}-${new Date().toISOString().slice(0, 10)}.json`;
 }
 
+function buildMediaPackageFilename(prefix = 'giapha-media-package') {
+  return `${prefix}-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
 function jsonDownloadResponse(payload, filename) {
   return new Response(JSON.stringify(payload, null, 2), {
     headers: {
@@ -275,6 +284,37 @@ function normalizeHistoryImage(image = {}) {
     type: String(image?.type || '').trim(),
     size: Number(image?.size || 0)
   };
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8Array(base64 = '') {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function getHistoryMediaItems(historyEvents = []) {
+  const byKey = new Map();
+  historyEvents.forEach((event) => {
+    (event.images || []).forEach((image) => {
+      if (image?.key && !byKey.has(image.key)) {
+        byKey.set(image.key, image);
+      }
+    });
+  });
+  return Array.from(byKey.values());
 }
 
 async function replaceMembersFromSync(db, members = []) {
@@ -1240,7 +1280,119 @@ app.post('/cms-package/import', async (c) => {
   }
 });
 
-// 22. GET /api/history-events - Fetch family history milestones
+// 22. GET /api/media-package/export - Export referenced R2 history media as JSON (Admin only)
+app.get('/media-package/export', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được xuất gói media.' }, 403);
+  }
+  if (!c.env.MEDIA_BUCKET) {
+    return c.json({ success: false, error: 'Chưa cấu hình R2 MEDIA_BUCKET.' }, 500);
+  }
+
+  try {
+    const historyEvents = await fetchHistoryEvents(c.env.DB, true);
+    const mediaRefs = getHistoryMediaItems(historyEvents);
+    const missing = [];
+    const media = [];
+
+    for (const ref of mediaRefs) {
+      const object = await c.env.MEDIA_BUCKET.get(ref.key);
+      if (!object) {
+        missing.push(ref.key);
+        continue;
+      }
+
+      const buffer = await object.arrayBuffer();
+      media.push({
+        key: ref.key,
+        name: ref.name || ref.key.split('/').pop(),
+        contentType: object.httpMetadata?.contentType || ref.type || 'application/octet-stream',
+        size: buffer.byteLength,
+        base64: arrayBufferToBase64(buffer)
+      });
+    }
+
+    const payload = {
+      ...buildMediaPackage(media, {
+        exportedBy: user.username || user.fullName || 'admin'
+      }),
+      missing
+    };
+
+    return jsonDownloadResponse(payload, buildMediaPackageFilename());
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 23. POST /api/media-package/preview - Validate and preview media package import (Admin only)
+app.post('/media-package/preview', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được kiểm tra gói media.' }, 403);
+  }
+
+  try {
+    const incoming = normalizeImportedMediaPackage(await c.req.json());
+    const historyEvents = await fetchHistoryEvents(c.env.DB, true);
+    const existingKeys = getHistoryMediaItems(historyEvents).map((image) => image.key);
+    const preview = buildMediaPackagePreview(existingKeys, incoming.media);
+
+    return c.json({
+      success: true,
+      valid: true,
+      errors: [],
+      preview
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 400);
+  }
+});
+
+// 24. POST /api/media-package/import - Upload media package objects to R2 (Admin only)
+app.post('/media-package/import', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được nhập gói media.' }, 403);
+  }
+  if (!c.env.MEDIA_BUCKET) {
+    return c.json({ success: false, error: 'Chưa cấu hình R2 MEDIA_BUCKET.' }, 500);
+  }
+
+  try {
+    const incoming = normalizeImportedMediaPackage(await c.req.json());
+    const historyEvents = await fetchHistoryEvents(c.env.DB, true);
+    const existingKeys = getHistoryMediaItems(historyEvents).map((image) => image.key);
+    const preview = buildMediaPackagePreview(existingKeys, incoming.media);
+
+    await Promise.all(incoming.media.map((item) => c.env.MEDIA_BUCKET.put(
+      item.key,
+      base64ToUint8Array(item.base64),
+      {
+        httpMetadata: {
+          contentType: item.contentType,
+          cacheControl: 'public, max-age=31536000, immutable'
+        },
+        customMetadata: {
+          originalName: item.name || item.key.split('/').pop() || item.key,
+          importedBy: user.username || 'admin'
+        }
+      }
+    )));
+
+    return c.json({
+      success: true,
+      message: 'Đã nhập gói media.',
+      imported: incoming.media.length,
+      preview
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 25. GET /api/history-events - Fetch family history milestones
 app.get('/history-events', async (c) => {
   try {
     const isPrivateMode = await getPrivateMode(c.env.DB);

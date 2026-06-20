@@ -195,6 +195,7 @@ npm run dev:cf</code></pre>
           <li>Lịch giỗ và lịch sử dòng họ.</li>
           <li>Mobile layout.</li>
           <li>Export backup bằng <code>Xuất gói CMS</code>.</li>
+          <li>Nếu có ảnh lịch sử, export/import thêm <code>Gói media R2</code>.</li>
         </ul>
       </section>
 
@@ -224,8 +225,9 @@ npx wrangler pages deploy ./dist --project-name giapha-khach-a</code></pre>
       <section>
         <h2>Ghi chú về ảnh R2</h2>
         <p>
-          CMS package v1 chưa đóng gói binary ảnh R2. Ảnh lịch sử nên upload qua UI sau khi setup,
-          hoặc xử lý media package ở giai đoạn sau.
+          CMS package v1 chứa reference ảnh, còn binary ảnh được đóng gói riêng trong media package.
+          Quy trình chuẩn là import CMS package trước để tạo dữ liệu, sau đó import gói media R2
+          để upload ảnh vào đúng key mà lịch sử dòng họ đang tham chiếu.
         </p>
       </section>
     </main>

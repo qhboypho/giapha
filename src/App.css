@@ -3697,6 +3697,7 @@
 
 .member-sync-card,
 .cms-package-card,
+.media-package-card,
 .site-config-card {
   display: grid;
   gap: 14px;
@@ -3707,6 +3708,7 @@
 .account-password-card p,
 .member-sync-card p,
 .cms-package-card p,
+.media-package-card p,
 .site-config-card p {
   margin: 0;
   color: var(--text-secondary);
@@ -3716,6 +3718,7 @@
 .account-password-card strong,
 .member-sync-card strong,
 .cms-package-card strong,
+.media-package-card strong,
 .site-config-card strong {
   color: var(--text-primary);
 }
@@ -3850,6 +3853,10 @@
 
 .cms-package-detail-grid {
   grid-template-columns: repeat(3, minmax(150px, 1fr));
+}
+
+.media-package-detail-grid {
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
 }
 
 .member-sync-detail-section {

@@ -11,6 +11,7 @@ Gia Phả TC CMS là base website gia phả trực tuyến dùng React, Cloudfla
 - Chế độ riêng tư.
 - Cấu hình website/CMS dynamic: tên dòng họ, logo, hero, footer.
 - Export/import CMS package gồm `siteConfig`, `members`, `historyEvents`.
+- Export/import media package cho ảnh lịch sử trong R2.
 - Script bootstrap để setup nhanh khách mới.
 
 ## Tech Stack
@@ -146,6 +147,8 @@ Nếu chạy bootstrap qua npm trên Windows/PowerShell, dùng double separator:
 npm run cms:bootstrap -- -- --package=./data/khach-a-package.json --migrate --yes
 ```
 
+10. Nếu có ảnh lịch sử, vào UI quản trị của site gốc để `Xuất gói media`, sau đó vào site khách mới để `Chọn gói media` và upload vào R2.
+
 ## CMS Package
 
 CMS package v1 là file JSON gồm:
@@ -158,15 +161,17 @@ Trong UI quản trị:
 
 - `Cấu hình website/CMS`: sửa cấu hình site.
 - `Gói CMS website`: export/import full package.
+- `Gói media R2`: export/import ảnh lịch sử đang lưu trong R2.
 - `Đồng bộ cây gia phả`: export/import riêng members.
 
-Lưu ý: CMS package v1 chưa đóng gói binary ảnh R2. Ảnh lịch sử cần upload qua UI hoặc xử lý media package riêng ở giai đoạn sau.
+Lưu ý: CMS package v1 chứa reference ảnh. Binary ảnh nằm trong media package riêng để dễ backup/restore R2.
 
 ## Lệnh Kiểm Tra
 
 ```powershell
 node scripts/test-cms-bootstrap.mjs
 node scripts/test-cms-package-utils.mjs
+node scripts/test-media-package-utils.mjs
 node scripts/test-site-config-utils.mjs
 node scripts/test-member-sync-utils.mjs
 npm run lint

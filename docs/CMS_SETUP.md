@@ -83,7 +83,7 @@ Package v1 hien gom:
 - `members`: cay gia pha.
 - `historyEvents`: lich su dong ho.
 
-Luu y: package v1 luu reference anh lich su, chua dong goi binary anh R2.
+Luu y: CMS package v1 luu reference anh lich su. Binary anh R2 nam trong media package rieng.
 
 ## 6. Kiem Tra Package Bang Dry Run
 
@@ -155,6 +155,7 @@ Trong `Tai khoan / Quan tri`, co cac khoi:
 
 - `Cau hinh website/CMS`: sua text/logo/cau hinh site.
 - `Goi CMS website`: export/import full package.
+- `Goi media R2`: export/import anh lich su trong R2.
 - `Dong bo cay gia pha`: export/import rieng members.
 
 ## 10. Import Len Production
@@ -201,14 +202,14 @@ Trong UI quan tri:
 - Bam `Xuat goi CMS` de backup full data text/config.
 - Bam `Chon goi CMS` de preview file backup.
 - Bam import de ghi de neu can restore.
+- Bam `Xuat goi media` de backup anh lich su trong R2.
+- Bam `Chon goi media` de preview/upload anh vao R2.
 
 Script bootstrap cung dung cung dinh dang CMS package nen co the dung cho setup moi hoac restore DB.
 
 ## 14. Ghi Chu Ve Anh R2
 
-CMS package v1 chua dong goi binary anh trong R2. Neu khach moi co anh lich su:
+CMS package v1 khong nhet binary anh truc tiep vao file data chinh. Anh R2 duoc dong goi bang media package rieng de file CMS nhe hon va de import theo thu tu:
 
-- Upload anh qua UI sau khi setup, hoac
-- Import data truoc, upload/map media sau.
-
-Giai doan sau nen them media package de dong goi va import anh R2 tu dong.
+1. Import CMS package de tao config, members, historyEvents.
+2. Import media package de upload anh vao R2 theo dung key ma historyEvents dang tham chieu.
