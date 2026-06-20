@@ -140,10 +140,14 @@ function copyProjectTree(sourceDir, targetDir) {
 
 function runCommand(command, args, cwd) {
   console.log(`$ ${command} ${args.join(" ")}`);
-  const result = spawnSync(command, args, {
+  const executable = process.platform === "win32" && ["npm", "npx"].includes(command)
+    ? `${command}.cmd`
+    : command;
+  const result = spawnSync(executable, args, {
     cwd,
     stdio: "inherit",
-    shell: process.platform === "win32"
+    shell: false,
+    windowsVerbatimArguments: false
   });
   if (result.status !== 0) {
     throw new Error(`Command failed: ${command} ${args.join(" ")}`);
