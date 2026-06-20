@@ -3696,6 +3696,7 @@
 }
 
 .member-sync-card,
+.cms-package-card,
 .site-config-card {
   display: grid;
   gap: 14px;
@@ -3705,6 +3706,7 @@
 
 .account-password-card p,
 .member-sync-card p,
+.cms-package-card p,
 .site-config-card p {
   margin: 0;
   color: var(--text-secondary);
@@ -3713,6 +3715,7 @@
 
 .account-password-card strong,
 .member-sync-card strong,
+.cms-package-card strong,
 .site-config-card strong {
   color: var(--text-primary);
 }
@@ -3797,6 +3800,10 @@
   gap: 8px;
 }
 
+.cms-package-card .member-sync-stats {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
 .member-sync-stats span {
   display: grid;
   gap: 2px;
@@ -3820,6 +3827,10 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(160px, 1fr));
   gap: 10px;
+}
+
+.cms-package-detail-grid {
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
 }
 
 .member-sync-detail-section {

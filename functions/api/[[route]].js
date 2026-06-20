@@ -4,6 +4,12 @@ import { handle } from 'hono/cloudflare-pages';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { verifyPassword, generateSecureToken, hashPassword } from '../helpers/auth';
 import {
+  buildCmsPackage,
+  buildCmsPackagePreview,
+  normalizeImportedCmsPackage,
+  validateCmsPackageRelations
+} from '../../src/utils/cmsPackageUtils.js';
+import {
   buildMemberSyncAiPrompt,
   buildMemberSyncExport,
   buildMemberSyncPreview,
@@ -140,6 +146,10 @@ async function fetchFormattedMembers(db) {
 }
 
 function buildMemberSyncFilename(prefix = 'giapha-members') {
+  return `${prefix}-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
+function buildCmsPackageFilename(prefix = 'giapha-cms-package') {
   return `${prefix}-${new Date().toISOString().slice(0, 10)}.json`;
 }
 
@@ -295,6 +305,30 @@ async function replaceMembersFromSync(db, members = []) {
       JSON.stringify(member.spouseIds || []),
       member.fatherId || null,
       member.motherId || null
+    ))
+  ];
+
+  await db.batch(statements);
+}
+
+async function replaceHistoryEventsFromPackage(db, historyEvents = []) {
+  const statements = [
+    db.prepare("DELETE FROM family_history_events"),
+    ...historyEvents.map((event) => db.prepare(`
+      INSERT INTO family_history_events (
+        id, eventDate, title, description, relatedBranch, relatedMemberIds,
+        imageUrls, isHomepageVisible, sortOrder, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `).bind(
+      event.id,
+      event.eventDate,
+      event.title,
+      event.description || '',
+      event.relatedBranch || '',
+      JSON.stringify(event.relatedMemberIds || []),
+      JSON.stringify(event.images || []),
+      event.isHomepageVisible ? 1 : 0,
+      Number(event.sortOrder || 0)
     ))
   ];
 
@@ -1103,7 +1137,110 @@ app.post('/member-sync/import', async (c) => {
   }
 });
 
-// 19. GET /api/history-events - Fetch family history milestones
+// 19. GET /api/cms-package/export - Export CMS settings, members, and history events (Admin only)
+app.get('/cms-package/export', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được xuất gói CMS.' }, 403);
+  }
+
+  try {
+    const [siteConfig, members, historyEvents] = await Promise.all([
+      getSiteConfig(c.env.DB),
+      fetchFormattedMembers(c.env.DB),
+      fetchHistoryEvents(c.env.DB, true)
+    ]);
+    const payload = buildCmsPackage({
+      siteConfig,
+      members,
+      historyEvents
+    }, {
+      exportedBy: user.username || user.fullName || 'admin'
+    });
+
+    return jsonDownloadResponse(payload, buildCmsPackageFilename());
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 20. POST /api/cms-package/preview - Validate and preview a CMS package import (Admin only)
+app.post('/cms-package/preview', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được kiểm tra gói CMS.' }, 403);
+  }
+
+  try {
+    const incoming = normalizeImportedCmsPackage(await c.req.json());
+    const relationResult = validateCmsPackageRelations(incoming);
+    const existing = {
+      siteConfig: await getSiteConfig(c.env.DB),
+      members: await fetchFormattedMembers(c.env.DB),
+      historyEvents: await fetchHistoryEvents(c.env.DB, true)
+    };
+    const preview = buildCmsPackagePreview(existing, incoming);
+
+    return c.json({
+      success: true,
+      valid: relationResult.valid,
+      errors: relationResult.errors,
+      preview
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 400);
+  }
+});
+
+// 21. POST /api/cms-package/import - Replace CMS settings, members, and history events (Admin only)
+app.post('/cms-package/import', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được nhập gói CMS.' }, 403);
+  }
+
+  try {
+    const incoming = normalizeImportedCmsPackage(await c.req.json());
+    const relationResult = validateCmsPackageRelations(incoming);
+
+    if (!relationResult.valid) {
+      return c.json({
+        success: false,
+        error: 'Gói CMS có quan hệ dữ liệu chưa hợp lệ.',
+        errors: relationResult.errors
+      }, 400);
+    }
+
+    const existing = {
+      siteConfig: await getSiteConfig(c.env.DB),
+      members: await fetchFormattedMembers(c.env.DB),
+      historyEvents: await fetchHistoryEvents(c.env.DB, true)
+    };
+    const backup = buildCmsPackage(existing, {
+      exportedBy: `backup-before-cms-import:${user.username || 'admin'}`,
+      exportedAt: new Date().toISOString()
+    });
+    const preview = buildCmsPackagePreview(existing, incoming);
+
+    await c.env.DB.prepare(
+      "INSERT INTO settings (key, value, updatedAt) VALUES (?, ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updatedAt=excluded.updatedAt"
+    ).bind(SITE_CONFIG_SETTING_KEY, serializeSiteConfig(incoming.siteConfig)).run();
+    await replaceMembersFromSync(c.env.DB, incoming.members.map(normalizeMemberForSync));
+    await replaceHistoryEventsFromPackage(c.env.DB, incoming.historyEvents);
+
+    return c.json({
+      success: true,
+      message: 'Đã nhập gói CMS.',
+      backup,
+      backupFilename: buildCmsPackageFilename('backup-before-cms-import'),
+      preview
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 22. GET /api/history-events - Fetch family history milestones
 app.get('/history-events', async (c) => {
   try {
     const isPrivateMode = await getPrivateMode(c.env.DB);

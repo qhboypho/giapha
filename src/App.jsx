@@ -321,6 +321,28 @@ export default function App() {
     }
   };
 
+  const handleCmsPackageImported = async () => {
+    const settingsRes = await fetch("/api/settings");
+    const settingsData = await settingsRes.json();
+    let nextPrivateMode = isPrivateMode;
+    if (settingsData.success) {
+      nextPrivateMode = settingsData.privateMode;
+      setIsPrivateMode(nextPrivateMode);
+      setSiteConfig(normalizeSiteConfig(settingsData.siteConfig));
+    }
+
+    const isLockedAfterImport = nextPrivateMode && !isAuthenticatedViewer(currentUser);
+    if (isLockedAfterImport) {
+      setMembers([]);
+      setHistoryEvents([]);
+      setSelectedPersonId(null);
+      return;
+    }
+
+    await loadMembers(shouldRevealSensitiveByDefault(currentUser, nextPrivateMode));
+    await loadHistoryEvents();
+  };
+
   const handleSelectPerson = (id) => {
     setSelectedPersonId(id);
   };
@@ -679,6 +701,7 @@ export default function App() {
                   siteConfig={siteConfig}
                   onToast={showToast}
                   onSiteConfigSave={handleSiteConfigSave}
+                  onCmsPackageImported={handleCmsPackageImported}
                   onMembersSynced={() => loadMembers(showSensitiveInfo)}
                 />
               ) : activeView === "history-admin" ? (

@@ -28,6 +28,7 @@ export default function AccountAdminPage({
   siteConfig = DEFAULT_SITE_CONFIG,
   onToast,
   onSiteConfigSave,
+  onCmsPackageImported,
   onMembersSynced
 }) {
   const canManage = isAdmin(currentUser);
@@ -44,6 +45,11 @@ export default function AccountAdminPage({
   const [syncPreview, setSyncPreview] = useState(null);
   const [syncErrors, setSyncErrors] = useState([]);
   const [syncBusy, setSyncBusy] = useState(false);
+  const [cmsPackageFileName, setCmsPackageFileName] = useState("");
+  const [cmsPackagePayload, setCmsPackagePayload] = useState(null);
+  const [cmsPackagePreview, setCmsPackagePreview] = useState(null);
+  const [cmsPackageErrors, setCmsPackageErrors] = useState([]);
+  const [cmsPackageBusy, setCmsPackageBusy] = useState(false);
 
   const adminCount = useMemo(
     () => users.filter((user) => user.role === "admin").length,
@@ -297,6 +303,113 @@ export default function AccountAdminPage({
     );
   };
 
+  const exportCmsPackage = async () => {
+    setCmsPackageBusy(true);
+    try {
+      const res = await fetch("/api/cms-package/export");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onToast?.(data.error || "Không thể xuất gói CMS.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || `giapha-cms-package-${new Date().toISOString().slice(0, 10)}.json`;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      onToast?.("Đã xuất gói CMS.");
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi xuất gói CMS.");
+    } finally {
+      setCmsPackageBusy(false);
+    }
+  };
+
+  const previewCmsPackageImport = async (payload, filename) => {
+    setCmsPackageBusy(true);
+    setCmsPackagePreview(null);
+    setCmsPackageErrors([]);
+    try {
+      const res = await fetch("/api/cms-package/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCmsPackagePayload(payload);
+        setCmsPackageFileName(filename);
+        setCmsPackagePreview(data.preview);
+        setCmsPackageErrors(data.errors || []);
+        onToast?.(data.valid ? "Gói CMS hợp lệ, có thể nhập dữ liệu." : "Gói CMS còn lỗi quan hệ, cần kiểm tra lại.");
+      } else {
+        setCmsPackagePayload(null);
+        onToast?.(data.error || "Không thể kiểm tra gói CMS.");
+      }
+    } catch {
+      setCmsPackagePayload(null);
+      onToast?.("Lỗi kết nối máy chủ khi kiểm tra gói CMS.");
+    } finally {
+      setCmsPackageBusy(false);
+    }
+  };
+
+  const handleCmsPackageFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      await previewCmsPackageImport(JSON.parse(text), file.name);
+    } catch {
+      setCmsPackagePayload(null);
+      setCmsPackagePreview(null);
+      setCmsPackageErrors([]);
+      onToast?.("File gói CMS không đọc được.");
+    }
+  };
+
+  const importCmsPackage = async () => {
+    if (!cmsPackagePayload || cmsPackageErrors.length > 0) return;
+    if (!window.confirm("Nhập gói CMS sẽ ghi đè cấu hình website, cây gia phả và lịch sử dòng họ hiện tại. Tiếp tục?")) return;
+
+    setCmsPackageBusy(true);
+    try {
+      const res = await fetch("/api/cms-package/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cmsPackagePayload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.backup) {
+          downloadJson(data.backup, data.backupFilename || "backup-before-cms-import.json");
+        }
+        setCmsPackagePayload(null);
+        setCmsPackagePreview(null);
+        setCmsPackageErrors([]);
+        setCmsPackageFileName("");
+        await onCmsPackageImported?.();
+        onToast?.("Đã nhập gói CMS. Backup hiện tại đã được tải xuống.");
+      } else {
+        setCmsPackageErrors(data.errors || []);
+        onToast?.(data.error || "Không thể nhập gói CMS.");
+      }
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi nhập gói CMS.");
+    } finally {
+      setCmsPackageBusy(false);
+    }
+  };
+
   const previewMemberImport = async (payload, filename) => {
     setSyncBusy(true);
     setSyncPreview(null);
@@ -533,6 +646,89 @@ export default function AccountAdminPage({
               </button>
             </div>
           </form>
+
+          <section className="cms-package-card glass">
+            <div className="account-form-title">
+              <ShieldCheck size={18} strokeWidth={2.2} />
+              <h2>Gói CMS website</h2>
+            </div>
+            <p>
+              Xuất hoặc nhập trọn gói cấu hình website, cây gia phả và lịch sử dòng họ. Đây là định dạng dùng để setup nhanh cho khách mới.
+            </p>
+            <div className="member-sync-actions">
+              <button className="btn btn-secondary" type="button" onClick={exportCmsPackage} disabled={cmsPackageBusy}>
+                <Download size={16} strokeWidth={2.2} />
+                Xuất gói CMS
+              </button>
+              <label className={`btn btn-primary member-sync-import ${cmsPackageBusy ? "disabled" : ""}`}>
+                <Upload size={16} strokeWidth={2.2} />
+                Chọn gói CMS
+                <input type="file" accept="application/json,.json" onChange={handleCmsPackageFileChange} disabled={cmsPackageBusy} />
+              </label>
+            </div>
+
+            {cmsPackagePreview && (
+              <div className="member-sync-preview">
+                <div className="member-sync-file">
+                  <strong>{cmsPackageFileName}</strong>
+                  <span>
+                    {cmsPackagePreview.totals.incomingMembers} thành viên · {cmsPackagePreview.totals.incomingHistoryEvents} cột mốc lịch sử
+                  </span>
+                </div>
+                <div className="member-sync-stats">
+                  <span><strong>{cmsPackagePreview.siteConfigChanged ? "Có" : "Không"}</strong> đổi cấu hình</span>
+                  <span><strong>{cmsPackagePreview.members.toCreate}</strong> thành viên mới</span>
+                  <span><strong>{cmsPackagePreview.members.toUpdate}</strong> thành viên cập nhật</span>
+                  <span><strong>{cmsPackagePreview.members.toDelete}</strong> thành viên sẽ xóa</span>
+                  <span><strong>{cmsPackagePreview.historyEvents.toCreate}</strong> lịch sử mới</span>
+                  <span><strong>{cmsPackagePreview.historyEvents.toUpdate}</strong> lịch sử cập nhật</span>
+                  <span><strong>{cmsPackagePreview.historyEvents.toDelete}</strong> lịch sử sẽ xóa</span>
+                </div>
+                <div className="member-sync-detail-grid cms-package-detail-grid">
+                  {[
+                    ["Thành viên thêm", cmsPackagePreview.members.creates || [], "create", "name"],
+                    ["Thành viên sửa", cmsPackagePreview.members.updates || [], "update", "name"],
+                    ["Thành viên xóa", cmsPackagePreview.members.deletes || [], "delete", "name"],
+                    ["Lịch sử thêm", cmsPackagePreview.historyEvents.creates || [], "create", "title"],
+                    ["Lịch sử sửa", cmsPackagePreview.historyEvents.updates || [], "update", "title"],
+                    ["Lịch sử xóa", cmsPackagePreview.historyEvents.deletes || [], "delete", "title"]
+                  ].map(([title, items, tone, labelKey]) => (
+                    <div className={`member-sync-detail-section ${tone}`} key={title}>
+                      <strong>{title}</strong>
+                      {items.length > 0 ? (
+                        <div className="member-sync-detail-list">
+                          {items.slice(0, 4).map((item) => (
+                            <span key={`${title}-${item.id}`}>
+                              <b>{item[labelKey]}</b>
+                              <small>
+                                {item.generation ? `Đời ${item.generation}` : item.eventDate}
+                                {item.changedFields?.length ? ` · đổi ${item.changedFields.join(", ")}` : ""}
+                              </small>
+                            </span>
+                          ))}
+                          {items.length > 4 && <em>Còn {items.length - 4} mục khác.</em>}
+                        </div>
+                      ) : (
+                        <small>Không có thay đổi.</small>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {cmsPackageErrors.length > 0 ? (
+                  <div className="member-sync-errors">
+                    {cmsPackageErrors.slice(0, 6).map((error) => (
+                      <span key={error}>{error}</span>
+                    ))}
+                    {cmsPackageErrors.length > 6 && <span>Còn {cmsPackageErrors.length - 6} lỗi khác.</span>}
+                  </div>
+                ) : (
+                  <button className="btn btn-primary" type="button" onClick={importCmsPackage} disabled={cmsPackageBusy}>
+                    Ghi đè website bằng gói CMS
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
 
           <section className="member-sync-card glass">
             <div className="account-form-title">
