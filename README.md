@@ -14,6 +14,7 @@ Gia Phả TC CMS là base website gia phả trực tuyến dùng React, Cloudfla
 - Export/import media package cho ảnh lịch sử trong R2.
 - AI-assisted import v2: tải ảnh/PDF, gọi OpenAI để tạo JSON, preview rồi nhập vào cây; vẫn hỗ trợ copy prompt/paste JSON thủ công.
 - Setup Wizard trong app cho admin/non-tech cấu hình website, AI và nhập dữ liệu theo từng bước.
+- Create Customer script để tạo folder project mới từ base hiện tại.
 - Provision Wizard ngoài app để sinh lệnh/cấu hình Cloudflare cho khách mới.
 - Script bootstrap để setup nhanh khách mới.
 
@@ -108,6 +109,24 @@ npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a
 `AI_CONFIG_SECRET` nên là chuỗi ngẫu nhiên dài ít nhất 24 ký tự. Sau khi có secret này, quản trị viên có thể vào `Cấu hình AI` trong app để chọn OpenAI/Gemini/Claude, nhập API key provider và lưu mã hóa trong D1. Nếu muốn dùng fallback cũ cho OpenAI, vẫn có thể set thêm `OPENAI_API_KEY`.
 
 ## Provision Wizard Cho Khách Mới
+
+Nếu đang đứng ở repo base và muốn tạo hẳn một folder project mới cho khách:
+
+```powershell
+npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan
+```
+
+Lệnh này tạo folder mặc định:
+
+```text
+../giapha-tran-xuan
+```
+
+Sau đó tự chạy Provision Wizard trong folder mới để sinh `.provision/tran-xuan/PROVISION_GUIDE.md`. Mặc định script không chạy `npm install` và không ghi đè `wrangler.jsonc`; nếu muốn làm luôn:
+
+```powershell
+npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --install --write-wrangler
+```
 
 Dùng khi muốn có quy trình dễ hơn cho dev hoặc người không chuyên kỹ thuật. Wizard sẽ hỏi tên khách/project, sinh `wrangler.generated.jsonc`, secret AI, checklist Cloudflare và hướng dẫn deploy trong thư mục `.provision/<slug>/`.
 
@@ -214,6 +233,7 @@ node scripts/test-site-config-utils.mjs
 node scripts/test-member-sync-utils.mjs
 npm run test:ai-config
 node scripts/test-provision-wizard.mjs
+node scripts/test-create-customer-project.mjs
 npm run lint
 npm run build
 ```

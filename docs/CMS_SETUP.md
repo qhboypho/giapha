@@ -14,7 +14,15 @@ Tai lieu nay mo ta quy trinh don gian nhat de clone base, tao website gia pha ch
 npx wrangler login
 ```
 
-## Cach De Nhat: Provision Wizard
+## Cach De Nhat: Create Customer + Provision Wizard
+
+Neu dang dung o repo base va muon tao han mot folder project moi cho khach:
+
+```powershell
+npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan
+```
+
+Lenh nay tao folder `../giapha-tran-xuan`, copy source base va tu chay Provision Wizard trong folder moi.
 
 Neu muon cai dat de hon cho dev hoac nguoi khong chuyen ky thuat, chay wizard ben ngoai app:
 
