@@ -43,6 +43,19 @@ const HISTORY_IMAGE_LIMIT = 8;
 const HISTORY_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 const ALLOWED_HISTORY_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const ACTIVE_VIEWER_WINDOW_SECONDS = 90;
+const AI_IMPORT_MAX_FILES = 8;
+const AI_IMPORT_MAX_FILE_BYTES = 8 * 1024 * 1024;
+const AI_IMPORT_MAX_TOTAL_BYTES = 24 * 1024 * 1024;
+const AI_IMPORT_DEFAULT_MODEL = 'gpt-5.5';
+const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
+const OPENAI_FILES_URL = 'https://api.openai.com/v1/files';
+const ALLOWED_AI_SOURCE_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif'
+]);
 
 function isAuthenticatedViewer(user) {
   return Boolean(user && user.role !== 'guest');
@@ -303,6 +316,225 @@ function base64ToUint8Array(base64 = '') {
     bytes[index] = binary.charCodeAt(index);
   }
   return bytes;
+}
+
+function buildMemberSyncAiSchema() {
+  const optionalString = { type: ['string', 'null'] };
+  const textString = { type: 'string' };
+
+  return {
+    type: 'object',
+    properties: {
+      type: { type: 'string', enum: ['giapha-tc-members'] },
+      version: { type: 'number', enum: [1] },
+      exportedAt: { type: 'string' },
+      exportedBy: { type: 'string' },
+      memberCount: { type: 'number' },
+      members: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: textString,
+            name: textString,
+            gender: { type: 'string', enum: ['nam', 'nu'] },
+            generation: { type: 'number' },
+            isDeceased: { type: 'boolean' },
+            birthDate: optionalString,
+            deathDate: optionalString,
+            birthPlace: textString,
+            restingPlace: textString,
+            occupation: textString,
+            bio: textString,
+            phone: textString,
+            address: textString,
+            avatar: textString,
+            isFeatured: { type: 'boolean' },
+            spouseIds: {
+              type: 'array',
+              items: { type: 'string' }
+            },
+            fatherId: optionalString,
+            motherId: optionalString
+          },
+          required: [
+            'id',
+            'name',
+            'gender',
+            'generation',
+            'isDeceased',
+            'birthDate',
+            'deathDate',
+            'birthPlace',
+            'restingPlace',
+            'occupation',
+            'bio',
+            'phone',
+            'address',
+            'avatar',
+            'isFeatured',
+            'spouseIds',
+            'fatherId',
+            'motherId'
+          ],
+          additionalProperties: false
+        }
+      }
+    },
+    required: ['type', 'version', 'exportedAt', 'exportedBy', 'memberCount', 'members'],
+    additionalProperties: false
+  };
+}
+
+function extractOpenAiResponseText(response = {}) {
+  if (typeof response.output_text === 'string') {
+    return response.output_text;
+  }
+
+  const chunks = [];
+  (response.output || []).forEach((item) => {
+    (item.content || []).forEach((content) => {
+      if (typeof content.text === 'string') {
+        chunks.push(content.text);
+      }
+      if (typeof content.output_text === 'string') {
+        chunks.push(content.output_text);
+      }
+    });
+  });
+  return chunks.join('\n').trim();
+}
+
+function normalizeAiSourceFile(file) {
+  if (typeof File === 'undefined' || !(file instanceof File) || file.size <= 0) {
+    return null;
+  }
+
+  const type = String(file.type || '').toLowerCase();
+  const name = sanitizeFileName(file.name || 'gia-pha-source');
+  return {
+    file,
+    name,
+    type,
+    size: file.size
+  };
+}
+
+async function uploadOpenAiUserFile(apiKey, source) {
+  const form = new FormData();
+  form.append('purpose', 'user_data');
+  form.append('file', source.file, source.name || 'gia-pha-source.pdf');
+
+  const response = await fetch(OPENAI_FILES_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: form
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message || 'Không thể tải PDF nguồn lên OpenAI.');
+  }
+  if (!data.id) {
+    throw new Error('OpenAI không trả về file id cho PDF nguồn.');
+  }
+  return data.id;
+}
+
+async function deleteOpenAiFile(apiKey, fileId) {
+  if (!fileId) return;
+  await fetch(`${OPENAI_FILES_URL}/${encodeURIComponent(fileId)}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${apiKey}`
+    }
+  }).catch(() => null);
+}
+
+async function buildAiSourceContent(apiKey, sources) {
+  const uploadedFileIds = [];
+  const content = [
+    {
+      type: 'input_text',
+      text: [
+        buildMemberSyncAiPrompt(),
+        '',
+        'Hãy đọc toàn bộ nguồn đính kèm trong request này. Nếu có nhiều ảnh/trang, hãy gộp thành một cây gia phả duy nhất.',
+        'Trường memberCount phải đúng bằng số phần tử trong members. exportedAt dùng ISO timestamp hiện tại nếu không biết thời điểm nguồn.'
+      ].join('\n')
+    }
+  ];
+
+  for (const source of sources) {
+    if (source.type === 'application/pdf') {
+      const fileId = await uploadOpenAiUserFile(apiKey, source);
+      uploadedFileIds.push(fileId);
+      content.push({
+        type: 'input_file',
+        file_id: fileId
+      });
+      continue;
+    }
+
+    const buffer = await source.file.arrayBuffer();
+    content.push({
+      type: 'input_image',
+      image_url: `data:${source.type};base64,${arrayBufferToBase64(buffer)}`
+    });
+  }
+
+  return { content, uploadedFileIds };
+}
+
+async function callOpenAiMemberExtraction(apiKey, model, sources) {
+  const { content, uploadedFileIds } = await buildAiSourceContent(apiKey, sources);
+
+  try {
+    const response = await fetch(OPENAI_RESPONSES_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        input: [
+          {
+            role: 'system',
+            content: 'Bạn là chuyên gia nhập liệu gia phả Việt Nam. Chỉ trích xuất dữ liệu chắc chắn từ nguồn, không tự bịa quan hệ hoặc ngày tháng.'
+          },
+          {
+            role: 'user',
+            content
+          }
+        ],
+        text: {
+          format: {
+            type: 'json_schema',
+            name: 'giapha_member_sync_import',
+            schema: buildMemberSyncAiSchema(),
+            strict: true
+          }
+        }
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data?.error?.message || 'OpenAI không xử lý được nguồn gia phả.');
+    }
+
+    const text = extractOpenAiResponseText(data);
+    if (!text) {
+      throw new Error('OpenAI không trả về JSON dữ liệu gia phả.');
+    }
+
+    return JSON.parse(text);
+  } finally {
+    await Promise.all(uploadedFileIds.map((fileId) => deleteOpenAiFile(apiKey, fileId)));
+  }
 }
 
 function getHistoryMediaItems(historyEvents = []) {
@@ -1109,6 +1341,68 @@ app.get('/member-sync/ai-prompt', async (c) => {
   }
 
   return textDownloadResponse(buildMemberSyncAiPrompt(), 'giapha-ai-import-prompt.txt');
+});
+
+// 17. POST /api/member-sync/ai-extract - Extract family tree members from image/PDF sources using OpenAI (Admin only)
+app.post('/member-sync/ai-extract', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Chỉ quản trị viên mới được dùng AI nhận diện gia phả.' }, 403);
+  }
+
+  const apiKey = String(c.env.OPENAI_API_KEY || '').trim();
+  if (!apiKey) {
+    return c.json({ success: false, error: 'Chưa cấu hình OPENAI_API_KEY cho hệ thống.' }, 500);
+  }
+
+  try {
+    const form = await c.req.formData();
+    const sources = form.getAll('sources').map(normalizeAiSourceFile).filter(Boolean);
+
+    if (!sources.length) {
+      return c.json({ success: false, error: 'Vui lòng chọn ít nhất một ảnh hoặc PDF gia phả.' }, 400);
+    }
+    if (sources.length > AI_IMPORT_MAX_FILES) {
+      return c.json({ success: false, error: `Chỉ hỗ trợ tối đa ${AI_IMPORT_MAX_FILES} file mỗi lần nhận diện.` }, 400);
+    }
+
+    const totalBytes = sources.reduce((sum, source) => sum + source.size, 0);
+    if (totalBytes > AI_IMPORT_MAX_TOTAL_BYTES) {
+      return c.json({ success: false, error: 'Tổng dung lượng nguồn AI tối đa là 24MB mỗi lần.' }, 400);
+    }
+
+    const invalidSource = sources.find((source) => !ALLOWED_AI_SOURCE_TYPES.has(source.type));
+    if (invalidSource) {
+      return c.json({ success: false, error: `File ${invalidSource.name} không đúng định dạng ảnh/PDF được hỗ trợ.` }, 400);
+    }
+
+    const oversizedSource = sources.find((source) => source.size > AI_IMPORT_MAX_FILE_BYTES);
+    if (oversizedSource) {
+      return c.json({ success: false, error: `File ${oversizedSource.name} vượt quá giới hạn 8MB.` }, 400);
+    }
+
+    const model = String(c.env.OPENAI_MODEL || AI_IMPORT_DEFAULT_MODEL).trim() || AI_IMPORT_DEFAULT_MODEL;
+    const payload = await callOpenAiMemberExtraction(apiKey, model, sources);
+    const incomingMembers = normalizeImportedMembers(payload);
+    const relationResult = validateMemberRelations(incomingMembers);
+    const existingMembers = await fetchFormattedMembers(c.env.DB);
+    const preview = buildMemberSyncPreview(existingMembers, incomingMembers);
+
+    return c.json({
+      success: true,
+      model,
+      payload: {
+        ...payload,
+        memberCount: incomingMembers.length
+      },
+      valid: relationResult.valid,
+      errors: relationResult.errors,
+      preview
+    });
+  } catch (err) {
+    console.error('AI member extraction error:', err);
+    return c.json({ success: false, error: err.message || 'Không thể nhận diện gia phả bằng AI.' }, 500);
+  }
 });
 
 // 17. POST /api/member-sync/preview - Validate and preview a family tree import file (Admin only)

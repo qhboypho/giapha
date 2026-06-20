@@ -12,7 +12,7 @@ Gia Phả TC CMS là base website gia phả trực tuyến dùng React, Cloudfla
 - Cấu hình website/CMS dynamic: tên dòng họ, logo, hero, footer.
 - Export/import CMS package gồm `siteConfig`, `members`, `historyEvents`.
 - Export/import media package cho ảnh lịch sử trong R2.
-- AI-assisted import v1: copy prompt, paste JSON AI trả về, preview rồi nhập vào cây.
+- AI-assisted import v2: tải ảnh/PDF, gọi OpenAI để tạo JSON, preview rồi nhập vào cây; vẫn hỗ trợ copy prompt/paste JSON thủ công.
 - Script bootstrap để setup nhanh khách mới.
 
 ## Tech Stack
@@ -97,6 +97,14 @@ npx wrangler d1 create giapha-khach-a-db
 npx wrangler r2 bucket create giapha-khach-a-media
 ```
 
+Nếu dùng chức năng AI nhận diện gia phả từ ảnh/PDF, cấu hình secret cho Pages project:
+
+```powershell
+npx wrangler pages secret put OPENAI_API_KEY --project-name giapha-khach-a
+```
+
+Có thể đổi model bằng biến `OPENAI_MODEL`; nếu không đặt, hệ thống dùng model mặc định trong code.
+
 ## Setup Khách Mới Bằng CMS Package
 
 Quy trình đầy đủ nằm trong:
@@ -163,7 +171,7 @@ Trong UI quản trị:
 - `Cấu hình website/CMS`: sửa cấu hình site.
 - `Gói CMS website`: export/import full package.
 - `Gói media R2`: export/import ảnh lịch sử đang lưu trong R2.
-- `Nhập gia phả bằng AI`: quản lý ảnh/PDF nguồn, copy prompt AI, paste JSON AI trả về và preview trước khi nhập.
+- `Nhập gia phả bằng AI`: tải ảnh/PDF để AI tự nhận diện thành JSON, hoặc copy prompt/paste JSON thủ công, rồi preview trước khi nhập.
 - `Đồng bộ cây gia phả`: export/import riêng members.
 
 Lưu ý: CMS package v1 chứa reference ảnh. Binary ảnh nằm trong media package riêng để dễ backup/restore R2.

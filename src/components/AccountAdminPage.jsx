@@ -339,6 +339,7 @@ export default function AccountAdminPage({
     const nextFiles = Array.from(files || [])
       .filter((file) => file.type.startsWith("image/") || file.type === "application/pdf")
       .map((file) => ({
+        file,
         name: file.name,
         size: file.size,
         type: file.type || "unknown"
@@ -376,6 +377,13 @@ export default function AccountAdminPage({
     setAiErrors([]);
   };
 
+  const handleAiJsonTextChange = (event) => {
+    setAiJsonText(event.target.value);
+    setAiPayload(null);
+    setAiPreview(null);
+    setAiErrors([]);
+  };
+
   const previewAiJsonImport = async () => {
     setAiBusy(true);
     setAiPreview(null);
@@ -402,6 +410,55 @@ export default function AccountAdminPage({
       setAiPreview(null);
       setAiErrors([]);
       onToast?.("JSON AI không đọc được.");
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const extractAiMembers = async () => {
+    if (!aiSourceFiles.length) {
+      onToast?.("Vui lòng chọn ảnh/PDF gia phả trước khi dùng AI nhận diện.");
+      return;
+    }
+
+    setAiBusy(true);
+    setAiPreview(null);
+    setAiErrors([]);
+    try {
+      const formData = new FormData();
+      aiSourceFiles.forEach((source) => {
+        if (source.file) {
+          formData.append("sources", source.file, source.name);
+        }
+      });
+
+      const res = await fetch("/api/member-sync/ai-extract", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        const payload = data.payload;
+        setAiPayload(payload);
+        setAiJsonText(JSON.stringify(payload, null, 2));
+        setAiPreview(data.preview);
+        setAiErrors(data.errors || []);
+        onToast?.(
+          data.valid
+            ? `AI đã nhận diện ${data.preview?.totalIncoming || payload?.members?.length || 0} thành viên.`
+            : "AI đã trả JSON nhưng còn lỗi quan hệ, cần kiểm tra lại."
+        );
+      } else {
+        setAiPayload(null);
+        setAiPreview(null);
+        setAiErrors(data.errors || []);
+        onToast?.(data.error || "AI chưa nhận diện được dữ liệu gia phả.");
+      }
+    } catch {
+      setAiPayload(null);
+      setAiPreview(null);
+      setAiErrors([]);
+      onToast?.("Lỗi kết nối máy chủ khi gọi AI nhận diện.");
     } finally {
       setAiBusy(false);
     }
@@ -1050,7 +1107,7 @@ export default function AccountAdminPage({
               <h2>Nhập gia phả bằng AI</h2>
             </div>
             <p>
-              Dùng ảnh/PDF gia phả làm nguồn cho AI, copy prompt chuẩn rồi paste JSON AI trả về để preview trước khi nhập vào cây.
+              Tải ảnh/PDF gia phả để AI nhận diện thành JSON, sau đó preview và xác nhận trước khi nhập vào cây.
             </p>
             <div
               className={`ai-source-dropzone ${aiDragActive ? "active" : ""}`}
@@ -1079,6 +1136,10 @@ export default function AccountAdminPage({
               </div>
             )}
             <div className="member-sync-actions">
+              <button className="btn btn-primary" type="button" onClick={extractAiMembers} disabled={aiBusy || !aiSourceFiles.length}>
+                <ShieldCheck size={16} strokeWidth={2.2} />
+                AI tự nhận diện
+              </button>
               <button className="btn btn-secondary" type="button" onClick={copyAiPrompt} disabled={aiBusy}>
                 <Copy size={16} strokeWidth={2.2} />
                 Copy prompt AI
@@ -1098,8 +1159,8 @@ export default function AccountAdminPage({
               className="form-input ai-json-input"
               rows={8}
               value={aiJsonText}
-              onChange={(event) => setAiJsonText(event.target.value)}
-              placeholder="Paste JSON AI trả về vào đây..."
+              onChange={handleAiJsonTextChange}
+              placeholder="AI sẽ điền JSON vào đây, hoặc paste JSON AI bên ngoài trả về..."
               spellCheck={false}
             />
 
