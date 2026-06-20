@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Huong dan setup CMS gia pha</title>
+    <title>Hướng dẫn setup CMS gia phả</title>
     <style>
       :root {
         color-scheme: dark;
@@ -104,20 +104,20 @@
   <body>
     <main>
       <header>
-        <h1>Huong dan setup CMS gia pha cho khach moi</h1>
+        <h1>Hướng dẫn setup CMS gia phả cho khách mới</h1>
         <p>
-          Quy trinh nay dung khi clone base gia pha, tao tai nguyen Cloudflare moi,
-          import CMS package va deploy website cho mot dong ho/khach moi.
+          Quy trình này dùng khi clone base gia phả, tạo tài nguyên Cloudflare mới,
+          import CMS package và deploy website cho một dòng họ/khách mới.
         </p>
       </header>
 
       <section>
-        <h2>1. Chuan bi</h2>
+        <h2>1. Chuẩn bị</h2>
         <ul class="step-list">
-          <li>Node.js 20+ va npm.</li>
+          <li>Node.js 20+ và npm.</li>
           <li>Git.</li>
-          <li>Tai khoan Cloudflare co quyen tao Pages, D1, R2.</li>
-          <li>File CMS package <code>.json</code> cua khach.</li>
+          <li>Tài khoản Cloudflare có quyền tạo Pages, D1, R2.</li>
+          <li>File CMS package <code>.json</code> của khách.</li>
         </ul>
         <pre><code>npx wrangler login</code></pre>
       </section>
@@ -132,20 +132,20 @@ git checkout -b customer/khach-a</code></pre>
       </section>
 
       <section>
-        <h2>3. Tao Cloudflare resources</h2>
-        <p>Tao rieng cho moi khach:</p>
+        <h2>3. Tạo Cloudflare resources</h2>
+        <p>Tạo riêng cho mỗi khách:</p>
         <ul class="step-list">
-          <li>Pages project, vi du <code>giapha-khach-a</code>.</li>
-          <li>D1 database, vi du <code>giapha-khach-a-db</code>.</li>
-          <li>R2 bucket, vi du <code>giapha-khach-a-media</code>.</li>
+          <li>Pages project, ví dụ <code>giapha-khach-a</code>.</li>
+          <li>D1 database, ví dụ <code>giapha-khach-a-db</code>.</li>
+          <li>R2 bucket, ví dụ <code>giapha-khach-a-media</code>.</li>
         </ul>
         <pre><code>npx wrangler d1 create giapha-khach-a-db
 npx wrangler r2 bucket create giapha-khach-a-media</code></pre>
       </section>
 
       <section>
-        <h2>4. Sua wrangler.jsonc</h2>
-        <p>Cap nhat <code>name</code>, <code>database_name</code>, <code>database_id</code>, <code>bucket_name</code> theo khach.</p>
+        <h2>4. Sửa wrangler.jsonc</h2>
+        <p>Cập nhật <code>name</code>, <code>database_name</code>, <code>database_id</code>, <code>bucket_name</code> theo khách.</p>
         <pre><code>{
   "name": "giapha-khach-a",
   "d1_databases": [
@@ -167,65 +167,65 @@ npx wrangler r2 bucket create giapha-khach-a-media</code></pre>
       </section>
 
       <section>
-        <h2>5. Kiem tra CMS package</h2>
-        <p>Lenh dry-run chi validate va sinh SQL, chua ghi DB.</p>
+        <h2>5. Kiểm tra CMS package</h2>
+        <p>Lệnh dry-run chỉ validate và sinh SQL, chưa ghi DB.</p>
         <pre><code>node scripts/cms-bootstrap.mjs --package=./data/khach-a-package.json</code></pre>
-        <p>Neu chay qua npm tren Windows/PowerShell:</p>
+        <p>Nếu chạy qua npm trên Windows/PowerShell:</p>
         <pre><code>npm run cms:bootstrap -- -- --package=./data/khach-a-package.json</code></pre>
       </section>
 
       <section>
-        <h2>6. Import local de test</h2>
+        <h2>6. Import local để test</h2>
         <pre><code>node scripts/cms-bootstrap.mjs --package=./data/khach-a-package.json --migrate --admin-password="mat-khau-admin-local" --yes</code></pre>
-        <p>Lenh nay apply migrations, import config/members/history va tao/update admin.</p>
+        <p>Lệnh này apply migrations, import config/members/history và tạo/update admin.</p>
       </section>
 
       <section>
-        <h2>7. Chay app local</h2>
+        <h2>7. Chạy app local</h2>
         <pre><code>npm run build
 npm run dev:cf</code></pre>
-        <p>Mo <code>http://localhost:8788</code>, dang nhap bang <code>admin</code> va mat khau vua set.</p>
+        <p>Mở <code>http://localhost:8788</code>, đăng nhập bằng <code>admin</code> và mật khẩu vừa set.</p>
       </section>
 
       <section>
-        <h2>8. Kiem tra trong UI quan tri</h2>
+        <h2>8. Kiểm tra trong UI quản trị</h2>
         <ul class="step-list">
-          <li>Logo, ten dong ho, hero, footer.</li>
-          <li>Cay gia pha, thanh vien, nguoi tieu bieu.</li>
-          <li>Lich gio va lich su dong ho.</li>
+          <li>Logo, tên dòng họ, hero, footer.</li>
+          <li>Cây gia phả, thành viên, người tiêu biểu.</li>
+          <li>Lịch giỗ và lịch sử dòng họ.</li>
           <li>Mobile layout.</li>
-          <li>Export backup bang <code>Xuat goi CMS</code>.</li>
+          <li>Export backup bằng <code>Xuất gói CMS</code>.</li>
         </ul>
       </section>
 
       <section>
         <h2>9. Import production</h2>
         <pre><code>node scripts/cms-bootstrap.mjs --package=./data/khach-a-package.json --remote --migrate --admin-password="mat-khau-admin-prod" --yes</code></pre>
-        <p class="note">Lenh co <code>--remote</code> va <code>--yes</code> se ghi vao D1 tren Cloudflare. Chi chay sau khi local da on.</p>
+        <p class="note">Lệnh có <code>--remote</code> và <code>--yes</code> sẽ ghi vào D1 trên Cloudflare. Chỉ chạy sau khi local đã ổn.</p>
       </section>
 
       <section>
         <h2>10. Deploy Pages</h2>
         <pre><code>npm run build
 npx wrangler pages deploy ./dist --project-name giapha-khach-a</code></pre>
-        <p>Sau khi deploy, gan custom domain neu khach co ten mien.</p>
+        <p>Sau khi deploy, gắn custom domain nếu khách có tên miền.</p>
       </section>
 
       <section>
-        <h2>11. Ban giao</h2>
+        <h2>11. Bàn giao</h2>
         <ul class="step-list">
           <li>URL website.</li>
-          <li>Tai khoan admin va mat khau tam thoi.</li>
-          <li>Yeu cau khach doi mat khau sau khi nhan.</li>
-          <li>Huong dan export/import CMS package de backup/restore.</li>
+          <li>Tài khoản admin và mật khẩu tạm thời.</li>
+          <li>Yêu cầu khách đổi mật khẩu sau khi nhận.</li>
+          <li>Hướng dẫn export/import CMS package để backup/restore.</li>
         </ul>
       </section>
 
       <section>
-        <h2>Ghi chu ve anh R2</h2>
+        <h2>Ghi chú về ảnh R2</h2>
         <p>
-          CMS package v1 chua dong goi binary anh R2. Anh lich su nen upload qua UI sau khi setup,
-          hoac xu ly media package o giai doan sau.
+          CMS package v1 chưa đóng gói binary ảnh R2. Ảnh lịch sử nên upload qua UI sau khi setup,
+          hoặc xử lý media package ở giai đoạn sau.
         </p>
       </section>
     </main>
