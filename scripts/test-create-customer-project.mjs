@@ -7,7 +7,9 @@ const plan = buildCustomerProjectPlan({
   slug: "tran-xuan",
   parentDir: ".tmp-customers",
   writeWrangler: true,
-  install: true
+  install: true,
+  gitInit: true,
+  commitMessage: "chore: init tran xuan"
 });
 
 assert.equal(plan.familyName, "Trần Xuân");
@@ -15,6 +17,9 @@ assert.equal(plan.slug, "tran-xuan");
 assert.equal(plan.targetDir, resolve(".tmp-customers", "giapha-tran-xuan"));
 assert.equal(plan.install, true);
 assert.equal(plan.writeWrangler, true);
+assert.equal(plan.gitInit, true);
+assert.equal(plan.gitBranch, "customer/tran-xuan");
+assert.equal(plan.commitMessage, "chore: init tran xuan");
 assert.deepEqual(plan.provisionArgs, [
   "--yes",
   "--family-name",
@@ -30,5 +35,7 @@ const defaultPlan = buildCustomerProjectPlan({
 });
 assert.equal(defaultPlan.slug, "ho-nguyen");
 assert.equal(defaultPlan.targetDir, resolve("..", "giapha-ho-nguyen"));
+assert.equal(defaultPlan.gitBranch, "customer/ho-nguyen");
+assert.equal(defaultPlan.commitMessage, "chore: initialize Họ Nguyễn customer project");
 
 console.log("create customer project tests passed");

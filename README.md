@@ -128,6 +128,14 @@ Sau đó tự chạy Provision Wizard trong folder mới để sinh `.provision/
 npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --install --write-wrangler
 ```
 
+Nếu muốn tạo luôn git repo local, branch khách và initial commit:
+
+```powershell
+npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --git-init
+```
+
+Script chỉ tạo git local, chưa tạo GitHub remote. Khi muốn push, thêm remote thủ công rồi push branch khách.
+
 Dùng khi muốn có quy trình dễ hơn cho dev hoặc người không chuyên kỹ thuật. Wizard sẽ hỏi tên khách/project, sinh `wrangler.generated.jsonc`, secret AI, checklist Cloudflare và hướng dẫn deploy trong thư mục `.provision/<slug>/`.
 
 Chạy tương tác:

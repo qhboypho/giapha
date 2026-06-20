@@ -24,6 +24,12 @@ npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan
 
 Lenh nay tao folder `../giapha-tran-xuan`, copy source base va tu chay Provision Wizard trong folder moi.
 
+Neu muon tao luon git repo local, branch khach va initial commit:
+
+```powershell
+npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --git-init
+```
+
 Neu muon cai dat de hon cho dev hoac nguoi khong chuyen ky thuat, chay wizard ben ngoai app:
 
 ```powershell

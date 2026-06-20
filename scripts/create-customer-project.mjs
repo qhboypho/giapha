@@ -40,6 +40,8 @@ function parseArgs(argv) {
     parentDir: DEFAULT_PARENT_DIR,
     install: false,
     writeWrangler: false,
+    gitInit: false,
+    commitMessage: "",
     force: false,
     yes: false,
     help: false
@@ -67,6 +69,11 @@ function parseArgs(argv) {
       args.install = true;
     } else if (arg === "--write-wrangler") {
       args.writeWrangler = true;
+    } else if (arg === "--git-init") {
+      args.gitInit = true;
+    } else if (flagName === "--commit-message") {
+      args.commitMessage = value;
+      if (!inlineValue) i += 1;
     } else if (arg === "--force") {
       args.force = true;
     } else if (arg === "--yes") {
@@ -95,6 +102,8 @@ Options:
   --parent-dir <path>    Folder cha khi không truyền target-dir. Default: ..
   --install              Chạy npm install trong project mới
   --write-wrangler       Ghi luôn wrangler.jsonc trong project mới
+  --git-init             Tạo git repo local, branch customer/<slug>, initial commit
+  --commit-message <msg> Commit message khi dùng --git-init
   --force                Xóa target-dir nếu đã tồn tại
   --yes                  Không hỏi tương tác, dùng tham số/default
   --help                 Hiện hướng dẫn
@@ -102,7 +111,7 @@ Options:
 Examples:
   npm run create-customer
   npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan
-  npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --install --write-wrangler
+  npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --git-init --install --write-wrangler
 `);
 }
 
@@ -185,6 +194,7 @@ async function collectOptions(args) {
       targetDir: await ask(rl, "Folder project mới", args.targetDir || defaultTarget),
       install: args.install || await askYesNo(rl, "Chạy npm install trong project mới không", false),
       writeWrangler: args.writeWrangler || await askYesNo(rl, "Ghi luôn wrangler.jsonc theo khách mới không", false),
+      gitInit: args.gitInit || await askYesNo(rl, "Tạo git repo local và commit initial không", true),
       force: args.force || await askYesNo(rl, "Nếu folder tồn tại thì xóa tạo lại không", false)
     };
   } finally {
@@ -209,6 +219,9 @@ export function buildCustomerProjectPlan(options = {}) {
     targetDir,
     install: Boolean(options.install),
     writeWrangler: Boolean(options.writeWrangler),
+    gitInit: Boolean(options.gitInit),
+    gitBranch: `customer/${slug}`,
+    commitMessage: String(options.commitMessage || `chore: initialize ${familyName} customer project`).trim(),
     force: Boolean(options.force),
     provisionArgs: [
       "--yes",
@@ -220,6 +233,13 @@ export function buildCustomerProjectPlan(options = {}) {
     ],
     provision
   };
+}
+
+function initializeGitRepository(plan) {
+  runCommand("git", ["init"], plan.targetDir);
+  runCommand("git", ["checkout", "-b", plan.gitBranch], plan.targetDir);
+  runCommand("git", ["add", "."], plan.targetDir);
+  runCommand("git", ["commit", "-m", plan.commitMessage], plan.targetDir);
 }
 
 async function main() {
@@ -241,9 +261,16 @@ async function main() {
     runCommand("npm", ["install"], plan.targetDir);
   }
 
+  if (plan.gitInit) {
+    initializeGitRepository(plan);
+  }
+
   console.log("\nĐã tạo project khách mới:");
   console.log(`- Folder: ${plan.targetDir}`);
   console.log(`- Slug: ${plan.slug}`);
+  if (plan.gitInit) {
+    console.log(`- Git branch: ${plan.gitBranch}`);
+  }
   console.log(`- Provision guide: ${resolve(plan.targetDir, ".provision", plan.slug, "PROVISION_GUIDE.md")}`);
   console.log("\nBước tiếp theo:");
   console.log(`cd ${plan.targetDir}`);
