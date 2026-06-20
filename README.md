@@ -1,34 +1,34 @@
-# Gia Pha TC CMS
+# Gia Phả TC CMS
 
-Gia Pha TC CMS la base website gia pha truc tuyen dung React, Cloudflare Pages, Hono, D1 va R2. Project co the dung cho mot dong ho rieng hoac clone ra nhieu site khach khac nhau bang CMS package.
+Gia Phả TC CMS là base website gia phả trực tuyến dùng React, Cloudflare Pages, Hono, D1 và R2. Project có thể dùng cho một dòng họ riêng hoặc clone ra nhiều site khách khác nhau bằng CMS package.
 
-## Tinh Nang Chinh
+## Tính Năng Chính
 
-- Cay gia pha truc quan.
-- Danh sach thanh vien, ho so chi tiet, them/sua/xoa theo quyen.
-- Ngay gio, nguoi tieu bieu, lich su dong ho.
-- Tai khoan admin/editor/member.
-- Che do rieng tu.
-- Cau hinh website/CMS dynamic: ten dong ho, logo, hero, footer.
-- Export/import CMS package gom `siteConfig`, `members`, `historyEvents`.
-- Script bootstrap de setup nhanh khach moi.
+- Cây gia phả trực quan.
+- Danh sách thành viên, hồ sơ chi tiết, thêm/sửa/xóa theo quyền.
+- Ngày giỗ, người tiêu biểu, lịch sử dòng họ.
+- Tài khoản admin/editor/member.
+- Chế độ riêng tư.
+- Cấu hình website/CMS dynamic: tên dòng họ, logo, hero, footer.
+- Export/import CMS package gồm `siteConfig`, `members`, `historyEvents`.
+- Script bootstrap để setup nhanh khách mới.
 
 ## Tech Stack
 
 - React + Vite.
-- Hono tren Cloudflare Pages Functions.
+- Hono trên Cloudflare Pages Functions.
 - Cloudflare D1 cho database.
-- Cloudflare R2 cho anh lich su.
+- Cloudflare R2 cho ảnh lịch sử.
 - Wrangler CLI.
 
-## Yeu Cau
+## Yêu Cầu
 
 - Node.js 20+.
 - npm.
 - Git.
-- Tai khoan Cloudflare neu muon dung D1/R2/Pages.
+- Tài khoản Cloudflare nếu muốn dùng D1/R2/Pages.
 
-## Cai Dat Local
+## Cài Đặt Local
 
 ```powershell
 git clone https://github.com/qhboypho/giapha.git giapha-tc
@@ -36,20 +36,20 @@ cd giapha-tc
 npm install
 ```
 
-Chay frontend Vite:
+Chạy frontend Vite:
 
 ```powershell
 npm run dev
 ```
 
-Chay Cloudflare Pages local, co D1/R2 binding:
+Chạy Cloudflare Pages local, có D1/R2 binding:
 
 ```powershell
 npm run build
 npm run dev:cf
 ```
 
-Mac dinh app Pages local chay tai:
+Mặc định app Pages local chạy tại:
 
 ```text
 http://localhost:8788
@@ -63,31 +63,31 @@ Apply migrations:
 npm run db:migrate:local
 ```
 
-Seed data mau:
+Seed data mẫu:
 
 ```powershell
 npm run db:seed
 ```
 
-Tai khoan seed mac dinh:
+Tài khoản seed mặc định:
 
 - `admin / admin123`
 - `editor / editor123`
 - `member / member123`
 
-Nen doi mat khau admin sau khi setup that.
+Nên đổi mật khẩu admin sau khi setup thật.
 
-## Cau Hinh Cloudflare
+## Cấu Hình Cloudflare
 
-Sua `wrangler.jsonc` theo tai nguyen cua moi site:
+Sửa `wrangler.jsonc` theo tài nguyên của mỗi site:
 
-- `name`: ten project.
+- `name`: tên project.
 - `d1_databases[0].database_name`.
 - `d1_databases[0].database_id`.
 - `r2_buckets[0].bucket_name`.
 - `r2_buckets[0].preview_bucket_name`.
 
-Tao D1/R2 bang Wrangler:
+Tạo D1/R2 bằng Wrangler:
 
 ```powershell
 npx wrangler login
@@ -95,19 +95,19 @@ npx wrangler d1 create giapha-khach-a-db
 npx wrangler r2 bucket create giapha-khach-a-media
 ```
 
-## Setup Khach Moi Bang CMS Package
+## Setup Khách Mới Bằng CMS Package
 
-Quy trinh day du nam trong:
+Quy trình đầy đủ nằm trong:
 
 - [docs/CMS_SETUP.md](docs/CMS_SETUP.md)
 - Trang trong app: `/cms-setup-guide.html`
 
-Tom tat nhanh:
+Tóm tắt nhanh:
 
 1. Clone source.
-2. Tao Cloudflare Pages/D1/R2 rieng cho khach.
-3. Sua `wrangler.jsonc`.
-4. Dat file CMS package vao `data/khach-a-package.json`.
+2. Tạo Cloudflare Pages/D1/R2 riêng cho khách.
+3. Sửa `wrangler.jsonc`.
+4. Đặt file CMS package vào `data/khach-a-package.json`.
 5. Dry-run package:
 
 ```powershell
@@ -127,7 +127,7 @@ npm run build
 npm run dev:cf
 ```
 
-8. Import remote khi da test xong:
+8. Import remote khi đã test xong:
 
 ```powershell
 node scripts/cms-bootstrap.mjs --package=./data/khach-a-package.json --remote --migrate --admin-password="mat-khau-admin-prod" --yes
@@ -140,7 +140,7 @@ npm run build
 npx wrangler pages deploy ./dist --project-name giapha-khach-a
 ```
 
-Neu chay bootstrap qua npm tren Windows/PowerShell, dung double separator:
+Nếu chạy bootstrap qua npm trên Windows/PowerShell, dùng double separator:
 
 ```powershell
 npm run cms:bootstrap -- -- --package=./data/khach-a-package.json --migrate --yes
@@ -148,21 +148,21 @@ npm run cms:bootstrap -- -- --package=./data/khach-a-package.json --migrate --ye
 
 ## CMS Package
 
-CMS package v1 la file JSON gom:
+CMS package v1 là file JSON gồm:
 
-- `siteConfig`: cau hinh ten dong ho, logo, hero, footer.
-- `members`: thanh vien cay gia pha.
-- `historyEvents`: cot moc lich su dong ho.
+- `siteConfig`: cấu hình tên dòng họ, logo, hero, footer.
+- `members`: thành viên cây gia phả.
+- `historyEvents`: cột mốc lịch sử dòng họ.
 
-Trong UI quan tri:
+Trong UI quản trị:
 
-- `Cau hinh website/CMS`: sua cau hinh site.
-- `Goi CMS website`: export/import full package.
-- `Dong bo cay gia pha`: export/import rieng members.
+- `Cấu hình website/CMS`: sửa cấu hình site.
+- `Gói CMS website`: export/import full package.
+- `Đồng bộ cây gia phả`: export/import riêng members.
 
-Luu y: CMS package v1 chua dong goi binary anh R2. Anh lich su can upload qua UI hoac xu ly media package rieng o giai doan sau.
+Lưu ý: CMS package v1 chưa đóng gói binary ảnh R2. Ảnh lịch sử cần upload qua UI hoặc xử lý media package riêng ở giai đoạn sau.
 
-## Lenh Kiem Tra
+## Lệnh Kiểm Tra
 
 ```powershell
 node scripts/test-cms-bootstrap.mjs
@@ -181,21 +181,21 @@ Build:
 npm run build
 ```
 
-Deploy len Cloudflare Pages:
+Deploy lên Cloudflare Pages:
 
 ```powershell
 npx wrangler pages deploy ./dist --project-name <pages-project-name>
 ```
 
-Apply migrations remote neu can:
+Apply migrations remote nếu cần:
 
 ```powershell
 npx wrangler d1 migrations apply <database-name> --remote
 ```
 
-## Bao Mat
+## Bảo Mật
 
-- Khong commit mat khau, token, secret vao repo.
-- Khong commit file package khach neu chua duoc phep.
-- Doi mat khau admin sau khi ban giao.
-- Backup CMS package truoc khi import ghi de.
+- Không commit mật khẩu, token, secret vào repo.
+- Không commit file package khách nếu chưa được phép.
+- Đổi mật khẩu admin sau khi bàn giao.
+- Backup CMS package trước khi import ghi đè.
