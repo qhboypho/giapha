@@ -141,11 +141,8 @@ npx wrangler r2 bucket create giapha-tran-xuan-media-preview</code></pre>
         <pre><code>npx wrangler d1 list
 npx wrangler d1 migrations apply giapha-tran-xuan-db --local
 npx wrangler d1 migrations apply giapha-tran-xuan-db --remote</code></pre>
-        <p>Sau khi <code>wrangler.jsonc</code> đã đúng, commit và push lên repo GitHub riêng nếu có:</p>
-        <pre><code>git add wrangler.jsonc .provision\tran-xuan\PROVISION_GUIDE.md .provision\tran-xuan\provision-summary.json
-git commit -m "chore: configure Tran Xuan Cloudflare resources"
-git remote add origin https://github.com/qhboypho/giapha-tran-xuan.git
-git push -u origin customer/tran-xuan</code></pre>
+        <p>Sau khi <code>wrangler.jsonc</code> đã đúng, dùng script để commit và push lên repo GitHub riêng nếu có:</p>
+        <pre><code>npm run git:publish-customer -- --remote-url=https://github.com/qhboypho/giapha-tran-xuan.git --branch=customer/tran-xuan --user-name="Dinh Tung" --user-email="you@example.com" --commit-message="chore: configure Tran Xuan Cloudflare resources"</code></pre>
         <p>Deploy lần đầu, set secret AI, deploy lại:</p>
         <pre><code>npm run build
 npx wrangler pages deploy ./dist --project-name giapha-tran-xuan

@@ -68,16 +68,19 @@ Copy `database_id` cua `giapha-tran-xuan-db` vao `wrangler.jsonc` o ca `database
 npx wrangler d1 list
 ```
 
-Sau khi `wrangler.jsonc` da dung, commit lai cau hinh local:
+Sau khi `wrangler.jsonc` da dung va da tao repo GitHub rieng, vi du `https://github.com/qhboypho/giapha-tran-xuan.git`, dung script de commit/push. Neu may chua cau hinh ten/email Git, truyen luon `--user-name` va `--user-email`:
 
 ```powershell
-git add wrangler.jsonc .provision\tran-xuan\PROVISION_GUIDE.md .provision\tran-xuan\provision-summary.json
-git commit -m "chore: configure Tran Xuan Cloudflare resources"
+npm run git:publish-customer -- --remote-url=https://github.com/qhboypho/giapha-tran-xuan.git --branch=customer/tran-xuan --user-name="Dinh Tung" --user-email="you@example.com" --commit-message="chore: configure Tran Xuan Cloudflare resources"
 ```
 
-Neu da tao repo GitHub rieng, vi du `https://github.com/qhboypho/giapha-tran-xuan.git`, day code len repo do:
+Neu muon cau hinh Git thu cong:
 
 ```powershell
+git config --local user.name "Dinh Tung"
+git config --local user.email "you@example.com"
+git add wrangler.jsonc .provision\tran-xuan\PROVISION_GUIDE.md .provision\tran-xuan\provision-summary.json
+git commit -m "chore: configure Tran Xuan Cloudflare resources"
 git remote add origin https://github.com/qhboypho/giapha-tran-xuan.git
 git push -u origin customer/tran-xuan
 ```

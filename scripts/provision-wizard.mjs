@@ -286,16 +286,21 @@ Kiểm tra kỹ không để thừa dấu cách trong \`database_id\` và \`prev
 
 ## 4. Commit và push GitHub nếu có repo riêng
 
-Sau khi \`wrangler.jsonc\` đã đúng, commit lại cấu hình local:
+Nếu máy chưa cấu hình tên/email Git, script bên dưới có thể set ở local repo khách bằng \`--user-name\` và \`--user-email\`.
+
+Sau khi \`wrangler.jsonc\` đã đúng và đã tạo repo GitHub riêng, ví dụ \`https://github.com/qhboypho/${plan.projectName}.git\`, chạy:
 
 \`\`\`powershell
-git add wrangler.jsonc .provision\\${plan.slug}\\PROVISION_GUIDE.md .provision\\${plan.slug}\\provision-summary.json
-git commit -m "chore: configure ${plan.familyName} Cloudflare resources"
+npm run git:publish-customer -- --remote-url=https://github.com/qhboypho/${plan.projectName}.git --branch=customer/${plan.slug} --user-name="Dinh Tung" --user-email="you@example.com" --commit-message="chore: configure ${plan.familyName} Cloudflare resources"
 \`\`\`
 
-Nếu đã tạo repo GitHub riêng, ví dụ \`https://github.com/qhboypho/${plan.projectName}.git\`, đẩy code lên repo đó:
+Nếu muốn cấu hình Git thủ công:
 
 \`\`\`powershell
+git config --local user.name "Dinh Tung"
+git config --local user.email "you@example.com"
+git add wrangler.jsonc .provision\\${plan.slug}\\PROVISION_GUIDE.md .provision\\${plan.slug}\\provision-summary.json
+git commit -m "chore: configure ${plan.familyName} Cloudflare resources"
 git remote add origin https://github.com/qhboypho/${plan.projectName}.git
 git push -u origin customer/${plan.slug}
 \`\`\`

@@ -166,16 +166,19 @@ Copy `database_id` của `giapha-tran-xuan-db` vào `wrangler.jsonc` ở cả `d
 npx wrangler d1 list
 ```
 
-Sau khi `wrangler.jsonc` đã đúng, commit lại cấu hình local:
+Sau khi `wrangler.jsonc` đã đúng và đã tạo repo GitHub riêng, ví dụ `https://github.com/qhboypho/giapha-tran-xuan.git`, dùng script để commit/push. Nếu máy chưa cấu hình tên/email Git, truyền luôn `--user-name` và `--user-email`:
 
 ```powershell
-git add wrangler.jsonc .provision\tran-xuan\PROVISION_GUIDE.md .provision\tran-xuan\provision-summary.json
-git commit -m "chore: configure Tran Xuan Cloudflare resources"
+npm run git:publish-customer -- --remote-url=https://github.com/qhboypho/giapha-tran-xuan.git --branch=customer/tran-xuan --user-name="Dinh Tung" --user-email="you@example.com" --commit-message="chore: configure Tran Xuan Cloudflare resources"
 ```
 
-Nếu đã tạo repo GitHub riêng, ví dụ `https://github.com/qhboypho/giapha-tran-xuan.git`, đẩy code lên repo đó:
+Nếu muốn cấu hình Git thủ công:
 
 ```powershell
+git config --local user.name "Dinh Tung"
+git config --local user.email "you@example.com"
+git add wrangler.jsonc .provision\tran-xuan\PROVISION_GUIDE.md .provision\tran-xuan\provision-summary.json
+git commit -m "chore: configure Tran Xuan Cloudflare resources"
 git remote add origin https://github.com/qhboypho/giapha-tran-xuan.git
 git push -u origin customer/tran-xuan
 ```
@@ -330,6 +333,7 @@ node scripts/test-member-sync-utils.mjs
 npm run test:ai-config
 node scripts/test-provision-wizard.mjs
 node scripts/test-create-customer-project.mjs
+node scripts/test-customer-git-publish.mjs
 npm run lint
 npm run build
 ```

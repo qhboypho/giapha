@@ -14,6 +14,7 @@
     "cms:bootstrap": "node scripts/cms-bootstrap.mjs",
     "provision:wizard": "node scripts/provision-wizard.mjs",
     "create-customer": "node scripts/create-customer-project.mjs",
+    "git:publish-customer": "node scripts/customer-git-publish.mjs",
     "test:ai-config": "node scripts/test-ai-config-utils.mjs",
     "dev:cf": "wrangler pages dev dist --d1 DB=8733270f-4775-4736-835a-c46f14119798 --r2 MEDIA_BUCKET=giapha-tc-media-preview --port 8788",
     "dev:cf:proxy": "wrangler pages dev --proxy 5174 --d1 DB=8733270f-4775-4736-835a-c46f14119798 --r2 MEDIA_BUCKET=giapha-tc-media-preview --port 8788"
