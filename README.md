@@ -166,6 +166,27 @@ Copy `database_id` của `giapha-tran-xuan-db` vào `wrangler.jsonc` ở cả `d
 npx wrangler d1 list
 ```
 
+Sau khi `wrangler.jsonc` đã đúng, commit lại cấu hình local:
+
+```powershell
+git add wrangler.jsonc .provision\tran-xuan\PROVISION_GUIDE.md .provision\tran-xuan\provision-summary.json
+git commit -m "chore: configure Tran Xuan Cloudflare resources"
+```
+
+Nếu đã tạo repo GitHub riêng, ví dụ `https://github.com/qhboypho/giapha-tran-xuan.git`, đẩy code lên repo đó:
+
+```powershell
+git remote add origin https://github.com/qhboypho/giapha-tran-xuan.git
+git push -u origin customer/tran-xuan
+```
+
+Nếu `origin` đã tồn tại thì dùng:
+
+```powershell
+git remote set-url origin https://github.com/qhboypho/giapha-tran-xuan.git
+git push -u origin customer/tran-xuan
+```
+
 Apply migrations:
 
 ```powershell

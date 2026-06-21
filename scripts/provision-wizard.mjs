@@ -284,7 +284,30 @@ Dev có thể copy file này thành \`wrangler.jsonc\`, hoặc chạy lại wiza
 
 Kiểm tra kỹ không để thừa dấu cách trong \`database_id\` và \`preview_database_id\`.
 
-## 4. Apply migrations
+## 4. Commit và push GitHub nếu có repo riêng
+
+Sau khi \`wrangler.jsonc\` đã đúng, commit lại cấu hình local:
+
+\`\`\`powershell
+git add wrangler.jsonc .provision\\${plan.slug}\\PROVISION_GUIDE.md .provision\\${plan.slug}\\provision-summary.json
+git commit -m "chore: configure ${plan.familyName} Cloudflare resources"
+\`\`\`
+
+Nếu đã tạo repo GitHub riêng, ví dụ \`https://github.com/qhboypho/${plan.projectName}.git\`, đẩy code lên repo đó:
+
+\`\`\`powershell
+git remote add origin https://github.com/qhboypho/${plan.projectName}.git
+git push -u origin customer/${plan.slug}
+\`\`\`
+
+Nếu \`origin\` đã tồn tại thì dùng:
+
+\`\`\`powershell
+git remote set-url origin https://github.com/qhboypho/${plan.projectName}.git
+git push -u origin customer/${plan.slug}
+\`\`\`
+
+## 5. Apply migrations
 
 Local:
 
@@ -298,7 +321,7 @@ Production:
 npx wrangler d1 migrations apply ${plan.d1Name} --remote
 \`\`\`
 
-## 5. Build và chạy local Cloudflare Pages
+## 6. Build và chạy local Cloudflare Pages
 
 \`\`\`powershell
 npm install
@@ -312,7 +335,7 @@ Mở:
 http://127.0.0.1:8788
 \`\`\`
 
-## 6. Deploy Cloudflare Pages lần đầu
+## 7. Deploy Cloudflare Pages lần đầu
 
 Deploy lần đầu để Cloudflare tạo Pages project:
 
@@ -327,7 +350,7 @@ Sau khi deploy thành công, URL mặc định thường là:
 https://${plan.projectName}.pages.dev/
 \`\`\`
 
-## 7. Cấu hình secret AI
+## 8. Cấu hình secret AI
 
 \`\`\`powershell
 npx wrangler pages secret put AI_CONFIG_SECRET --project-name ${plan.projectName}
@@ -348,7 +371,7 @@ npx wrangler pages deploy ./dist --project-name ${plan.projectName}
 
 Sau khi deploy, admin có thể nhập API key OpenAI/Gemini/Claude trong app.
 
-## 8. Import CMS package nếu có
+## 9. Import CMS package nếu có
 
 Dry-run:
 
@@ -370,7 +393,7 @@ node scripts/cms-bootstrap.mjs --package=${cmsPackageLine} --remote --migrate --
 
 Nếu chưa có CMS package, deploy site base rồi đăng nhập admin, mở Setup Wizard trong app để cấu hình và nhập dữ liệu.
 
-## 9. Sau deploy
+## 10. Sau deploy
 
 - Đăng nhập admin.
 - Mở Setup Wizard trong app.

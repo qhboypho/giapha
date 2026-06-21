@@ -35,6 +35,7 @@ assert.match(guide, /npx wrangler d1 create giapha-tran-cong-db/);
 assert.match(guide, /npx wrangler pages deploy \.\/dist --project-name giapha-tran-cong/);
 assert.match(guide, /npm run create-customer -- --family-name="Trần Công" --slug=tran-cong/);
 assert.match(guide, /Deploy lần đầu để Cloudflare tạo Pages project/);
+assert.match(guide, /git push -u origin customer\/tran-cong/);
 assert.match(guide, /Setup Wizard/);
 
 const summary = buildProvisionSummary(plan);

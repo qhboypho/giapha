@@ -68,6 +68,27 @@ Copy `database_id` cua `giapha-tran-xuan-db` vao `wrangler.jsonc` o ca `database
 npx wrangler d1 list
 ```
 
+Sau khi `wrangler.jsonc` da dung, commit lai cau hinh local:
+
+```powershell
+git add wrangler.jsonc .provision\tran-xuan\PROVISION_GUIDE.md .provision\tran-xuan\provision-summary.json
+git commit -m "chore: configure Tran Xuan Cloudflare resources"
+```
+
+Neu da tao repo GitHub rieng, vi du `https://github.com/qhboypho/giapha-tran-xuan.git`, day code len repo do:
+
+```powershell
+git remote add origin https://github.com/qhboypho/giapha-tran-xuan.git
+git push -u origin customer/tran-xuan
+```
+
+Neu `origin` da ton tai thi dung:
+
+```powershell
+git remote set-url origin https://github.com/qhboypho/giapha-tran-xuan.git
+git push -u origin customer/tran-xuan
+```
+
 Apply migrations:
 
 ```powershell
@@ -107,7 +128,7 @@ Ket qua mau:
 https://giapha-tran-xuan.pages.dev/
 ```
 
-## 2. Clone Source
+## 2. Clone Source Thu Cong Neu Khong Dung Create Customer
 
 ```powershell
 git clone https://github.com/qhboypho/giapha.git giapha-khach-a
