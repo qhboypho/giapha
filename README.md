@@ -138,6 +138,73 @@ Script chỉ tạo git local, chưa tạo GitHub remote. Khi muốn push, thêm 
 
 Dùng khi muốn có quy trình dễ hơn cho dev hoặc người không chuyên kỹ thuật. Wizard sẽ hỏi tên khách/project, sinh `wrangler.generated.jsonc`, secret AI, checklist Cloudflare và hướng dẫn deploy trong thư mục `.provision/<slug>/`.
 
+### Quy trình mẫu: Họ Trần Xuân
+
+Chạy từ repo base:
+
+```powershell
+npm run create-customer -- --family-name="Trần Xuân" --slug=tran-xuan --git-init --write-wrangler --install --force --commit-message="chore: init Tran Xuan site"
+```
+
+Vào project mới:
+
+```powershell
+cd ..\giapha-tran-xuan
+```
+
+Tạo D1/R2:
+
+```powershell
+npx wrangler d1 create giapha-tran-xuan-db
+npx wrangler r2 bucket create giapha-tran-xuan-media
+npx wrangler r2 bucket create giapha-tran-xuan-media-preview
+```
+
+Copy `database_id` của `giapha-tran-xuan-db` vào `wrangler.jsonc` ở cả `database_id` và `preview_database_id`. Nếu cần xem lại:
+
+```powershell
+npx wrangler d1 list
+```
+
+Apply migrations:
+
+```powershell
+npx wrangler d1 migrations apply giapha-tran-xuan-db --local
+npx wrangler d1 migrations apply giapha-tran-xuan-db --remote
+```
+
+Deploy lần đầu để tạo Pages project:
+
+```powershell
+npm run build
+npx wrangler pages deploy ./dist --project-name giapha-tran-xuan
+```
+
+Set secret AI sau khi Pages project đã tồn tại:
+
+```powershell
+npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-tran-xuan
+```
+
+Copy secret từ:
+
+```text
+.provision\tran-xuan\AI_CONFIG_SECRET.txt
+```
+
+Deploy lại để Pages Function nhận secret:
+
+```powershell
+npm run build
+npx wrangler pages deploy ./dist --project-name giapha-tran-xuan
+```
+
+Kết quả mẫu:
+
+```text
+https://giapha-tran-xuan.pages.dev/
+```
+
 Chạy tương tác:
 
 ```powershell

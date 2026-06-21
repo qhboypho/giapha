@@ -242,6 +242,14 @@ export function buildProvisionGuide(plan) {
 
 Thư mục này được sinh bởi \`npm run provision:wizard\`. Dùng nó để triển khai nhanh một site gia phả mới từ base hiện tại.
 
+Nếu bắt đầu từ repo base, lệnh đầy đủ kiểu Trần Xuân là:
+
+\`\`\`powershell
+npm run create-customer -- --family-name="${plan.familyName}" --slug=${plan.slug} --git-init --write-wrangler --install --force --commit-message="chore: init ${plan.familyName} site"
+\`\`\`
+
+Sau lệnh này, vào folder project khách rồi làm các bước bên dưới.
+
 ## 1. Đăng nhập Cloudflare
 
 \`\`\`powershell
@@ -258,6 +266,12 @@ npx wrangler r2 bucket create ${plan.previewR2Name}
 
 ${d1IdNote}
 
+Nếu cần xem lại UUID:
+
+\`\`\`powershell
+npx wrangler d1 list
+\`\`\`
+
 ## 3. Áp dụng cấu hình Wrangler
 
 File đã sinh:
@@ -268,19 +282,21 @@ ${plan.outputDir}/wrangler.generated.jsonc
 
 Dev có thể copy file này thành \`wrangler.jsonc\`, hoặc chạy lại wizard với \`--write-wrangler\`.
 
-## 4. Cấu hình secret AI
+Kiểm tra kỹ không để thừa dấu cách trong \`database_id\` và \`preview_database_id\`.
+
+## 4. Apply migrations
+
+Local:
 
 \`\`\`powershell
-npx wrangler pages secret put AI_CONFIG_SECRET --project-name ${plan.projectName}
+npx wrangler d1 migrations apply ${plan.d1Name} --local
 \`\`\`
 
-Giá trị gợi ý đã sinh:
+Production:
 
-\`\`\`text
-${plan.aiSecret}
+\`\`\`powershell
+npx wrangler d1 migrations apply ${plan.d1Name} --remote
 \`\`\`
-
-Không commit secret này lên git. Sau khi deploy, admin có thể nhập API key OpenAI/Gemini/Claude trong app.
 
 ## 5. Build và chạy local Cloudflare Pages
 
@@ -296,21 +312,43 @@ Mở:
 http://127.0.0.1:8788
 \`\`\`
 
-## 6. Apply migrations
+## 6. Deploy Cloudflare Pages lần đầu
 
-Local:
-
-\`\`\`powershell
-npx wrangler d1 migrations apply ${plan.d1Name} --local
-\`\`\`
-
-Production:
+Deploy lần đầu để Cloudflare tạo Pages project:
 
 \`\`\`powershell
-npx wrangler d1 migrations apply ${plan.d1Name} --remote
+npm run build
+npx wrangler pages deploy ./dist --project-name ${plan.projectName}
 \`\`\`
 
-## 7. Import CMS package nếu có
+Sau khi deploy thành công, URL mặc định thường là:
+
+\`\`\`text
+https://${plan.projectName}.pages.dev/
+\`\`\`
+
+## 7. Cấu hình secret AI
+
+\`\`\`powershell
+npx wrangler pages secret put AI_CONFIG_SECRET --project-name ${plan.projectName}
+\`\`\`
+
+Giá trị gợi ý đã sinh:
+
+\`\`\`text
+${plan.aiSecret}
+\`\`\`
+
+Không commit secret này lên git. Sau khi set secret, deploy lại để Pages Function nhận biến mới:
+
+\`\`\`powershell
+npm run build
+npx wrangler pages deploy ./dist --project-name ${plan.projectName}
+\`\`\`
+
+Sau khi deploy, admin có thể nhập API key OpenAI/Gemini/Claude trong app.
+
+## 8. Import CMS package nếu có
 
 Dry-run:
 
@@ -331,13 +369,6 @@ node scripts/cms-bootstrap.mjs --package=${cmsPackageLine} --remote --migrate --
 \`\`\`
 
 Nếu chưa có CMS package, deploy site base rồi đăng nhập admin, mở Setup Wizard trong app để cấu hình và nhập dữ liệu.
-
-## 8. Deploy Cloudflare Pages
-
-\`\`\`powershell
-npm run build
-npx wrangler pages deploy ./dist --project-name ${plan.projectName}
-\`\`\`
 
 ## 9. Sau deploy
 

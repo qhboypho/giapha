@@ -40,6 +40,73 @@ Wizard se hoi ten khach/project, sinh `wrangler.generated.jsonc`, `AI_CONFIG_SEC
 
 Sau khi deploy xong, admin vao app mo `Setup Wizard` de cau hinh noi dung website va nhap du lieu.
 
+## Quy Trinh Mau: Ho Tran Xuan
+
+Chay tu repo base:
+
+```powershell
+npm run create-customer -- --family-name="Trần Xuân" --slug=tran-xuan --git-init --write-wrangler --install --force --commit-message="chore: init Tran Xuan site"
+```
+
+Vao project moi:
+
+```powershell
+cd ..\giapha-tran-xuan
+```
+
+Tao D1/R2:
+
+```powershell
+npx wrangler d1 create giapha-tran-xuan-db
+npx wrangler r2 bucket create giapha-tran-xuan-media
+npx wrangler r2 bucket create giapha-tran-xuan-media-preview
+```
+
+Copy `database_id` cua `giapha-tran-xuan-db` vao `wrangler.jsonc` o ca `database_id` va `preview_database_id`. Neu can xem lai:
+
+```powershell
+npx wrangler d1 list
+```
+
+Apply migrations:
+
+```powershell
+npx wrangler d1 migrations apply giapha-tran-xuan-db --local
+npx wrangler d1 migrations apply giapha-tran-xuan-db --remote
+```
+
+Deploy lan dau de tao Pages project:
+
+```powershell
+npm run build
+npx wrangler pages deploy ./dist --project-name giapha-tran-xuan
+```
+
+Set secret AI sau khi Pages project da ton tai:
+
+```powershell
+npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-tran-xuan
+```
+
+Copy secret tu:
+
+```text
+.provision\tran-xuan\AI_CONFIG_SECRET.txt
+```
+
+Deploy lai de Pages Function nhan secret:
+
+```powershell
+npm run build
+npx wrangler pages deploy ./dist --project-name giapha-tran-xuan
+```
+
+Ket qua mau:
+
+```text
+https://giapha-tran-xuan.pages.dev/
+```
+
 ## 2. Clone Source
 
 ```powershell

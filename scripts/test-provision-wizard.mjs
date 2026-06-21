@@ -33,6 +33,8 @@ assert.equal(wrangler.r2_buckets[0].binding, "MEDIA_BUCKET");
 const guide = buildProvisionGuide(plan);
 assert.match(guide, /npx wrangler d1 create giapha-tran-cong-db/);
 assert.match(guide, /npx wrangler pages deploy \.\/dist --project-name giapha-tran-cong/);
+assert.match(guide, /npm run create-customer -- --family-name="Trần Công" --slug=tran-cong/);
+assert.match(guide, /Deploy lần đầu để Cloudflare tạo Pages project/);
 assert.match(guide, /Setup Wizard/);
 
 const summary = buildProvisionSummary(plan);

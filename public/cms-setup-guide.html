@@ -129,6 +129,28 @@
       </section>
 
       <section>
+        <h2>Quy trình mẫu: Họ Trần Xuân</h2>
+        <p>Chạy từ repo base để tạo project mới, provision, cài dependencies, ghi wrangler và commit local:</p>
+        <pre><code>npm run create-customer -- --family-name="Trần Xuân" --slug=tran-xuan --git-init --write-wrangler --install --force --commit-message="chore: init Tran Xuan site"</code></pre>
+        <p>Vào project mới và tạo tài nguyên Cloudflare:</p>
+        <pre><code>cd ..\giapha-tran-xuan
+npx wrangler d1 create giapha-tran-xuan-db
+npx wrangler r2 bucket create giapha-tran-xuan-media
+npx wrangler r2 bucket create giapha-tran-xuan-media-preview</code></pre>
+        <p>Copy <code>database_id</code> vào <code>wrangler.jsonc</code>, rồi apply migrations:</p>
+        <pre><code>npx wrangler d1 list
+npx wrangler d1 migrations apply giapha-tran-xuan-db --local
+npx wrangler d1 migrations apply giapha-tran-xuan-db --remote</code></pre>
+        <p>Deploy lần đầu, set secret AI, deploy lại:</p>
+        <pre><code>npm run build
+npx wrangler pages deploy ./dist --project-name giapha-tran-xuan
+npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-tran-xuan
+npm run build
+npx wrangler pages deploy ./dist --project-name giapha-tran-xuan</code></pre>
+        <p class="note">Kết quả mẫu: <code>https://giapha-tran-xuan.pages.dev/</code></p>
+      </section>
+
+      <section>
         <h2>2. Clone source</h2>
         <pre><code>git clone https://github.com/qhboypho/giapha.git giapha-khach-a
 cd giapha-khach-a
