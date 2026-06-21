@@ -224,6 +224,18 @@ npx wrangler d1 migrations apply giapha-tran-xuan-db --local
 npx wrangler d1 migrations apply giapha-tran-xuan-db --remote
 ```
 
+Tạo hoặc cập nhật admin trước khi chạy/deploy để vào trang là đăng nhập được luôn:
+
+```powershell
+$env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-local"
+node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-db --local --migrate --yes
+$env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-prod"
+node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-db --remote --migrate --yes
+Remove-Item Env:ADMIN_BOOTSTRAP_PASSWORD
+```
+
+Lệnh này hash mật khẩu đúng chuẩn, ghi user `admin` vào D1 và xóa session cũ nếu có. Khi bàn giao khách, đổi mật khẩu admin trong app hoặc chạy lại lệnh remote với mật khẩu mới.
+
 Deploy lần đầu để tạo Pages project:
 
 ```powershell
@@ -352,6 +364,7 @@ Lưu ý: CMS package v1 chứa reference ảnh. Binary ảnh nằm trong media p
 ## Lệnh Kiểm Tra
 
 ```powershell
+node scripts/test-admin-bootstrap.mjs
 node scripts/test-cms-bootstrap.mjs
 node scripts/test-cms-package-utils.mjs
 node scripts/test-media-package-utils.mjs

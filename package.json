@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "db:migrate:local": "wrangler d1 migrations apply giapha-tc-db --local",
     "db:seed": "wrangler d1 execute giapha-tc-db --local --file=./migrations/0002_seed.sql",
+    "admin:bootstrap": "node scripts/admin-bootstrap.mjs",
     "cms:bootstrap": "node scripts/cms-bootstrap.mjs",
     "provision:wizard": "node scripts/provision-wizard.mjs",
     "create-customer": "node scripts/create-customer-project.mjs",

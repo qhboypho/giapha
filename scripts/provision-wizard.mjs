@@ -347,7 +347,26 @@ Production:
 npx wrangler d1 migrations apply ${plan.d1Name} --remote
 \`\`\`
 
-## 6. Build và chạy local Cloudflare Pages
+## 6. Tạo tài khoản admin trước khi chạy/deploy
+
+Local:
+
+\`\`\`powershell
+$env:ADMIN_BOOTSTRAP_PASSWORD="doi-mat-khau-local"
+node scripts/admin-bootstrap.mjs --db=${plan.d1Name} --local --migrate --yes
+\`\`\`
+
+Production:
+
+\`\`\`powershell
+$env:ADMIN_BOOTSTRAP_PASSWORD="doi-mat-khau-prod"
+node scripts/admin-bootstrap.mjs --db=${plan.d1Name} --remote --migrate --yes
+Remove-Item Env:ADMIN_BOOTSTRAP_PASSWORD
+\`\`\`
+
+Lệnh này tạo hoặc cập nhật user \`admin\` bằng mật khẩu đã hash đúng chuẩn, đồng thời xóa session cũ. Sau deploy, trang có thể đăng nhập ngay bằng user \`admin\` và mật khẩu vừa set.
+
+## 7. Build và chạy local Cloudflare Pages
 
 \`\`\`powershell
 npm install
@@ -361,7 +380,7 @@ Mở:
 http://127.0.0.1:8788
 \`\`\`
 
-## 7. Deploy Cloudflare Pages lần đầu
+## 8. Deploy Cloudflare Pages lần đầu
 
 Deploy lần đầu để Cloudflare tạo Pages project:
 
@@ -376,7 +395,7 @@ Sau khi deploy thành công, URL mặc định thường là:
 https://${plan.projectName}.pages.dev/
 \`\`\`
 
-## 8. Cấu hình secret AI
+## 9. Cấu hình secret AI
 
 \`\`\`powershell
 npx wrangler pages secret put AI_CONFIG_SECRET --project-name ${plan.projectName}
@@ -397,7 +416,7 @@ npx wrangler pages deploy ./dist --project-name ${plan.projectName}
 
 Sau khi deploy, admin có thể nhập API key OpenAI/Gemini/Claude trong app.
 
-## 9. Import CMS package nếu có
+## 10. Import CMS package nếu có
 
 Dry-run:
 
@@ -419,7 +438,7 @@ node scripts/cms-bootstrap.mjs --package=${cmsPackageLine} --remote --migrate --
 
 Nếu chưa có CMS package, deploy site base rồi đăng nhập admin, mở Setup Wizard trong app để cấu hình và nhập dữ liệu.
 
-## 10. Sau deploy
+## 11. Sau deploy
 
 - Đăng nhập admin.
 - Mở Setup Wizard trong app.

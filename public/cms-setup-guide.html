@@ -151,6 +151,13 @@ npx wrangler r2 bucket create giapha-tran-xuan-media-preview</code></pre>
 npx wrangler d1 list
 npx wrangler d1 migrations apply giapha-tran-xuan-db --local
 npx wrangler d1 migrations apply giapha-tran-xuan-db --remote</code></pre>
+        <p>Tạo hoặc cập nhật admin trước khi chạy/deploy để vào trang là đăng nhập được ngay:</p>
+        <pre><code>$env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-local"
+node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-db --local --migrate --yes
+$env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-prod"
+node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-db --remote --migrate --yes
+Remove-Item Env:ADMIN_BOOTSTRAP_PASSWORD</code></pre>
+        <p class="note">Lệnh này hash mật khẩu đúng chuẩn, ghi user <code>admin</code> vào D1 và xóa session cũ nếu có.</p>
         <p>Sau khi <code>wrangler.jsonc</code> đã đúng, dùng script để commit và push lên repo GitHub riêng nếu có:</p>
         <pre><code>npm run git:publish-customer -- --remote-url=https://github.com/qhboypho/giapha-tran-xuan.git --branch=customer/tran-xuan --user-name="Dinh Tung" --user-email="you@example.com" --commit-message="chore: configure Tran Xuan Cloudflare resources"</code></pre>
         <p>Deploy lần đầu, set secret AI, deploy lại:</p>
