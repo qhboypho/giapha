@@ -140,6 +140,13 @@ Dùng khi muốn có quy trình dễ hơn cho dev hoặc người không chuyên
 
 ### Quy trình mẫu: Họ Trần Xuân
 
+Trước khi chạy `git:publish-customer`, cần hoàn tất 4 bước này:
+
+1. Tạo project local cho khách bằng `create-customer`.
+2. Vào đúng folder project khách.
+3. Tạo repo GitHub mới riêng, ví dụ `qhboypho/giapha-tran-xuan`.
+4. Tạo D1/R2 trên Cloudflare và sửa `wrangler.jsonc`, thay cả `database_id` và `preview_database_id` bằng UUID D1 thật.
+
 Chạy từ repo base:
 
 ```powershell
@@ -160,7 +167,27 @@ npx wrangler r2 bucket create giapha-tran-xuan-media
 npx wrangler r2 bucket create giapha-tran-xuan-media-preview
 ```
 
-Copy `database_id` của `giapha-tran-xuan-db` vào `wrangler.jsonc` ở cả `database_id` và `preview_database_id`. Nếu cần xem lại:
+Tạo repo GitHub mới riêng trên GitHub, ví dụ:
+
+```text
+https://github.com/qhboypho/giapha-tran-xuan.git
+```
+
+Copy `database_id` của `giapha-tran-xuan-db` vào `wrangler.jsonc` ở cả 2 dòng:
+
+```json
+"database_id": "PASTE_D1_DATABASE_ID_HERE",
+"preview_database_id": "PASTE_D1_DATABASE_ID_HERE"
+```
+
+Sau khi sửa, ví dụ:
+
+```json
+"database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1",
+"preview_database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1"
+```
+
+Nếu cần xem lại UUID:
 
 ```powershell
 npx wrangler d1 list

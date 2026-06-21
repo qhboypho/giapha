@@ -42,6 +42,13 @@ Sau khi deploy xong, admin vao app mo `Setup Wizard` de cau hinh noi dung websit
 
 ## Quy Trinh Mau: Ho Tran Xuan
 
+Truoc khi chay `git:publish-customer`, can hoan tat 4 buoc nay:
+
+1. Tao project local cho khach bang `create-customer`.
+2. Vao dung folder project khach.
+3. Tao repo GitHub moi rieng, vi du `qhboypho/giapha-tran-xuan`.
+4. Tao D1/R2 tren Cloudflare va sua `wrangler.jsonc`, thay ca `database_id` va `preview_database_id` bang UUID D1 that.
+
 Chay tu repo base:
 
 ```powershell
@@ -62,7 +69,27 @@ npx wrangler r2 bucket create giapha-tran-xuan-media
 npx wrangler r2 bucket create giapha-tran-xuan-media-preview
 ```
 
-Copy `database_id` cua `giapha-tran-xuan-db` vao `wrangler.jsonc` o ca `database_id` va `preview_database_id`. Neu can xem lai:
+Tao repo GitHub moi rieng tren GitHub, vi du:
+
+```text
+https://github.com/qhboypho/giapha-tran-xuan.git
+```
+
+Copy `database_id` cua `giapha-tran-xuan-db` vao `wrangler.jsonc` o ca 2 dong:
+
+```json
+"database_id": "PASTE_D1_DATABASE_ID_HERE",
+"preview_database_id": "PASTE_D1_DATABASE_ID_HERE"
+```
+
+Sau khi sua, vi du:
+
+```json
+"database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1",
+"preview_database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1"
+```
+
+Neu can xem lai UUID:
 
 ```powershell
 npx wrangler d1 list

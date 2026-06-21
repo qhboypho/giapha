@@ -130,6 +130,13 @@
 
       <section>
         <h2>Quy trình mẫu: Họ Trần Xuân</h2>
+        <p>Trước khi chạy <code>git:publish-customer</code>, cần có đủ 4 thứ:</p>
+        <ul class="step-list">
+          <li>Project local khách đã tạo bằng <code>create-customer</code>.</li>
+          <li>Đã vào đúng folder project khách.</li>
+          <li>Repo GitHub mới riêng, ví dụ <code>qhboypho/giapha-tran-xuan</code>.</li>
+          <li>D1/R2 đã tạo và <code>wrangler.jsonc</code> đã thay cả <code>database_id</code> lẫn <code>preview_database_id</code>.</li>
+        </ul>
         <p>Chạy từ repo base để tạo project mới, provision, cài dependencies, ghi wrangler và commit local:</p>
         <pre><code>npm run create-customer -- --family-name="Trần Xuân" --slug=tran-xuan --git-init --write-wrangler --install --force --commit-message="chore: init Tran Xuan site"</code></pre>
         <p>Vào project mới và tạo tài nguyên Cloudflare:</p>
@@ -138,7 +145,10 @@ npx wrangler d1 create giapha-tran-xuan-db
 npx wrangler r2 bucket create giapha-tran-xuan-media
 npx wrangler r2 bucket create giapha-tran-xuan-media-preview</code></pre>
         <p>Copy <code>database_id</code> vào <code>wrangler.jsonc</code>, rồi apply migrations:</p>
-        <pre><code>npx wrangler d1 list
+        <pre><code>"database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1",
+"preview_database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1"
+
+npx wrangler d1 list
 npx wrangler d1 migrations apply giapha-tran-xuan-db --local
 npx wrangler d1 migrations apply giapha-tran-xuan-db --remote</code></pre>
         <p>Sau khi <code>wrangler.jsonc</code> đã đúng, dùng script để commit và push lên repo GitHub riêng nếu có:</p>

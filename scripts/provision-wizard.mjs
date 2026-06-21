@@ -250,6 +250,13 @@ npm run create-customer -- --family-name="${plan.familyName}" --slug=${plan.slug
 
 Sau lệnh này, vào folder project khách rồi làm các bước bên dưới.
 
+Trước khi chạy \`git:publish-customer\`, cần hoàn tất 4 bước:
+
+1. Tạo project local cho khách bằng \`create-customer\`.
+2. Vào đúng folder project khách.
+3. Tạo repo GitHub mới riêng, ví dụ \`qhboypho/${plan.projectName}\`.
+4. Tạo D1/R2 trên Cloudflare và sửa \`wrangler.jsonc\`, thay cả \`database_id\` và \`preview_database_id\` bằng UUID D1 thật.
+
 ## 1. Đăng nhập Cloudflare
 
 \`\`\`powershell
@@ -283,6 +290,20 @@ ${plan.outputDir}/wrangler.generated.jsonc
 Dev có thể copy file này thành \`wrangler.jsonc\`, hoặc chạy lại wizard với \`--write-wrangler\`.
 
 Kiểm tra kỹ không để thừa dấu cách trong \`database_id\` và \`preview_database_id\`.
+
+Trong \`wrangler.jsonc\`, thay cả 2 dòng:
+
+\`\`\`json
+"database_id": "PASTE_D1_DATABASE_ID_HERE",
+"preview_database_id": "PASTE_D1_DATABASE_ID_HERE"
+\`\`\`
+
+Ví dụ:
+
+\`\`\`json
+"database_id": "${plan.d1Id}",
+"preview_database_id": "${plan.d1Id}"
+\`\`\`
 
 ## 4. Commit và push GitHub nếu có repo riêng
 
