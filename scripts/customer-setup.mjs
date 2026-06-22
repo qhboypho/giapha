@@ -135,9 +135,11 @@ async function collectOptions(args) {
 }
 
 function executableFor(command) {
-  return process.platform === "win32" && ["npm", "npx"].includes(command)
-    ? `${command}.cmd`
-    : command;
+  return command;
+}
+
+function shouldUseShell(command) {
+  return process.platform === "win32" && ["npm", "npx"].includes(command);
 }
 
 function runCommand(command, args, options = {}) {
@@ -148,7 +150,7 @@ function runCommand(command, args, options = {}) {
     input: options.input,
     encoding: options.input ? "utf8" : undefined,
     stdio: options.input ? ["pipe", "inherit", "inherit"] : "inherit",
-    shell: false,
+    shell: shouldUseShell(command),
     windowsVerbatimArguments: false
   });
 
@@ -164,7 +166,7 @@ function captureCommand(command, args, options = {}) {
     env: options.env || process.env,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
-    shell: false,
+    shell: shouldUseShell(command),
     windowsVerbatimArguments: false
   });
 

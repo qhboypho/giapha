@@ -140,16 +140,15 @@ function copyProjectTree(sourceDir, targetDir) {
 
 function runCommand(command, args, cwd, options = {}) {
   console.log(`$ ${command} ${args.join(" ")}`);
-  const executable = process.platform === "win32" && ["npm", "npx"].includes(command)
-    ? `${command}.cmd`
-    : command;
+  const needsWindowsShell = process.platform === "win32" && ["npm", "npx"].includes(command);
+  const executable = needsWindowsShell ? command : command;
   const maxAttempts = Number(options.retries || 0) + 1;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const result = spawnSync(executable, args, {
       cwd,
       stdio: "inherit",
-      shell: false,
+      shell: needsWindowsShell,
       windowsVerbatimArguments: false
     });
     if (result.status === 0) return;
