@@ -719,9 +719,7 @@ export default function Navbar({
           <button className="btn btn-secondary" onClick={() => setIsLoginModalOpen(true)} style={{ flex: "none", borderRadius: "20px" }}>
             Đăng nhập
           </button>
-        ) : (
-          <span className="auth-loading-pill">Đang kiểm tra...</span>
-        )}
+        ) : null}
       </div>
 
       {/* Mobile Navigation Toggle (Visible on Mobile) */}
@@ -997,11 +995,7 @@ export default function Navbar({
                 >
                   Đăng nhập
                 </button>
-              ) : (
-                <div className="auth-loading-pill mobile-auth-loading">
-                  Đang kiểm tra phiên đăng nhập...
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         </>

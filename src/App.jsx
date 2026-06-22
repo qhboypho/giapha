@@ -458,7 +458,6 @@ export default function App() {
 
   // Determine if application is locked under Private Mode
   const isLocked = isPrivateMode && !isAuthenticatedViewer(currentUser);
-  const isAuthInitializing = !authReady;
   const canRevealSensitiveInfo = isPrivateMode && canEditMembers(currentUser);
   const canGoBack = viewHistory.length > 0;
   const notifications = useMemo(() => buildFamilyNotifications({
@@ -648,17 +647,7 @@ export default function App() {
 
       {/* Main split display */}
       <div className="main-content">
-        {isAuthInitializing ? (
-          <div className="lock-screen animate-fade">
-            <div className="lock-container glass">
-              <span className="lock-icon">⌛</span>
-              <h2>Đang kiểm tra phiên đăng nhập</h2>
-              <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
-                Hệ thống đang xác minh tài khoản hiện tại.
-              </p>
-            </div>
-          </div>
-        ) : isLocked ? (
+        {isLocked ? (
           // Private Lock Screen
           <div className="lock-screen animate-fade">
             <div className="lock-container glass">

@@ -694,29 +694,6 @@
   z-index: 1300;
 }
 
-.auth-loading-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0 14px;
-  border: 1px solid rgba(255, 248, 239, 0.18);
-  border-radius: 999px;
-  background: rgba(255, 248, 239, 0.08);
-  color: rgba(255, 248, 239, 0.72);
-  font-size: 0.82rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.mobile-auth-loading {
-  width: 100%;
-  min-height: 42px;
-  color: var(--text-secondary);
-  border-color: var(--border-card);
-  background: rgba(215, 169, 77, 0.08);
-}
-
 .user-menu-chevron {
   color: rgba(255, 248, 239, 0.78);
   transition: transform var(--transition-fast);
