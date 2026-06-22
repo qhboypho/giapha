@@ -33,12 +33,13 @@ const COPY_EXCLUDE_SUFFIXES = [
   ".local"
 ];
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const args = {
     familyName: "",
     slug: "",
     targetDir: "",
     parentDir: DEFAULT_PARENT_DIR,
+    customerProject: false,
     install: false,
     writeWrangler: false,
     gitInit: false,
@@ -66,6 +67,8 @@ function parseArgs(argv) {
     } else if (flagName === "--parent-dir") {
       args.parentDir = value || DEFAULT_PARENT_DIR;
       if (!inlineValue) i += 1;
+    } else if (arg === "--customer-project") {
+      args.customerProject = true;
     } else if (arg === "--install") {
       args.install = true;
     } else if (arg === "--write-wrangler") {
@@ -101,6 +104,7 @@ Options:
   --slug <slug>          Slug khách, ví dụ tran-xuan
   --target-dir <path>    Folder project mới. Default: ../giapha-<slug>
   --parent-dir <path>    Folder cha khi không truyền target-dir. Default: ..
+  --customer-project     Clone ở chế độ khách mới, dùng dữ liệu sample
   --install              Chạy npm install trong project mới
   --write-wrangler       Ghi luôn wrangler.jsonc trong project mới
   --git-init             Tạo git repo local, branch customer/<slug>, initial commit
