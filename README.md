@@ -110,6 +110,23 @@ npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a
 
 ## Provision Wizard Cho Khách Mới
 
+### Cách nhanh nhất: One-command setup
+
+Đứng ở repo base rồi chạy một lệnh để tạo project khách, tạo Cloudflare D1/R2, migrate DB, tạo admin và deploy Pages:
+
+```powershell
+cd C:\Users\DinhTungPC\.gemini\antigravity\scratch\giapha-tc
+npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy
+```
+
+Nếu folder local khách đã tồn tại và muốn test lại từ đầu, thêm `--force`:
+
+```powershell
+npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force
+```
+
+Kết quả script sẽ in ra folder project, D1/R2, URL Pages và tài khoản `admin`. GitHub repo riêng là bước optional, làm sau khi site đã chạy ổn.
+
 Nếu đang đứng ở repo base và muốn tạo hẳn một folder project mới cho khách:
 
 ```powershell
@@ -371,6 +388,7 @@ node scripts/test-media-package-utils.mjs
 node scripts/test-site-config-utils.mjs
 node scripts/test-member-sync-utils.mjs
 npm run test:ai-config
+node scripts/test-customer-setup.mjs
 node scripts/test-provision-wizard.mjs
 node scripts/test-create-customer-project.mjs
 node scripts/test-customer-git-publish.mjs

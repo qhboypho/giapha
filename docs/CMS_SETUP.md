@@ -16,6 +16,23 @@ npx wrangler login
 
 ## Cach De Nhat: Create Customer + Provision Wizard
 
+### Cách nhanh nhất: One-command setup
+
+Đứng ở repo base rồi chạy một lệnh để tạo project khách, tạo Cloudflare D1/R2, migrate DB, tạo admin và deploy Pages:
+
+```powershell
+cd C:\Users\DinhTungPC\.gemini\antigravity\scratch\giapha-tc
+npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy
+```
+
+Nếu folder local khách đã tồn tại và muốn test lại từ đầu, thêm `--force`:
+
+```powershell
+npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force
+```
+
+Script sẽ in ra URL Pages và tài khoản `admin`. GitHub repo riêng là bước optional, làm sau khi site đã chạy ổn.
+
 Neu dang dung o repo base va muon tao han mot folder project moi cho khach:
 
 ```powershell

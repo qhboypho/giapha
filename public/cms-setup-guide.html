@@ -121,6 +121,10 @@
         </ul>
         <pre><code>npx wrangler login</code></pre>
         <p class="note">Cách dễ nhất từ repo base là tạo folder project khách mới, rồi script sẽ tự chạy Provision Wizard trong folder đó.</p>
+        <p>Cách nhanh nhất là dùng một lệnh one-command setup từ repo base:</p>
+        <pre><code>npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy</code></pre>
+        <p>Nếu folder local khách đã tồn tại và muốn test lại từ đầu:</p>
+        <pre><code>npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force</code></pre>
         <pre><code>npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan</code></pre>
         <p>Nếu muốn tạo luôn git local branch và initial commit:</p>
         <pre><code>npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --git-init</code></pre>
