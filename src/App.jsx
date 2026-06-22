@@ -29,6 +29,18 @@ const VIEWER_ID_STORAGE_KEY = "giapha_tc_viewer_id";
 const VIEWER_ID_PATTERN = /^[a-zA-Z0-9_-]{16,80}$/;
 const READ_NOTIFICATION_STORAGE_KEY = "giapha_tc_read_notifications";
 const HAD_SESSION_STORAGE_KEY = "giapha_tc_had_session";
+const LEGACY_THEME_VARIABLES = [
+  "--bg-app",
+  "--bg-main",
+  "--bg-card",
+  "--bg-card-hover",
+  "--border-card",
+  "--text-primary",
+  "--text-secondary",
+  "--text-muted",
+  "--bg-input",
+  "--theme-generations-background"
+];
 
 const getOrCreateViewerId = () => {
   const existing = localStorage.getItem(VIEWER_ID_STORAGE_KEY);
@@ -100,6 +112,9 @@ export default function App() {
   }, [siteConfig.siteTitle]);
 
   useEffect(() => {
+    for (const name of LEGACY_THEME_VARIABLES) {
+      document.documentElement.style.removeProperty(name);
+    }
     const themeVariables = buildThemeCssVariables(siteConfig);
     for (const [name, value] of Object.entries(themeVariables)) {
       document.documentElement.style.setProperty(name, value);

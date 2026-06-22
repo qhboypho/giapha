@@ -66,9 +66,10 @@ assert.throws(
 
 const cssVariables = buildThemeCssVariables(themedConfig);
 assert.equal(cssVariables["--color-brand-primary"], "#123ABC");
-assert.match(cssVariables["--bg-app"], /radial-gradient/);
+assert.match(cssVariables["--cms-bg-app"], /radial-gradient/);
+assert.equal(cssVariables["--bg-app"], undefined);
 assert.match(cssVariables["--theme-home-background-image"], /home\.jpg/);
-assert.equal(cssVariables["--theme-generations-background"], "#101820");
+assert.equal(cssVariables["--cms-generations-background"], "#101820");
 assert.match(cssVariables["--theme-generations-background-image"], /generations\.jpg/);
 assert.equal(cssVariables["--tree-connector-color"], "#ABCDEF");
 

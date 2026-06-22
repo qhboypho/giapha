@@ -21,8 +21,11 @@
 
   /* Light Theme Variables */
   --bg-app: radial-gradient(circle at top left, var(--heritage-cream), #F0E8D9);
+  --bg-main: #FCF9F2;
   --bg-card: var(--heritage-cream-card);
   --bg-card-hover: #FFFDF8;
+  --bg-primary: var(--bg-main);
+  --bg-secondary: #F6EBD8;
   --border-card: var(--heritage-gold-border);
   --text-primary: #2B2118;
   --text-secondary: #5A4E42;
@@ -31,8 +34,12 @@
   --shadow-sm: 0 4px 6px -1px rgba(122, 6, 18, 0.05);
   --shadow-md: 0 10px 15px -3px rgba(122, 6, 18, 0.08);
   --shadow-lg: 0 20px 25px -5px rgba(122, 6, 18, 0.12);
+  --shadow-card: var(--shadow-md);
   --bg-nav: var(--heritage-red);
   --glass-blur: blur(12px);
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
   --node-deceased-bg: #EAE3D5;
   --node-deceased-border: #8E7F72;
   --node-deceased-text: #5A4E42;
@@ -58,18 +65,23 @@
   --heritage-cream: #17110C;
   --heritage-cream-card: #241A12;
 
-  --bg-app: radial-gradient(circle at top left, var(--heritage-cream), #0F0A07);
-  --bg-card: var(--heritage-cream-card);
-  --bg-card-hover: #2D2017;
-  --border-card: #4B3828;
-  --text-primary: #F5E7D3;
-  --text-secondary: #D4C6B2;
-  --text-muted: #8E7F72;
-  --bg-input: #1C150F;
+  --bg-app: var(--cms-bg-app, radial-gradient(circle at top left, var(--heritage-cream), #0F0A07));
+  --bg-main: var(--cms-bg-main, #0F0A07);
+  --bg-card: var(--cms-bg-card, var(--heritage-cream-card));
+  --bg-card-hover: var(--cms-bg-card-hover, #2D2017);
+  --bg-primary: var(--bg-main);
+  --bg-secondary: var(--bg-card-hover);
+  --border-card: var(--cms-border-card, #4B3828);
+  --text-primary: var(--cms-text-primary, #F5E7D3);
+  --text-secondary: var(--cms-text-secondary, #D4C6B2);
+  --text-muted: var(--cms-text-muted, #8E7F72);
+  --bg-input: var(--cms-bg-input, #1C150F);
   --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --shadow-card: var(--shadow-md);
   --bg-nav: #4A020A;
+  --theme-generations-background: var(--cms-generations-background, var(--bg-main));
   --node-deceased-bg: #1B120C;
   --node-deceased-border: #4B3828;
   --node-deceased-text: #8E7F72;
