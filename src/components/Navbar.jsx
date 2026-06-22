@@ -28,6 +28,7 @@ import {
   X
 } from "lucide-react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
+import { ENABLE_SETUP_WIZARD } from "../config/cmsRuntime";
 import { getRoleLabel, isAdmin } from "../utils/authRoles";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
@@ -625,7 +626,7 @@ export default function Navbar({
                   <span>{getRoleLabel(currentUser.role)}</span>
                 </div>
 
-                {isAdmin(currentUser) && (
+                {isAdmin(currentUser) && ENABLE_SETUP_WIZARD && (
                   <>
                     <button
                       className="user-menu-item"
@@ -873,7 +874,7 @@ export default function Navbar({
                 </button>
               )}
 
-              {isAdmin(currentUser) && (
+              {isAdmin(currentUser) && ENABLE_SETUP_WIZARD && (
                 <button
                   className="btn btn-secondary"
                   onClick={() => {

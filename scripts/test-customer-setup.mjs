@@ -26,6 +26,7 @@ assert.equal(plan.targetDir, resolve("..", "giapha-tran-xuan"));
 assert.equal(plan.provision.projectName, "giapha-tran-xuan");
 assert.equal(plan.provision.d1Name, "giapha-tran-xuan-db");
 assert.equal(plan.provision.r2Name, "giapha-tran-xuan-media");
+assert.equal(plan.provision.customerProject, true);
 assert.equal(plan.deploy, true);
 
 const d1Id = extractD1IdFromListJson(JSON.stringify([

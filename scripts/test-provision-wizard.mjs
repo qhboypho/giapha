@@ -40,6 +40,15 @@ assert.match(guide, /npm run git:publish-customer -- --remote-url=https:\/\/gith
 assert.match(guide, /"preview_database_id": "PASTE_D1_DATABASE_ID_HERE"/);
 assert.match(guide, /Setup Wizard/);
 
+const customerPlan = buildProvisionPlan({
+  familyName: "Trần Xuân",
+  customerProject: true
+});
+const customerGuide = buildProvisionGuide(customerPlan);
+assert.match(customerGuide, /dữ liệu mẫu vài người/);
+assert.doesNotMatch(customerGuide, /Mở Setup Wizard trong app/);
+assert.equal(buildProvisionSummary(customerPlan).customerProject, true);
+
 const summary = buildProvisionSummary(plan);
 assert.equal(summary.familyName, "Trần Công");
 assert.equal(summary.aiSecretPreview, "secret...secret");

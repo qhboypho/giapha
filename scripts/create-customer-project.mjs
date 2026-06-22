@@ -7,12 +7,13 @@ import {
   rmSync,
   statSync
 } from "node:fs";
-import { basename, dirname, isAbsolute, resolve } from "node:path";
+import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { buildProvisionPlan, slugifyCustomer } from "./provision-wizard.mjs";
+import { sanitizeCustomerProject } from "./customer-sanitizer.mjs";
 
 const DEFAULT_PARENT_DIR = "..";
 const COPY_EXCLUDE_NAMES = new Set([
@@ -161,16 +162,19 @@ function runCommand(command, args, cwd, options = {}) {
   throw new Error(`Command failed: ${command} ${args.join(" ")}`);
 }
 
-function ensureTargetAvailable(targetDir, force) {
+export function ensureTargetAvailable(targetDir, force) {
+  const absoluteTarget = resolve(targetDir);
+  const cwd = resolve(".");
+  const targetInsideWorkspace = relative(cwd, absoluteTarget);
+  if (absoluteTarget === cwd || (targetInsideWorkspace && !targetInsideWorkspace.startsWith("..") && !isAbsolute(targetInsideWorkspace))) {
+    throw new Error("Folder project mới phải nằm ngoài project base hiện tại, nên đặt ngang hàng với folder base.");
+  }
+  if (cwd.startsWith(`${absoluteTarget}\\`) || cwd.startsWith(`${absoluteTarget}/`)) {
+    throw new Error("Không thể --force xóa folder đang chứa workspace hiện tại.");
+  }
   if (!existsSync(targetDir)) return;
   if (!force) {
     throw new Error(`Folder đích đã tồn tại: ${targetDir}. Dùng --force nếu muốn xóa và tạo lại.`);
-  }
-
-  const absoluteTarget = resolve(targetDir);
-  const cwd = resolve(".");
-  if (absoluteTarget === cwd || cwd.startsWith(`${absoluteTarget}\\`) || cwd.startsWith(`${absoluteTarget}/`)) {
-    throw new Error("Không thể --force xóa folder đang chứa workspace hiện tại.");
   }
 
   rmSync(absoluteTarget, { recursive: true, force: true });
@@ -223,7 +227,8 @@ export function buildCustomerProjectPlan(options = {}) {
     familyName,
     slug,
     outputRoot: ".provision",
-    writeWrangler: Boolean(options.writeWrangler)
+    writeWrangler: Boolean(options.writeWrangler),
+    customerProject: true
   });
 
   return {
@@ -242,6 +247,7 @@ export function buildCustomerProjectPlan(options = {}) {
       familyName,
       "--slug",
       slug,
+      "--customer-project",
       ...(options.writeWrangler ? ["--write-wrangler"] : [])
     ],
     provision
@@ -278,6 +284,7 @@ async function main() {
 
   ensureTargetAvailable(plan.targetDir, plan.force);
   copyProjectTree(resolve("."), plan.targetDir);
+  sanitizeCustomerProject(plan.targetDir, { familyName: plan.familyName, slug: plan.slug });
 
   runCommand("node", ["scripts/provision-wizard.mjs", ...plan.provisionArgs], plan.targetDir);
 

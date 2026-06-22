@@ -7,6 +7,7 @@ import FeaturedMembersPage from "./components/FeaturedMembersPage";
 import AnniversaryPage from "./components/AnniversaryPage";
 import GenerationsPage from "./components/GenerationsPage";
 import AccountAdminPage from "./components/AccountAdminPage";
+import { ENABLE_SETUP_WIZARD } from "./config/cmsRuntime";
 import HistoryAdminPage from "./components/HistoryAdminPage";
 import FamilyHistoryPage from "./components/FamilyHistoryPage";
 import Sidebar from "./components/Sidebar";
@@ -697,13 +698,13 @@ export default function App() {
                 <AccountAdminPage
                   currentUser={currentUser}
                   members={members}
-                  mode={accountPageMode}
+                  mode={ENABLE_SETUP_WIZARD ? accountPageMode : (accountPageMode === "password" ? "password" : "manage")}
                   siteConfig={siteConfig}
                   isPrivateMode={isPrivateMode}
                   onToast={showToast}
                   onSiteConfigSave={handleSiteConfigSave}
                   onPrivateModeChange={handleTogglePrivateMode}
-                  onOpenSetupWizard={() => setAccountPageMode("setup")}
+                  onOpenSetupWizard={() => ENABLE_SETUP_WIZARD && setAccountPageMode("setup")}
                   onCmsPackageImported={handleCmsPackageImported}
                   onMembersSynced={() => loadMembers(showSensitiveInfo)}
                 />

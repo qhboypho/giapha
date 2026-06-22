@@ -201,7 +201,8 @@ export function buildCustomerSetupPlan(options = {}) {
   const provision = buildProvisionPlan({
     familyName,
     slug,
-    outputRoot: ".provision"
+    outputRoot: ".provision",
+    customerProject: true
   });
 
   return {
@@ -263,6 +264,7 @@ async function main() {
     plan.familyName,
     "--slug",
     plan.slug,
+    "--customer-project",
     ...(options.targetDir ? ["--target-dir", options.targetDir] : []),
     ...(options.parentDir ? ["--parent-dir", options.parentDir] : []),
     "--write-wrangler",
@@ -283,6 +285,7 @@ async function main() {
     plan.familyName,
     "--slug",
     plan.slug,
+    "--customer-project",
     "--d1-id",
     d1Id,
     "--write-wrangler"
