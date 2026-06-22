@@ -628,19 +628,21 @@ export default function Navbar({
                   <span>{getRoleLabel(currentUser.role)}</span>
                 </div>
 
-                {isAdmin(currentUser) && ENABLE_SETUP_WIZARD && (
+                {isAdmin(currentUser) && (
                   <>
-                    <button
-                      className="user-menu-item"
-                      type="button"
-                      onClick={() => {
-                        onOpenAccounts?.("setup");
-                        setUserMenuOpenView(null);
-                      }}
-                    >
-                      <Wand2 size={17} strokeWidth={2.2} />
-                      Setup Wizard
-                    </button>
+                    {ENABLE_SETUP_WIZARD && (
+                      <button
+                        className="user-menu-item"
+                        type="button"
+                        onClick={() => {
+                          onOpenAccounts?.("setup");
+                          setUserMenuOpenView(null);
+                        }}
+                      >
+                        <Wand2 size={17} strokeWidth={2.2} />
+                        Setup Wizard
+                      </button>
+                    )}
                     <button
                       className="user-menu-item"
                       type="button"
