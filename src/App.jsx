@@ -15,7 +15,7 @@ import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
 import { canEditMembers, getRoleLabel, isAuthenticatedViewer } from "./utils/authRoles";
 import { buildFamilyNotifications } from "./utils/notificationUtils";
-import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "./utils/siteConfigUtils";
+import { DEFAULT_SITE_CONFIG, buildThemeCssVariables, normalizeSiteConfig } from "./utils/siteConfigUtils";
 import { getPreviousView, pushViewHistory } from "./utils/viewHistory";
 import "./App.css";
 
@@ -95,6 +95,13 @@ export default function App() {
   useEffect(() => {
     document.title = siteConfig.siteTitle;
   }, [siteConfig.siteTitle]);
+
+  useEffect(() => {
+    const themeVariables = buildThemeCssVariables(siteConfig);
+    for (const [name, value] of Object.entries(themeVariables)) {
+      document.documentElement.style.setProperty(name, value);
+    }
+  }, [siteConfig]);
 
   const buildMembersUrl = useCallback((revealSensitive) => {
     const shouldReveal = Boolean(revealSensitive);

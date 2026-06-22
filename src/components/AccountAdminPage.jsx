@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Download, ExternalLink, KeyRound, LockKeyhole, Plus, Save, ShieldCheck, Trash2, Upload, UserRound, Wand2 } from "lucide-react";
+import { Copy, Download, ExternalLink, KeyRound, LockKeyhole, Palette, Plus, Save, ShieldCheck, Trash2, Upload, UserRound, Wand2 } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
-import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
+import { DEFAULT_SITE_CONFIG, SITE_THEME_COLOR_FIELDS, normalizeSiteConfig } from "../utils/siteConfigUtils";
 import { AI_PROVIDERS, getAiProviderConfig } from "../utils/aiConfigUtils";
 import { SETUP_WIZARD_STEPS, SETUP_WIZARD_STORAGE_KEY, getSetupProgress } from "../utils/setupWizardUtils";
 
@@ -22,6 +22,21 @@ const emptyPasswordForm = {
 };
 
 const ROOT_ADMIN_USERNAME = "admin";
+const HEX_COLOR_INPUT_PATTERN = /^#[0-9a-f]{6}$/i;
+const THEME_COLOR_LABELS = {
+  primary: "Màu chính",
+  secondary: "Màu phụ",
+  accent: "Màu nhấn",
+  appBackground: "Nền tổng thể",
+  cardBackground: "Nền thẻ",
+  cardHover: "Nền thẻ hover",
+  border: "Viền",
+  textPrimary: "Chữ chính",
+  textSecondary: "Chữ phụ",
+  textMuted: "Chữ mờ",
+  navbarTop: "Navbar trên",
+  navbarBottom: "Navbar dưới"
+};
 const defaultAiConfigForm = {
   provider: "openai",
   model: AI_PROVIDERS.openai.defaultModel,
@@ -280,6 +295,26 @@ export default function AccountAdminPage({
 
   const handleSiteConfigChange = (field, value) => {
     setSiteConfigDraft((prev) => ({ ...(prev || normalizedSiteConfig), [field]: value }));
+  };
+
+  const handleThemeColorChange = (field, value) => {
+    setSiteConfigDraft((prev) => {
+      const base = prev || normalizedSiteConfig;
+      return {
+        ...base,
+        themeColors: {
+          ...base.themeColors,
+          [field]: value
+        }
+      };
+    });
+  };
+
+  const resetThemeColors = () => {
+    setSiteConfigDraft((prev) => ({
+      ...(prev || normalizedSiteConfig),
+      themeColors: { ...DEFAULT_SITE_CONFIG.themeColors }
+    }));
   };
 
   const handleSiteConfigSubmit = async (event) => {
@@ -1085,6 +1120,66 @@ export default function AccountAdminPage({
                 </button>
                 <button className="btn btn-primary" type="submit" disabled={saving}>
                   {saving ? "Đang lưu..." : "Lưu cấu hình website"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {wizardStep === "theme" && (
+            <form className="setup-wizard-panel" onSubmit={handleSiteConfigSubmit}>
+              <div className="theme-config-head">
+                <div>
+                  <span className="accounts-eyebrow">
+                    <Palette size={16} strokeWidth={2.2} />
+                    Tùy chỉnh giao diện
+                  </span>
+                  <h3>Màu sắc website</h3>
+                  <p>Những màu này được lưu trong CMS package và đi theo project khách khi clone.</p>
+                </div>
+                <div className="theme-config-preview" aria-label="Xem trước bảng màu">
+                  {SITE_THEME_COLOR_FIELDS.slice(0, 6).map((field) => (
+                    <span
+                      key={field}
+                      style={{ backgroundColor: siteConfigForm.themeColors?.[field] || DEFAULT_SITE_CONFIG.themeColors[field] }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="theme-color-grid">
+                {SITE_THEME_COLOR_FIELDS.map((field) => {
+                  const value = siteConfigForm.themeColors?.[field] || DEFAULT_SITE_CONFIG.themeColors[field];
+                  const swatchValue = HEX_COLOR_INPUT_PATTERN.test(value) ? value : DEFAULT_SITE_CONFIG.themeColors[field];
+                  return (
+                    <label className="theme-color-field" key={field}>
+                      <span>{THEME_COLOR_LABELS[field] || field}</span>
+                      <div className="theme-color-control">
+                        <input
+                          className="theme-color-swatch"
+                          type="color"
+                          value={swatchValue}
+                          onChange={(event) => handleThemeColorChange(field, event.target.value)}
+                          aria-label={THEME_COLOR_LABELS[field] || field}
+                        />
+                        <input
+                          className="form-input"
+                          value={value}
+                          onChange={(event) => handleThemeColorChange(field, event.target.value)}
+                          placeholder="#B64235"
+                          maxLength={7}
+                        />
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="account-form-actions">
+                <button className="btn btn-secondary" type="button" onClick={resetThemeColors}>
+                  Màu mặc định
+                </button>
+                <button className="btn btn-primary" type="submit" disabled={saving}>
+                  {saving ? "Đang lưu..." : "Lưu giao diện"}
                 </button>
               </div>
             </form>

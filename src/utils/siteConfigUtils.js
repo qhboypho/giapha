@@ -14,7 +14,21 @@ export const DEFAULT_SITE_CONFIG = {
   mainTreeTitle: "Cây gia phả dòng chính",
   loginDescription: "Hệ thống yêu cầu mật khẩu để xem thông tin chi tiết gia phả dòng họ.",
   footerQuote: "Cội nguồn là nơi bắt đầu - Ký ức là sợi dây - Tương lai là nơi tiếp nối.",
-  footerMessage: "Nguyện cùng nhau gìn giữ, để dòng họ Trần Công mãi bền vững và tỏa sáng."
+  footerMessage: "Nguyện cùng nhau gìn giữ, để dòng họ Trần Công mãi bền vững và tỏa sáng.",
+  themeColors: {
+    primary: "#B64235",
+    secondary: "#55745F",
+    accent: "#D6A85A",
+    appBackground: "#0F0A07",
+    cardBackground: "#241A12",
+    cardHover: "#2D2017",
+    border: "#4B3828",
+    textPrimary: "#F5E7D3",
+    textSecondary: "#D4C6B2",
+    textMuted: "#8E7F72",
+    navbarTop: "#9C130F",
+    navbarBottom: "#690604"
+  }
 };
 
 const SITE_CONFIG_TEXT_LIMITS = {
@@ -34,7 +48,9 @@ const SITE_CONFIG_TEXT_LIMITS = {
   footerMessage: 300
 };
 
-export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG);
+export const SITE_THEME_COLOR_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeColors);
+export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field) => field !== "themeColors");
+const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
 const normalizeString = (value, fallback = "", maxLength = 300) => {
   const text = String(value ?? "").trim();
@@ -42,12 +58,26 @@ const normalizeString = (value, fallback = "", maxLength = 300) => {
 };
 
 export function normalizeSiteConfig(config = {}) {
-  return SITE_CONFIG_FIELDS.reduce((acc, field) => {
+  const normalized = SITE_CONFIG_FIELDS.reduce((acc, field) => {
     acc[field] = normalizeString(
       config[field],
       DEFAULT_SITE_CONFIG[field],
       SITE_CONFIG_TEXT_LIMITS[field]
     );
+    return acc;
+  }, {});
+
+  normalized.themeColors = normalizeThemeColors(config.themeColors);
+  return normalized;
+}
+
+export function normalizeThemeColors(colors = {}) {
+  const source = colors && typeof colors === "object" ? colors : {};
+  return SITE_THEME_COLOR_FIELDS.reduce((acc, field) => {
+    const rawValue = String(source[field] || "").trim();
+    acc[field] = HEX_COLOR_PATTERN.test(rawValue)
+      ? rawValue.toUpperCase()
+      : DEFAULT_SITE_CONFIG.themeColors[field];
     return acc;
   }, {});
 }
@@ -84,4 +114,28 @@ export function validateSiteConfigInput(config = {}) {
   }
 
   return normalized;
+}
+
+export function buildThemeCssVariables(config = {}) {
+  const colors = normalizeSiteConfig(config).themeColors;
+  return {
+    "--color-brand-primary": colors.primary,
+    "--color-brand-secondary": colors.secondary,
+    "--color-brand-accent": colors.accent,
+    "--heritage-red": colors.primary,
+    "--heritage-green": colors.secondary,
+    "--heritage-gold": colors.accent,
+    "--bg-app": `radial-gradient(circle at top left, ${colors.cardBackground}, ${colors.appBackground})`,
+    "--bg-main": colors.appBackground,
+    "--bg-card": colors.cardBackground,
+    "--bg-card-hover": colors.cardHover,
+    "--border-card": colors.border,
+    "--text-primary": colors.textPrimary,
+    "--text-secondary": colors.textSecondary,
+    "--text-muted": colors.textMuted,
+    "--bg-input": colors.appBackground,
+    "--bg-nav": `linear-gradient(180deg, ${colors.navbarTop}, ${colors.navbarBottom})`,
+    "--theme-navbar-top": colors.navbarTop,
+    "--theme-navbar-bottom": colors.navbarBottom
+  };
 }

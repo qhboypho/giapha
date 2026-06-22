@@ -39,7 +39,21 @@ function buildSiteConfig(familyName) {
     mainTreeTitle: "Cây gia phả mẫu",
     loginDescription: "Hệ thống yêu cầu đăng nhập để xem thông tin chi tiết gia phả.",
     footerQuote: "Cội nguồn là nơi bắt đầu - Ký ức là sợi dây - Tương lai là nơi tiếp nối.",
-    footerMessage: "Dữ liệu đang ở trạng thái mẫu. Hãy cập nhật thông tin chính thức của dòng họ trước khi công bố."
+    footerMessage: "Dữ liệu đang ở trạng thái mẫu. Hãy cập nhật thông tin chính thức của dòng họ trước khi công bố.",
+    themeColors: {
+      primary: "#B64235",
+      secondary: "#55745F",
+      accent: "#D6A85A",
+      appBackground: "#0F0A07",
+      cardBackground: "#241A12",
+      cardHover: "#2D2017",
+      border: "#4B3828",
+      textPrimary: "#F5E7D3",
+      textSecondary: "#D4C6B2",
+      textMuted: "#8E7F72",
+      navbarTop: "#9C130F",
+      navbarBottom: "#690604"
+    }
   };
 }
 

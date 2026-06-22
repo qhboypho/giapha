@@ -7,6 +7,11 @@ export const SETUP_WIZARD_STEPS = [
     description: "Tên dòng họ, tiêu đề, logo và nội dung trang chủ."
   },
   {
+    id: "theme",
+    title: "Giao diện",
+    description: "Tùy chỉnh màu thương hiệu, nền, thẻ và thanh điều hướng."
+  },
+  {
     id: "security",
     title: "Bảo mật và AI",
     description: "Chế độ riêng tư và API key AI nếu muốn nhập liệu từ ảnh/PDF."
