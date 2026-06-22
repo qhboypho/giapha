@@ -85,6 +85,7 @@ export default function Navbar({
   suppressOverlays = false,
   currentUser,
   authReady = true,
+  isGuestLocked = false,
   setIsLoginModalOpen,
   onLogout,
   isPrivateMode,
@@ -518,7 +519,7 @@ export default function Navbar({
       </button>
 
       {/* Desktop Navigation (Hidden on Mobile) */}
-      <div className="nav-actions desktop-nav">
+      {!isGuestLocked && <div className="nav-actions desktop-nav">
         {/* View toggles */}
         <div className="btn-group">
           <button
@@ -720,10 +721,20 @@ export default function Navbar({
             Đăng nhập
           </button>
         ) : null}
-      </div>
+      </div>}
+
+      {isGuestLocked && (
+        <div className="nav-actions desktop-nav guest-nav-actions">
+          {authReady && (
+            <button className="btn btn-secondary" onClick={() => setIsLoginModalOpen(true)} style={{ flex: "none", borderRadius: "20px" }}>
+              Đăng nhập
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Mobile Navigation Toggle (Visible on Mobile) */}
-      <div className="mobile-nav-toggle">
+      {!isGuestLocked && <div className="mobile-nav-toggle">
         {canGoBack && (
           <button
             className="mobile-back-btn"
@@ -772,7 +783,17 @@ export default function Navbar({
         <button className="hamburger-btn" onClick={toggleMobileMenu} aria-label="Toggle menu">
           <span aria-hidden="true">☰</span>
         </button>
-      </div>
+      </div>}
+
+      {isGuestLocked && (
+        <div className="mobile-nav-toggle guest-mobile-nav">
+          {authReady && (
+            <button className="btn btn-secondary" onClick={() => setIsLoginModalOpen(true)} style={{ flex: "none", borderRadius: "20px" }}>
+              Đăng nhập
+            </button>
+          )}
+        </div>
+      )}
 
       {isMobileSearchOpen && !suppressOverlays && (
         <>

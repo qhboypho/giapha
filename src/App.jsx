@@ -459,6 +459,7 @@ export default function App() {
   // Determine if application is locked under Private Mode
   const isLocked = isPrivateMode && !isAuthenticatedViewer(currentUser);
   const shouldHoldAuthGate = !authReady;
+  const shouldUseGuestNavbar = shouldHoldAuthGate || isLocked;
   const canRevealSensitiveInfo = isPrivateMode && canEditMembers(currentUser);
   const canGoBack = viewHistory.length > 0;
   const notifications = useMemo(() => buildFamilyNotifications({
@@ -626,6 +627,7 @@ export default function App() {
         suppressOverlays={Boolean(isLoginModalOpen || isMemberModalOpen)}
         currentUser={currentUser}
         authReady={authReady}
+        isGuestLocked={shouldUseGuestNavbar}
         setIsLoginModalOpen={openLoginModal}
         onLogout={handleLogout}
         isPrivateMode={isPrivateMode}
