@@ -138,20 +138,28 @@ function copyProjectTree(sourceDir, targetDir) {
   }
 }
 
-function runCommand(command, args, cwd) {
+function runCommand(command, args, cwd, options = {}) {
   console.log(`$ ${command} ${args.join(" ")}`);
   const executable = process.platform === "win32" && ["npm", "npx"].includes(command)
     ? `${command}.cmd`
     : command;
-  const result = spawnSync(executable, args, {
-    cwd,
-    stdio: "inherit",
-    shell: false,
-    windowsVerbatimArguments: false
-  });
-  if (result.status !== 0) {
-    throw new Error(`Command failed: ${command} ${args.join(" ")}`);
+  const maxAttempts = Number(options.retries || 0) + 1;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const result = spawnSync(executable, args, {
+      cwd,
+      stdio: "inherit",
+      shell: false,
+      windowsVerbatimArguments: false
+    });
+    if (result.status === 0) return;
+
+    if (attempt < maxAttempts) {
+      console.log(`Command failed, thử lại lần ${attempt + 1}/${maxAttempts}: ${command} ${args.join(" ")}`);
+    }
   }
+
+  throw new Error(`Command failed: ${command} ${args.join(" ")}`);
 }
 
 function ensureTargetAvailable(targetDir, force) {
@@ -275,7 +283,7 @@ async function main() {
   runCommand("node", ["scripts/provision-wizard.mjs", ...plan.provisionArgs], plan.targetDir);
 
   if (plan.install) {
-    runCommand("npm", ["install"], plan.targetDir);
+    runCommand("npm", ["install", "--no-audit", "--no-fund"], plan.targetDir, { retries: 1 });
   }
 
   if (plan.gitInit) {
