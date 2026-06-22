@@ -28,6 +28,7 @@ const shouldIgnoreSwipeTarget = (target) => (
 const VIEWER_ID_STORAGE_KEY = "giapha_tc_viewer_id";
 const VIEWER_ID_PATTERN = /^[a-zA-Z0-9_-]{16,80}$/;
 const READ_NOTIFICATION_STORAGE_KEY = "giapha_tc_read_notifications";
+const HAD_SESSION_STORAGE_KEY = "giapha_tc_had_session";
 
 const getOrCreateViewerId = () => {
   const existing = localStorage.getItem(VIEWER_ID_STORAGE_KEY);
@@ -47,6 +48,7 @@ export default function App() {
   // Authenticated user state
   const [currentUser, setCurrentUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [hadSessionHint, setHadSessionHint] = useState(() => localStorage.getItem(HAD_SESSION_STORAGE_KEY) === "true");
 
   // Privacy mode status (locked/unlocked)
   const [isPrivateMode, setIsPrivateMode] = useState(true);
@@ -155,6 +157,11 @@ export default function App() {
         if (authData.success) {
           user = authData.user;
           setCurrentUser(user);
+          setHadSessionHint(true);
+          localStorage.setItem(HAD_SESSION_STORAGE_KEY, "true");
+        } else {
+          setHadSessionHint(false);
+          localStorage.removeItem(HAD_SESSION_STORAGE_KEY);
         }
       } catch (err) {
         console.error("Auth check failed:", err);
@@ -237,6 +244,8 @@ export default function App() {
 
   const handleLogin = async (user) => {
     setCurrentUser(user);
+    setHadSessionHint(true);
+    localStorage.setItem(HAD_SESSION_STORAGE_KEY, "true");
     showToast(`Đăng nhập thành công với vai trò ${getRoleLabel(user.role)}!`);
 
     // Reload settings and members lists
@@ -268,6 +277,8 @@ export default function App() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setCurrentUser(null);
+      setHadSessionHint(false);
+      localStorage.removeItem(HAD_SESSION_STORAGE_KEY);
       setMembers([]);
       setHistoryEvents([]);
       setShowSensitiveInfo(false);
@@ -459,7 +470,7 @@ export default function App() {
   // Determine if application is locked under Private Mode
   const isLocked = isPrivateMode && !isAuthenticatedViewer(currentUser);
   const shouldHoldAuthGate = !authReady;
-  const shouldUseGuestNavbar = shouldHoldAuthGate || isLocked;
+  const shouldUseGuestNavbar = isLocked && !(shouldHoldAuthGate && hadSessionHint);
   const canRevealSensitiveInfo = isPrivateMode && canEditMembers(currentUser);
   const canGoBack = viewHistory.length > 0;
   const notifications = useMemo(() => buildFamilyNotifications({
