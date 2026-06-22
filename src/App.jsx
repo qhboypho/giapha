@@ -458,6 +458,7 @@ export default function App() {
 
   // Determine if application is locked under Private Mode
   const isLocked = isPrivateMode && !isAuthenticatedViewer(currentUser);
+  const shouldHoldAuthGate = !authReady;
   const canRevealSensitiveInfo = isPrivateMode && canEditMembers(currentUser);
   const canGoBack = viewHistory.length > 0;
   const notifications = useMemo(() => buildFamilyNotifications({
@@ -647,7 +648,9 @@ export default function App() {
 
       {/* Main split display */}
       <div className="main-content">
-        {isLocked ? (
+        {shouldHoldAuthGate ? (
+          <div className="auth-hydration-blank" aria-hidden="true" />
+        ) : isLocked ? (
           // Private Lock Screen
           <div className="lock-screen animate-fade">
             <div className="lock-container glass">
