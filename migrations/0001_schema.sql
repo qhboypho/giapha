@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS members (
   phone TEXT,
   address TEXT,
   avatar TEXT, -- Base64 encoded image
-  isFeatured INTEGER NOT NULL DEFAULT 0, -- 0 for false, 1 for featured homepage member
   spouseIds TEXT, -- JSON array of strings: e.g. '["g1_2"]'
   fatherId TEXT,
   motherId TEXT,
