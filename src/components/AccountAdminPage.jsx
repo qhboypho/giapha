@@ -38,7 +38,6 @@ export default function AccountAdminPage({
   onToast,
   onSiteConfigSave,
   onPrivateModeChange,
-  onOpenSetupWizard,
   onCmsPackageImported,
   onMembersSynced
 }) {
@@ -78,7 +77,6 @@ export default function AccountAdminPage({
   const [aiPreview, setAiPreview] = useState(null);
   const [aiErrors, setAiErrors] = useState([]);
   const [aiBusy, setAiBusy] = useState(false);
-  const [aiDragActive, setAiDragActive] = useState(false);
 
   const adminCount = useMemo(
     () => users.filter((user) => user.role === "admin").length,
@@ -486,12 +484,6 @@ export default function AccountAdminPage({
   const handleAiSourceChange = (event) => {
     addAiSourceFiles(event.target.files);
     event.target.value = "";
-  };
-
-  const handleAiDrop = (event) => {
-    event.preventDefault();
-    setAiDragActive(false);
-    addAiSourceFiles(event.dataTransfer.files);
   };
 
   const clearAiImport = () => {
@@ -1010,6 +1002,10 @@ export default function AccountAdminPage({
             <div className="setup-wizard-progress">
               <strong>{wizardStepIndex + 1}/{SETUP_WIZARD_STEPS.length}</strong>
               <span>{wizardDone ? "Đã hoàn tất" : `${setupProgress.completedCount}/${setupProgress.requiredCount} mục bắt buộc`}</span>
+              <a className="btn btn-secondary" href="/cms-setup-guide.html" target="_blank" rel="noreferrer">
+                <ExternalLink size={16} strokeWidth={2.2} />
+                Hướng dẫn setup
+              </a>
             </div>
           </div>
 
@@ -1030,6 +1026,10 @@ export default function AccountAdminPage({
           {wizardStep === "site" && (
             <form className="setup-wizard-panel" onSubmit={handleSiteConfigSubmit}>
               <div className="site-config-grid">
+                <label>
+                  Nhãn nhỏ trên logo
+                  <input className="form-input" value={siteConfigForm.familyLabel} onChange={(event) => handleSiteConfigChange("familyLabel", event.target.value)} />
+                </label>
                 <label>
                   Tên dòng họ
                   <input className="form-input" value={siteConfigForm.familyName} onChange={(event) => handleSiteConfigChange("familyName", event.target.value)} required />
@@ -1054,9 +1054,21 @@ export default function AccountAdminPage({
                   Tiêu đề cây mini
                   <input className="form-input" value={siteConfigForm.mainTreeTitle} onChange={(event) => handleSiteConfigChange("mainTreeTitle", event.target.value)} />
                 </label>
+                <label>
+                  CTA chính
+                  <input className="form-input" value={siteConfigForm.primaryCtaLabel} onChange={(event) => handleSiteConfigChange("primaryCtaLabel", event.target.value)} />
+                </label>
+                <label>
+                  CTA phụ
+                  <input className="form-input" value={siteConfigForm.secondaryCtaLabel} onChange={(event) => handleSiteConfigChange("secondaryCtaLabel", event.target.value)} />
+                </label>
                 <label className="site-config-wide">
                   Mô tả hero
                   <textarea className="form-input" rows={3} value={siteConfigForm.heroDescription} onChange={(event) => handleSiteConfigChange("heroDescription", event.target.value)} />
+                </label>
+                <label className="site-config-wide">
+                  Mô tả đăng nhập
+                  <textarea className="form-input" rows={2} value={siteConfigForm.loginDescription} onChange={(event) => handleSiteConfigChange("loginDescription", event.target.value)} />
                 </label>
                 <label className="site-config-wide">
                   Câu footer
@@ -1133,6 +1145,16 @@ export default function AccountAdminPage({
                       autoComplete="off"
                     />
                   </label>
+                  {aiConfig?.hasApiKey && (
+                    <label className="ai-config-clear">
+                      <input
+                        type="checkbox"
+                        checked={aiConfigForm.clearApiKey}
+                        onChange={(event) => setAiConfigForm((prev) => ({ ...prev, clearApiKey: event.target.checked, apiKey: event.target.checked ? "" : prev.apiKey }))}
+                      />
+                      Xóa API key hiện tại
+                    </label>
+                  )}
                 </div>
                 <div className="account-form-actions">
                   <button className="btn btn-secondary" type="button" onClick={testAiConfig} disabled={aiConfigTesting || aiConfigBusy}>
@@ -1148,6 +1170,33 @@ export default function AccountAdminPage({
 
           {wizardStep === "data" && (
             <div className="setup-wizard-panel">
+              <div className="member-sync-actions">
+                <button className="btn btn-secondary" type="button" onClick={exportCmsPackage} disabled={cmsPackageBusy}>
+                  <Download size={16} strokeWidth={2.2} />
+                  Xuất gói CMS
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={exportMediaPackage} disabled={mediaPackageBusy}>
+                  <Download size={16} strokeWidth={2.2} />
+                  Xuất gói media
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={exportMembers} disabled={syncBusy}>
+                  <Download size={16} strokeWidth={2.2} />
+                  Xuất dữ liệu cây
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={downloadMemberSample} disabled={syncBusy}>
+                  <Download size={16} strokeWidth={2.2} />
+                  Tải JSON mẫu
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={copyAiPrompt} disabled={aiBusy}>
+                  <Copy size={16} strokeWidth={2.2} />
+                  Copy prompt AI
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={downloadAiPrompt} disabled={syncBusy}>
+                  <Download size={16} strokeWidth={2.2} />
+                  Tải prompt AI
+                </button>
+              </div>
+
               <div className="setup-import-grid">
                 <label className={`setup-import-tile ${cmsPackageBusy ? "disabled" : ""}`}>
                   <Upload size={20} strokeWidth={2.2} />
@@ -1177,9 +1226,9 @@ export default function AccountAdminPage({
 
               {(cmsPackagePreview || syncPreview || mediaPackagePreview || aiSourceFiles.length > 0) && (
                 <div className="setup-import-status">
-                  {cmsPackagePreview && <span>Gói CMS: {cmsPackagePreview.members.totalIncoming} thành viên, {cmsPackagePreview.historyEvents.totalIncoming} mốc lịch sử.</span>}
-                  {syncPreview && <span>JSON cây: {syncPreview.totalIncoming} thành viên.</span>}
-                  {mediaPackagePreview && <span>Media: {mediaPackagePreview.totalIncoming} ảnh.</span>}
+                  {cmsPackagePreview && <span>Gói CMS {cmsPackageFileName ? `"${cmsPackageFileName}"` : ""}: {cmsPackagePreview.members.totalIncoming} thành viên, {cmsPackagePreview.historyEvents.totalIncoming} mốc lịch sử.</span>}
+                  {syncPreview && <span>JSON cây {syncFileName ? `"${syncFileName}"` : ""}: {syncPreview.totalIncoming} thành viên.</span>}
+                  {mediaPackagePreview && <span>Media {mediaPackageFileName ? `"${mediaPackageFileName}"` : ""}: {mediaPackagePreview.totalIncoming} ảnh.</span>}
                   {aiSourceFiles.length > 0 && <span>AI: đã chọn {aiSourceFiles.length} file nguồn.</span>}
                 </div>
               )}
@@ -1205,7 +1254,22 @@ export default function AccountAdminPage({
                     AI tự nhận diện
                   </button>
                 )}
+                <button className="btn btn-primary" type="button" onClick={previewAiJsonImport} disabled={aiBusy || !aiJsonText.trim()}>
+                  Kiểm tra JSON AI
+                </button>
+                <button className="btn btn-secondary" type="button" onClick={clearAiImport} disabled={aiBusy || (!aiJsonText && !aiPreview)}>
+                  Xóa JSON AI
+                </button>
               </div>
+
+              <textarea
+                className="form-input ai-json-input"
+                rows={8}
+                value={aiJsonText}
+                onChange={handleAiJsonTextChange}
+                placeholder="AI sẽ điền JSON vào đây, hoặc paste JSON AI bên ngoài trả về..."
+                spellCheck={false}
+              />
 
               {aiPreview && (
                 <div className="setup-import-status">
@@ -1266,520 +1330,9 @@ export default function AccountAdminPage({
             )}
           </div>
         </section>
-      ) : mode !== "password" && (
-        <>
-          <form className="site-config-card glass" onSubmit={handleSiteConfigSubmit}>
-            <div className="account-form-title">
-              <Save size={18} strokeWidth={2.2} />
-              <h2>Cấu hình website/CMS</h2>
-            </div>
-            <p>
-              Đổi tên dòng họ, logo và nội dung trang chủ để tái sử dụng base này cho dòng họ khác mà không cần sửa source.
-            </p>
-            <div className="site-config-help">
-              <span>Setup khách mới bằng CMS package, bootstrap script và Cloudflare Pages.</span>
-              <div className="site-config-help-actions">
-                <button className="btn btn-primary" type="button" onClick={onOpenSetupWizard}>
-                  <Wand2 size={16} strokeWidth={2.2} />
-                  Mở Setup Wizard
-                </button>
-                <a className="btn btn-secondary" href="/cms-setup-guide.html" target="_blank" rel="noreferrer">
-                  <ExternalLink size={16} strokeWidth={2.2} />
-                  Mở hướng dẫn setup
-                </a>
-              </div>
-            </div>
-            <div className="site-config-grid">
-              <label>
-                Nhãn nhỏ trên logo
-                <input className="form-input" value={siteConfigForm.familyLabel} onChange={(event) => handleSiteConfigChange("familyLabel", event.target.value)} />
-              </label>
-              <label>
-                Tên dòng họ
-                <input className="form-input" value={siteConfigForm.familyName} onChange={(event) => handleSiteConfigChange("familyName", event.target.value)} required />
-              </label>
-              <label>
-                Tiêu đề website
-                <input className="form-input" value={siteConfigForm.siteTitle} onChange={(event) => handleSiteConfigChange("siteTitle", event.target.value)} required />
-              </label>
-              <label>
-                Logo URL
-                <input className="form-input" value={siteConfigForm.logoUrl} onChange={(event) => handleSiteConfigChange("logoUrl", event.target.value)} placeholder="/tranconglogo.png" />
-              </label>
-              <label>
-                Hero dòng 1
-                <input className="form-input" value={siteConfigForm.heroTitle} onChange={(event) => handleSiteConfigChange("heroTitle", event.target.value)} />
-              </label>
-              <label>
-                Hero dòng 2
-                <input className="form-input" value={siteConfigForm.heroSubtitle} onChange={(event) => handleSiteConfigChange("heroSubtitle", event.target.value)} />
-              </label>
-              <label className="site-config-wide">
-                Mô tả hero
-                <textarea className="form-input" rows={3} value={siteConfigForm.heroDescription} onChange={(event) => handleSiteConfigChange("heroDescription", event.target.value)} />
-              </label>
-              <label>
-                CTA chính
-                <input className="form-input" value={siteConfigForm.primaryCtaLabel} onChange={(event) => handleSiteConfigChange("primaryCtaLabel", event.target.value)} />
-              </label>
-              <label>
-                CTA phụ
-                <input className="form-input" value={siteConfigForm.secondaryCtaLabel} onChange={(event) => handleSiteConfigChange("secondaryCtaLabel", event.target.value)} />
-              </label>
-              <label>
-                Tiêu đề cây mini
-                <input className="form-input" value={siteConfigForm.mainTreeTitle} onChange={(event) => handleSiteConfigChange("mainTreeTitle", event.target.value)} />
-              </label>
-              <label className="site-config-wide">
-                Mô tả đăng nhập
-                <textarea className="form-input" rows={2} value={siteConfigForm.loginDescription} onChange={(event) => handleSiteConfigChange("loginDescription", event.target.value)} />
-              </label>
-              <label className="site-config-wide">
-                Câu footer
-                <textarea className="form-input" rows={2} value={siteConfigForm.footerQuote} onChange={(event) => handleSiteConfigChange("footerQuote", event.target.value)} />
-              </label>
-              <label className="site-config-wide">
-                Lời nhắn footer
-                <textarea className="form-input" rows={2} value={siteConfigForm.footerMessage} onChange={(event) => handleSiteConfigChange("footerMessage", event.target.value)} />
-              </label>
-            </div>
-            <div className="account-form-actions">
-              <button className="btn btn-primary" type="submit" disabled={saving}>
-                {saving ? "Đang lưu..." : "Lưu cấu hình website"}
-              </button>
-            </div>
-          </form>
+      ) : null}
 
-          <form className="ai-config-card glass" onSubmit={handleAiConfigSubmit}>
-            <div className="account-form-title">
-              <KeyRound size={18} strokeWidth={2.2} />
-              <h2>Cấu hình AI</h2>
-            </div>
-            <p>
-              Lưu API key AI đã mã hóa để admin có thể nhận diện gia phả từ ảnh/PDF ngay trong app.
-            </p>
-            {aiConfig && !aiConfig.encryptionReady && (
-              <div className="ai-config-warning">
-                Cần cấu hình secret <strong>AI_CONFIG_SECRET</strong> trên Cloudflare Pages trước khi lưu API key trong app.
-              </div>
-            )}
-            <div className="ai-config-status">
-              <span>
-                Provider hiện tại: <strong>{aiConfig?.providerLabel || "OpenAI"}</strong>
-              </span>
-              <span>
-                API key: <strong>{aiConfig?.hasApiKey ? (aiConfig.keyPreview || "Đã cấu hình") : "Chưa cấu hình"}</strong>
-              </span>
-              {aiConfig?.envFallback && <span>Đang dùng fallback từ <strong>OPENAI_API_KEY</strong></span>}
-            </div>
-            <div className="ai-config-grid">
-              <label>
-                Provider
-                <select className="form-input" value={aiConfigForm.provider} onChange={(event) => handleAiProviderChange(event.target.value)}>
-                  {Object.entries(AI_PROVIDERS).map(([value, provider]) => (
-                    <option value={value} key={value}>{provider.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Model
-                <input
-                  className="form-input"
-                  value={aiConfigForm.model}
-                  onChange={(event) => setAiConfigForm((prev) => ({ ...prev, model: event.target.value }))}
-                  placeholder={getAiProviderConfig(aiConfigForm.provider).defaultModel}
-                  required
-                />
-              </label>
-              <label className="ai-config-wide">
-                API key mới
-                <input
-                  className="form-input"
-                  type="password"
-                  value={aiConfigForm.apiKey}
-                  onChange={(event) => setAiConfigForm((prev) => ({ ...prev, apiKey: event.target.value, clearApiKey: false }))}
-                  placeholder={aiConfig?.hasApiKey ? "Để trống nếu không đổi key" : "Nhập API key của provider đã chọn"}
-                  autoComplete="off"
-                />
-              </label>
-              {aiConfig?.hasApiKey && (
-                <label className="ai-config-clear">
-                  <input
-                    type="checkbox"
-                    checked={aiConfigForm.clearApiKey}
-                    onChange={(event) => setAiConfigForm((prev) => ({ ...prev, clearApiKey: event.target.checked, apiKey: event.target.checked ? "" : prev.apiKey }))}
-                  />
-                  Xóa API key hiện tại
-                </label>
-              )}
-            </div>
-            <div className="account-form-actions">
-              <button className="btn btn-secondary" type="button" onClick={testAiConfig} disabled={aiConfigTesting || aiConfigBusy}>
-                {aiConfigTesting ? "Đang kiểm tra..." : "Kiểm tra kết nối"}
-              </button>
-              <button className="btn btn-primary" type="submit" disabled={aiConfigBusy}>
-                {aiConfigBusy ? "Đang lưu..." : "Lưu cấu hình AI"}
-              </button>
-            </div>
-          </form>
-
-          <section className="cms-package-card glass">
-            <div className="account-form-title">
-              <ShieldCheck size={18} strokeWidth={2.2} />
-              <h2>Gói CMS website</h2>
-            </div>
-            <p>
-              Xuất hoặc nhập trọn gói cấu hình website, cây gia phả và lịch sử dòng họ. Đây là định dạng dùng để setup nhanh cho khách mới.
-            </p>
-            <div className="member-sync-actions">
-              <button className="btn btn-secondary" type="button" onClick={exportCmsPackage} disabled={cmsPackageBusy}>
-                <Download size={16} strokeWidth={2.2} />
-                Xuất gói CMS
-              </button>
-              <label className={`btn btn-primary member-sync-import ${cmsPackageBusy ? "disabled" : ""}`}>
-                <Upload size={16} strokeWidth={2.2} />
-                Chọn gói CMS
-                <input type="file" accept="application/json,.json" onChange={handleCmsPackageFileChange} disabled={cmsPackageBusy} />
-              </label>
-            </div>
-
-            {cmsPackagePreview && (
-              <div className="member-sync-preview">
-                <div className="member-sync-file">
-                  <strong>{cmsPackageFileName}</strong>
-                  <span>
-                    {cmsPackagePreview.totals.incomingMembers} thành viên · {cmsPackagePreview.totals.incomingHistoryEvents} cột mốc lịch sử
-                  </span>
-                </div>
-                <div className="member-sync-stats">
-                  <span><strong>{cmsPackagePreview.siteConfigChanged ? "Có" : "Không"}</strong> đổi cấu hình</span>
-                  <span><strong>{cmsPackagePreview.members.toCreate}</strong> thành viên mới</span>
-                  <span><strong>{cmsPackagePreview.members.toUpdate}</strong> thành viên cập nhật</span>
-                  <span><strong>{cmsPackagePreview.members.toDelete}</strong> thành viên sẽ xóa</span>
-                  <span><strong>{cmsPackagePreview.historyEvents.toCreate}</strong> lịch sử mới</span>
-                  <span><strong>{cmsPackagePreview.historyEvents.toUpdate}</strong> lịch sử cập nhật</span>
-                  <span><strong>{cmsPackagePreview.historyEvents.toDelete}</strong> lịch sử sẽ xóa</span>
-                </div>
-                <div className="member-sync-detail-grid cms-package-detail-grid">
-                  {[
-                    ["Thành viên thêm", cmsPackagePreview.members.creates || [], "create", "name"],
-                    ["Thành viên sửa", cmsPackagePreview.members.updates || [], "update", "name"],
-                    ["Thành viên xóa", cmsPackagePreview.members.deletes || [], "delete", "name"],
-                    ["Lịch sử thêm", cmsPackagePreview.historyEvents.creates || [], "create", "title"],
-                    ["Lịch sử sửa", cmsPackagePreview.historyEvents.updates || [], "update", "title"],
-                    ["Lịch sử xóa", cmsPackagePreview.historyEvents.deletes || [], "delete", "title"]
-                  ].map(([title, items, tone, labelKey]) => (
-                    <div className={`member-sync-detail-section ${tone}`} key={title}>
-                      <strong>{title}</strong>
-                      {items.length > 0 ? (
-                        <div className="member-sync-detail-list">
-                          {items.slice(0, 4).map((item) => (
-                            <span key={`${title}-${item.id}`}>
-                              <b>{item[labelKey]}</b>
-                              <small>
-                                {item.generation ? `Đời ${item.generation}` : item.eventDate}
-                                {item.changedFields?.length ? ` · đổi ${item.changedFields.join(", ")}` : ""}
-                              </small>
-                            </span>
-                          ))}
-                          {items.length > 4 && <em>Còn {items.length - 4} mục khác.</em>}
-                        </div>
-                      ) : (
-                        <small>Không có thay đổi.</small>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {cmsPackageErrors.length > 0 ? (
-                  <div className="member-sync-errors">
-                    {cmsPackageErrors.slice(0, 6).map((error) => (
-                      <span key={error}>{error}</span>
-                    ))}
-                    {cmsPackageErrors.length > 6 && <span>Còn {cmsPackageErrors.length - 6} lỗi khác.</span>}
-                  </div>
-                ) : (
-                  <button className="btn btn-primary" type="button" onClick={importCmsPackage} disabled={cmsPackageBusy}>
-                    Ghi đè website bằng gói CMS
-                  </button>
-                )}
-              </div>
-            )}
-          </section>
-
-          <section className="media-package-card glass">
-            <div className="account-form-title">
-              <ShieldCheck size={18} strokeWidth={2.2} />
-              <h2>Gói media R2</h2>
-            </div>
-            <p>
-              Xuất hoặc nhập các ảnh lịch sử đang lưu trong R2. Dùng sau khi import gói CMS để website khách mới không bị thiếu ảnh tư liệu.
-            </p>
-            <div className="member-sync-actions">
-              <button className="btn btn-secondary" type="button" onClick={exportMediaPackage} disabled={mediaPackageBusy}>
-                <Download size={16} strokeWidth={2.2} />
-                Xuất gói media
-              </button>
-              <label className={`btn btn-primary member-sync-import ${mediaPackageBusy ? "disabled" : ""}`}>
-                <Upload size={16} strokeWidth={2.2} />
-                Chọn gói media
-                <input type="file" accept="application/json,.json" onChange={handleMediaPackageFileChange} disabled={mediaPackageBusy} />
-              </label>
-            </div>
-
-            {mediaPackagePreview && (
-              <div className="member-sync-preview">
-                <div className="member-sync-file">
-                  <strong>{mediaPackageFileName}</strong>
-                  <span>{mediaPackagePreview.totalIncoming} ảnh trong gói media</span>
-                </div>
-                <div className="member-sync-stats">
-                  <span><strong>{mediaPackagePreview.toUpload}</strong> ảnh mới</span>
-                  <span><strong>{mediaPackagePreview.toOverwrite}</strong> ảnh ghi đè</span>
-                  <span><strong>{mediaPackagePreview.totalExisting}</strong> ảnh đang tham chiếu</span>
-                </div>
-                <div className="member-sync-detail-grid media-package-detail-grid">
-                  {[
-                    ["Ảnh mới", mediaPackagePreview.uploads || [], "create"],
-                    ["Ảnh ghi đè", mediaPackagePreview.overwrites || [], "update"]
-                  ].map(([title, items, tone]) => (
-                    <div className={`member-sync-detail-section ${tone}`} key={title}>
-                      <strong>{title}</strong>
-                      {items.length > 0 ? (
-                        <div className="member-sync-detail-list">
-                          {items.slice(0, 6).map((item) => (
-                            <span key={`${title}-${item.key}`}>
-                              <b>{item.name || item.key}</b>
-                              <small>{item.contentType} · {Math.round((item.size || 0) / 1024)} KB</small>
-                            </span>
-                          ))}
-                          {items.length > 6 && <em>Còn {items.length - 6} ảnh khác.</em>}
-                        </div>
-                      ) : (
-                        <small>Không có thay đổi.</small>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {mediaPackageErrors.length > 0 ? (
-                  <div className="member-sync-errors">
-                    {mediaPackageErrors.slice(0, 6).map((error) => (
-                      <span key={error}>{error}</span>
-                    ))}
-                    {mediaPackageErrors.length > 6 && <span>Còn {mediaPackageErrors.length - 6} lỗi khác.</span>}
-                  </div>
-                ) : (
-                  <button className="btn btn-primary" type="button" onClick={importMediaPackage} disabled={mediaPackageBusy}>
-                    Upload gói media vào R2
-                  </button>
-                )}
-              </div>
-            )}
-          </section>
-
-          <section className="ai-import-card glass">
-            <div className="account-form-title">
-              <ShieldCheck size={18} strokeWidth={2.2} />
-              <h2>Nhập gia phả bằng AI</h2>
-            </div>
-            <p>
-              Tải ảnh/PDF gia phả để AI nhận diện thành JSON, sau đó preview và xác nhận trước khi nhập vào cây.
-            </p>
-            <div
-              className={`ai-source-dropzone ${aiDragActive ? "active" : ""}`}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setAiDragActive(true);
-              }}
-              onDragLeave={() => setAiDragActive(false)}
-              onDrop={handleAiDrop}
-            >
-              <Upload size={20} strokeWidth={2.2} />
-              <span>Chọn hoặc kéo ảnh/PDF gia phả vào đây</span>
-              <input type="file" accept="image/*,application/pdf" multiple onChange={handleAiSourceChange} />
-            </div>
-            {aiSourceFiles.length > 0 && (
-              <div className="ai-source-list">
-                {aiSourceFiles.map((file) => (
-                  <span key={`${file.name}-${file.size}`}>
-                    <b>{file.name}</b>
-                    <small>{Math.max(1, Math.round(file.size / 1024))} KB</small>
-                  </span>
-                ))}
-                <button className="btn btn-secondary" type="button" onClick={() => setAiSourceFiles([])}>
-                  Xóa danh sách nguồn
-                </button>
-              </div>
-            )}
-            <div className="member-sync-actions">
-              <button className="btn btn-primary" type="button" onClick={extractAiMembers} disabled={aiBusy || !aiSourceFiles.length}>
-                <ShieldCheck size={16} strokeWidth={2.2} />
-                AI tự nhận diện
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={copyAiPrompt} disabled={aiBusy}>
-                <Copy size={16} strokeWidth={2.2} />
-                Copy prompt AI
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={downloadAiPrompt} disabled={syncBusy}>
-                <Download size={16} strokeWidth={2.2} />
-                Tải prompt AI
-              </button>
-              <button className="btn btn-primary" type="button" onClick={previewAiJsonImport} disabled={aiBusy || !aiJsonText.trim()}>
-                Kiểm tra JSON AI
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={clearAiImport} disabled={aiBusy || (!aiJsonText && !aiPreview)}>
-                Xóa JSON
-              </button>
-            </div>
-            <textarea
-              className="form-input ai-json-input"
-              rows={8}
-              value={aiJsonText}
-              onChange={handleAiJsonTextChange}
-              placeholder="AI sẽ điền JSON vào đây, hoặc paste JSON AI bên ngoài trả về..."
-              spellCheck={false}
-            />
-
-            {aiPreview && (
-              <div className="member-sync-preview">
-                <div className="member-sync-file">
-                  <strong>Preview JSON AI</strong>
-                  <span>{aiPreview.totalIncoming} thành viên trong JSON</span>
-                </div>
-                <div className="member-sync-stats">
-                  <span><strong>{aiPreview.toCreate}</strong> thêm mới</span>
-                  <span><strong>{aiPreview.toUpdate}</strong> cập nhật</span>
-                  <span><strong>{aiPreview.unchanged}</strong> không đổi</span>
-                  <span><strong>{aiPreview.toDelete}</strong> sẽ xóa khỏi cây</span>
-                </div>
-                <div className="member-sync-detail-grid">
-                  {[
-                    ["Thêm mới", aiPreview.creates || [], "create"],
-                    ["Cập nhật", aiPreview.updates || [], "update"],
-                    ["Xóa khỏi cây", aiPreview.deletes || [], "delete"]
-                  ].map(([title, items, tone]) => (
-                    <div className={`member-sync-detail-section ${tone}`} key={title}>
-                      <strong>{title}</strong>
-                      {items.length > 0 ? (
-                        <div className="member-sync-detail-list">
-                          {items.slice(0, 6).map((item) => (
-                            <span key={`${tone}-${item.id}`}>
-                              <b>{item.name}</b>
-                              <small>
-                                Đời {item.generation}
-                                {item.changedFields?.length ? ` · đổi ${item.changedFields.join(", ")}` : ""}
-                              </small>
-                            </span>
-                          ))}
-                          {items.length > 6 && <em>Còn {items.length - 6} người khác.</em>}
-                        </div>
-                      ) : (
-                        <small>Không có thay đổi.</small>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {aiErrors.length > 0 ? (
-                  <div className="member-sync-errors">
-                    {aiErrors.slice(0, 6).map((error) => (
-                      <span key={error}>{error}</span>
-                    ))}
-                    {aiErrors.length > 6 && <span>Còn {aiErrors.length - 6} lỗi khác.</span>}
-                  </div>
-                ) : (
-                  <button className="btn btn-primary" type="button" onClick={importAiMembers} disabled={aiBusy}>
-                    Nhập JSON AI vào cây gia phả
-                  </button>
-                )}
-              </div>
-            )}
-          </section>
-
-          <section className="member-sync-card glass">
-            <div className="account-form-title">
-              <ShieldCheck size={18} strokeWidth={2.2} />
-              <h2>Đồng bộ cây gia phả</h2>
-            </div>
-            <p>
-              Xuất file JSON từ local rồi nhập lên production để đồng bộ riêng dữ liệu thành viên. Tài khoản, phiên đăng nhập và lịch sử dòng họ không bị thay đổi.
-            </p>
-            <div className="member-sync-actions">
-              <button className="btn btn-secondary" type="button" onClick={exportMembers} disabled={syncBusy}>
-                <Download size={16} strokeWidth={2.2} />
-                Xuất dữ liệu cây
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={downloadMemberSample} disabled={syncBusy}>
-                <Download size={16} strokeWidth={2.2} />
-                Tải JSON mẫu
-              </button>
-              <button className="btn btn-secondary" type="button" onClick={downloadAiPrompt} disabled={syncBusy}>
-                <Download size={16} strokeWidth={2.2} />
-                Tải prompt AI
-              </button>
-              <label className={`btn btn-primary member-sync-import ${syncBusy ? "disabled" : ""}`}>
-                <Upload size={16} strokeWidth={2.2} />
-                Chọn file nhập
-                <input type="file" accept="application/json,.json" onChange={handleSyncFileChange} disabled={syncBusy} />
-              </label>
-            </div>
-
-            {syncPreview && (
-              <div className="member-sync-preview">
-                <div className="member-sync-file">
-                  <strong>{syncFileName}</strong>
-                  <span>{syncPreview.totalIncoming} thành viên trong file</span>
-                </div>
-                <div className="member-sync-stats">
-                  <span><strong>{syncPreview.toCreate}</strong> thêm mới</span>
-                  <span><strong>{syncPreview.toUpdate}</strong> cập nhật</span>
-                  <span><strong>{syncPreview.unchanged}</strong> không đổi</span>
-                  <span><strong>{syncPreview.toDelete}</strong> sẽ xóa khỏi prod</span>
-                </div>
-                <div className="member-sync-detail-grid">
-                  {[
-                    ["Thêm mới", syncPreview.creates || [], "create"],
-                    ["Cập nhật", syncPreview.updates || [], "update"],
-                    ["Xóa khỏi prod", syncPreview.deletes || [], "delete"]
-                  ].map(([title, items, tone]) => (
-                    <div className={`member-sync-detail-section ${tone}`} key={title}>
-                      <strong>{title}</strong>
-                      {items.length > 0 ? (
-                        <div className="member-sync-detail-list">
-                          {items.slice(0, 6).map((item) => (
-                            <span key={`${tone}-${item.id}`}>
-                              <b>{item.name}</b>
-                              <small>
-                                Đời {item.generation}
-                                {item.changedFields?.length ? ` · đổi ${item.changedFields.join(", ")}` : ""}
-                              </small>
-                            </span>
-                          ))}
-                          {items.length > 6 && <em>Còn {items.length - 6} người khác.</em>}
-                        </div>
-                      ) : (
-                        <small>Không có thay đổi.</small>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {syncErrors.length > 0 ? (
-                  <div className="member-sync-errors">
-                    {syncErrors.slice(0, 6).map((error) => (
-                      <span key={error}>{error}</span>
-                    ))}
-                    {syncErrors.length > 6 && <span>Còn {syncErrors.length - 6} lỗi khác.</span>}
-                  </div>
-                ) : (
-                  <button className="btn btn-primary" type="button" onClick={importMembers} disabled={syncBusy}>
-                    Ghi đè cây gia phả trên production
-                  </button>
-                )}
-              </div>
-            )}
-          </section>
-        </>
-      )}
-
-      <div className="accounts-layout">
+      {mode !== "setup" && mode !== "password" && <div className="accounts-layout">
         <form className="account-form glass" onSubmit={handleSubmit}>
           <div className="account-form-title">
             {editing ? <Save size={18} strokeWidth={2.2} /> : <Plus size={18} strokeWidth={2.2} />}
@@ -1946,7 +1499,7 @@ export default function AccountAdminPage({
             })}
           </div>
         </section>
-      </div>
+      </div>}
     </div>
   );
 }
