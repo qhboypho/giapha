@@ -208,9 +208,9 @@
                 Chỉ cần đăng nhập Cloudflare trước, sau đó chạy một command từ repo base.
               </p>
               <pre><code>cd C:\Users\DinhTungPC\.gemini\antigravity\scratch\giapha-tc
-npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy</code></pre>
+npm run customer:setup -- --family-name="Trần Công" --slug=tran-cong --admin-password="TranCong@2026" --deploy</code></pre>
               <p>Nếu folder local khách đã tồn tại và muốn tạo lại từ đầu:</p>
-              <pre><code>npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force</code></pre>
+              <pre><code>npm run customer:setup -- --family-name="Trần Công" --slug=tran-cong --admin-password="TranCong@2026" --deploy --force</code></pre>
             </section>
 
             <section>
@@ -243,7 +243,7 @@ npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-
               <div class="result-grid">
                 <div class="result-item">
                   <strong>URL</strong>
-                  <span><code>https://giapha-tran-xuan.pages.dev/</code></span>
+                  <span><code>https://giapha-tran-cong.pages.dev/</code></span>
                 </div>
                 <div class="result-item">
                   <strong>Tài khoản</strong>
@@ -251,7 +251,7 @@ npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-
                 </div>
                 <div class="result-item">
                   <strong>Folder local</strong>
-                  <span><code>..\giapha-tran-xuan</code></span>
+                  <span><code>..\giapha-tran-cong</code></span>
                 </div>
                 <div class="result-item">
                   <strong>Cloudflare</strong>
@@ -283,52 +283,52 @@ npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-
         </ul>
         <pre><code>npx wrangler login</code></pre>
         <p class="note">Tab này giữ quy trình chi tiết để dev kiểm tra từng bước. Nếu muốn setup nhanh, dùng tab For non-tech.</p>
-        <pre><code>npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan</code></pre>
+        <pre><code>npm run create-customer -- --family-name "Trần Công" --slug tran-cong</code></pre>
         <p>Nếu muốn tạo luôn git local branch và initial commit:</p>
-        <pre><code>npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --git-init</code></pre>
+        <pre><code>npm run create-customer -- --family-name "Trần Công" --slug tran-cong --git-init</code></pre>
         <p>Nếu đã ở trong folder project khách rồi, chạy riêng Provision Wizard:</p>
         <pre><code>npm run provision:wizard</code></pre>
       </section>
 
       <section>
-        <h2>Quy trình mẫu: Họ Trần Xuân</h2>
+        <h2>Quy trình mẫu: Họ Trần Công</h2>
         <p>Trước khi chạy <code>git:publish-customer</code>, cần có đủ 4 thứ:</p>
         <ul class="step-list">
           <li>Project local khách đã tạo bằng <code>create-customer</code>.</li>
           <li>Đã vào đúng folder project khách.</li>
-          <li>Repo GitHub mới riêng, ví dụ <code>qhboypho/giapha-tran-xuan</code>.</li>
+          <li>Repo GitHub mới riêng, ví dụ <code>qhboypho/giapha-tran-cong</code>.</li>
           <li>D1/R2 đã tạo và <code>wrangler.jsonc</code> đã thay cả <code>database_id</code> lẫn <code>preview_database_id</code>.</li>
         </ul>
         <p>Chạy từ repo base để tạo project mới, provision, cài dependencies, ghi wrangler và commit local:</p>
-        <pre><code>npm run create-customer -- --family-name="Trần Xuân" --slug=tran-xuan --git-init --write-wrangler --install --force --commit-message="chore: init Tran Xuan site"</code></pre>
+        <pre><code>npm run create-customer -- --family-name="Trần Công" --slug=tran-cong --git-init --write-wrangler --install --force --commit-message="chore: init Tran Cong site"</code></pre>
         <p>Vào project mới và tạo tài nguyên Cloudflare:</p>
-        <pre><code>cd ..\giapha-tran-xuan
-npx wrangler d1 create giapha-tran-xuan-db
-npx wrangler r2 bucket create giapha-tran-xuan-media
-npx wrangler r2 bucket create giapha-tran-xuan-media-preview</code></pre>
+        <pre><code>cd ..\giapha-tran-cong
+npx wrangler d1 create giapha-tran-cong-db
+npx wrangler r2 bucket create giapha-tran-cong-media
+npx wrangler r2 bucket create giapha-tran-cong-media-preview</code></pre>
         <p>Copy <code>database_id</code> vào <code>wrangler.jsonc</code>, rồi apply migrations:</p>
         <pre><code>"database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1",
 "preview_database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1"
 
 npx wrangler d1 list
-npx wrangler d1 migrations apply giapha-tran-xuan-db --local
-npx wrangler d1 migrations apply giapha-tran-xuan-db --remote</code></pre>
+npx wrangler d1 migrations apply giapha-tran-cong-db --local
+npx wrangler d1 migrations apply giapha-tran-cong-db --remote</code></pre>
         <p>Tạo hoặc cập nhật admin trước khi chạy/deploy để vào trang là đăng nhập được ngay:</p>
         <pre><code>$env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-local"
-node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-db --local --migrate --yes
+node scripts/admin-bootstrap.mjs --db=giapha-tran-cong-db --local --migrate --yes
 $env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-prod"
-node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-db --remote --migrate --yes
+node scripts/admin-bootstrap.mjs --db=giapha-tran-cong-db --remote --migrate --yes
 Remove-Item Env:ADMIN_BOOTSTRAP_PASSWORD</code></pre>
         <p class="note">Lệnh này hash mật khẩu đúng chuẩn, ghi user <code>admin</code> vào D1 và xóa session cũ nếu có.</p>
         <p>Sau khi <code>wrangler.jsonc</code> đã đúng, dùng script để commit và push lên repo GitHub riêng nếu có:</p>
-        <pre><code>npm run git:publish-customer -- --remote-url=https://github.com/qhboypho/giapha-tran-xuan.git --branch=customer/tran-xuan --user-name="Dinh Tung" --user-email="you@example.com" --commit-message="chore: configure Tran Xuan Cloudflare resources"</code></pre>
+        <pre><code>npm run git:publish-customer -- --remote-url=https://github.com/qhboypho/giapha-tran-cong.git --branch=customer/tran-cong --user-name="Dinh Tung" --user-email="you@example.com" --commit-message="chore: configure Tran Cong Cloudflare resources"</code></pre>
         <p>Deploy lần đầu, set secret AI, deploy lại:</p>
         <pre><code>npm run build
-npx wrangler pages deploy ./dist --project-name giapha-tran-xuan
-npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-tran-xuan
+npx wrangler pages deploy ./dist --project-name giapha-tran-cong
+npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-tran-cong
 npm run build
-npx wrangler pages deploy ./dist --project-name giapha-tran-xuan</code></pre>
-        <p class="note">Kết quả mẫu: <code>https://giapha-tran-xuan.pages.dev/</code></p>
+npx wrangler pages deploy ./dist --project-name giapha-tran-cong</code></pre>
+        <p class="note">Kết quả mẫu: <code>https://giapha-tran-cong.pages.dev/</code></p>
       </section>
 
       <section>
