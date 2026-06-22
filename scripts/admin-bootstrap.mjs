@@ -100,9 +100,7 @@ function sqlText(value) {
 }
 
 export function buildAdminBootstrapSql(admin) {
-  return `BEGIN TRANSACTION;
-
-INSERT INTO users (username, password, role, fullName, createdAt)
+  return `INSERT INTO users (username, password, role, fullName, createdAt)
 VALUES (${sqlText(admin.username)}, ${sqlText(admin.passwordHash)}, 'admin', ${sqlText(admin.fullName)}, datetime('now'))
 ON CONFLICT(username) DO UPDATE SET
   password = excluded.password,
@@ -110,8 +108,6 @@ ON CONFLICT(username) DO UPDATE SET
   fullName = excluded.fullName;
 
 DELETE FROM sessions WHERE username = ${sqlText(admin.username)};
-
-COMMIT;
 `;
 }
 
