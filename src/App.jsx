@@ -46,6 +46,7 @@ export default function App() {
 
   // Authenticated user state
   const [currentUser, setCurrentUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
 
   // Privacy mode status (locked/unlocked)
   const [isPrivateMode, setIsPrivateMode] = useState(true);
@@ -143,6 +144,7 @@ export default function App() {
   useEffect(() => {
     const initApp = async () => {
       setLoading(true);
+      setAuthReady(false);
       let user = null;
       let pMode = true;
 
@@ -181,6 +183,7 @@ export default function App() {
           console.error("Initial data fetch failed:", err);
         }
       }
+      setAuthReady(true);
       setLoading(false);
     };
 
@@ -191,6 +194,11 @@ export default function App() {
     setToast(message);
     setTimeout(() => setToast(""), 3000);
   };
+
+  const openLoginModal = useCallback(() => {
+    if (!authReady || currentUser) return;
+    setIsLoginModalOpen(true);
+  }, [authReady, currentUser]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -450,6 +458,7 @@ export default function App() {
 
   // Determine if application is locked under Private Mode
   const isLocked = isPrivateMode && !isAuthenticatedViewer(currentUser);
+  const isAuthInitializing = !authReady;
   const canRevealSensitiveInfo = isPrivateMode && canEditMembers(currentUser);
   const canGoBack = viewHistory.length > 0;
   const notifications = useMemo(() => buildFamilyNotifications({
@@ -616,7 +625,8 @@ export default function App() {
         onBack={handleGoBack}
         suppressOverlays={Boolean(isLoginModalOpen || isMemberModalOpen)}
         currentUser={currentUser}
-        setIsLoginModalOpen={setIsLoginModalOpen}
+        authReady={authReady}
+        setIsLoginModalOpen={openLoginModal}
         onLogout={handleLogout}
         isPrivateMode={isPrivateMode}
         setIsPrivateMode={handleTogglePrivateMode}
@@ -638,7 +648,17 @@ export default function App() {
 
       {/* Main split display */}
       <div className="main-content">
-        {isLocked ? (
+        {isAuthInitializing ? (
+          <div className="lock-screen animate-fade">
+            <div className="lock-container glass">
+              <span className="lock-icon">⌛</span>
+              <h2>Đang kiểm tra phiên đăng nhập</h2>
+              <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+                Hệ thống đang xác minh tài khoản hiện tại.
+              </p>
+            </div>
+          </div>
+        ) : isLocked ? (
           // Private Lock Screen
           <div className="lock-screen animate-fade">
             <div className="lock-container glass">
@@ -650,7 +670,7 @@ export default function App() {
               </p>
               <button
                 className="btn btn-primary"
-                onClick={() => setIsLoginModalOpen(true)}
+                onClick={openLoginModal}
                 style={{ width: "100%", marginTop: "10px" }}
               >
                 🔑 Đăng nhập ngay
@@ -754,7 +774,7 @@ export default function App() {
 
       {/* Modals & Popups */}
       <LoginModal
-        isOpen={isLoginModalOpen}
+        isOpen={authReady && !currentUser && isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onLogin={handleLogin}
         siteConfig={siteConfig}

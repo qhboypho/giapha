@@ -84,6 +84,7 @@ export default function Navbar({
   onBack,
   suppressOverlays = false,
   currentUser,
+  authReady = true,
   setIsLoginModalOpen,
   onLogout,
   isPrivateMode,
@@ -714,10 +715,12 @@ export default function Navbar({
               </div>
             )}
           </div>
-        ) : (
+        ) : authReady ? (
           <button className="btn btn-secondary" onClick={() => setIsLoginModalOpen(true)} style={{ flex: "none", borderRadius: "20px" }}>
             Đăng nhập
           </button>
+        ) : (
+          <span className="auth-loading-pill">Đang kiểm tra...</span>
         )}
       </div>
 
@@ -983,7 +986,7 @@ export default function Navbar({
                   <LogOut aria-hidden="true" strokeWidth={2.3} />
                   Đăng xuất ({getRoleLabel(currentUser.role)})
                 </div>
-              ) : (
+              ) : authReady ? (
                 <button
                   className="btn btn-secondary"
                   onClick={() => {
@@ -994,6 +997,10 @@ export default function Navbar({
                 >
                   Đăng nhập
                 </button>
+              ) : (
+                <div className="auth-loading-pill mobile-auth-loading">
+                  Đang kiểm tra phiên đăng nhập...
+                </div>
               )}
             </div>
           </div>
