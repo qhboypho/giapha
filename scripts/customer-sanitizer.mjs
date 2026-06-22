@@ -52,12 +52,14 @@ function buildSiteConfig(familyName) {
       textSecondary: "#D4C6B2",
       textMuted: "#8E7F72",
       navbarTop: "#9C130F",
-      navbarBottom: "#690604"
+      navbarBottom: "#690604",
+      generationsBackground: "#0F0A07"
     },
     themeBackgrounds: {
       app: "",
       home: "",
       pages: "",
+      generations: "",
       tree: ""
     },
     treeTheme: {

@@ -1192,6 +1192,14 @@
   opacity: 0.12;
 }
 
+.directory-page.generations-page {
+  background:
+    radial-gradient(circle at 14% 8%, rgba(191, 161, 95, 0.12), transparent 26%),
+    radial-gradient(circle at 86% 92%, rgba(139, 13, 11, 0.12), transparent 24%),
+    var(--theme-generations-background-image, var(--theme-pages-background-image, none)),
+    var(--theme-generations-background, var(--bg-main));
+}
+
 .directory-hero,
 .directory-grid,
 .anniversary-timeline,

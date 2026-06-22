@@ -41,12 +41,14 @@ const THEME_COLOR_LABELS = {
   textSecondary: "Chữ phụ",
   textMuted: "Chữ mờ",
   navbarTop: "Navbar trên",
-  navbarBottom: "Navbar dưới"
+  navbarBottom: "Navbar dưới",
+  generationsBackground: "Nền trang các đời"
 };
 const THEME_BACKGROUND_LABELS = {
   app: "Nền toàn app",
   home: "Nền trang chủ",
   pages: "Nền các trang danh sách",
+  generations: "Nền trang các đời",
   tree: "Nền cây gia phả"
 };
 const TREE_THEME_LABELS = {

@@ -24,10 +24,12 @@ const themedConfig = normalizeSiteConfig({
   familyName: "Nguyen Van",
   themeColors: {
     primary: "#123abc",
+    generationsBackground: "#101820",
     accent: "red"
   },
   themeBackgrounds: {
     home: "/images/home.jpg",
+    generations: "/images/generations.jpg",
     tree: "javascript:alert(1)"
   },
   treeTheme: {
@@ -36,8 +38,10 @@ const themedConfig = normalizeSiteConfig({
   }
 });
 assert.equal(themedConfig.themeColors.primary, "#123ABC");
+assert.equal(themedConfig.themeColors.generationsBackground, "#101820");
 assert.equal(themedConfig.themeColors.accent, DEFAULT_SITE_CONFIG.themeColors.accent);
 assert.equal(themedConfig.themeBackgrounds.home, "/images/home.jpg");
+assert.equal(themedConfig.themeBackgrounds.generations, "/images/generations.jpg");
 assert.equal(themedConfig.themeBackgrounds.tree, "");
 assert.equal(themedConfig.treeTheme.connector, "#ABCDEF");
 assert.equal(themedConfig.treeTheme.selectedRing, DEFAULT_SITE_CONFIG.treeTheme.selectedRing);
@@ -64,6 +68,8 @@ const cssVariables = buildThemeCssVariables(themedConfig);
 assert.equal(cssVariables["--color-brand-primary"], "#123ABC");
 assert.match(cssVariables["--bg-app"], /radial-gradient/);
 assert.match(cssVariables["--theme-home-background-image"], /home\.jpg/);
+assert.equal(cssVariables["--theme-generations-background"], "#101820");
+assert.match(cssVariables["--theme-generations-background-image"], /generations\.jpg/);
 assert.equal(cssVariables["--tree-connector-color"], "#ABCDEF");
 
 assert.throws(
