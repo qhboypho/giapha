@@ -25,7 +25,9 @@
   width: 100%;
   overflow-y: auto;
   color: var(--home-ink);
-  background: var(--home-paper);
+  background:
+    var(--theme-home-background-image, none),
+    var(--home-paper);
   overflow-x: hidden;
   scroll-behavior: smooth;
   padding: clamp(1.25rem, 1.55vw, 1.52rem) clamp(1.25rem, 4vw, 4.25rem) 0;

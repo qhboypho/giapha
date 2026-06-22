@@ -28,6 +28,25 @@ export const DEFAULT_SITE_CONFIG = {
     textMuted: "#8E7F72",
     navbarTop: "#9C130F",
     navbarBottom: "#690604"
+  },
+  themeBackgrounds: {
+    app: "",
+    home: "",
+    pages: "",
+    tree: ""
+  },
+  treeTheme: {
+    maleBackground: "#1E2D3A",
+    maleBorder: "#4A90E2",
+    femaleBackground: "#3A2230",
+    femaleBorder: "#E24A90",
+    deceasedBackground: "#1B120C",
+    deceasedBorder: "#8E7F72",
+    deceasedText: "#8E7F72",
+    connector: "#8E7F72",
+    spouseConnector: "#D6A85A",
+    selectedRing: "#B64235",
+    searchHighlight: "#D6A85A"
   }
 };
 
@@ -49,8 +68,13 @@ const SITE_CONFIG_TEXT_LIMITS = {
 };
 
 export const SITE_THEME_COLOR_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeColors);
-export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field) => field !== "themeColors");
+export const SITE_THEME_BACKGROUND_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeBackgrounds);
+export const SITE_TREE_THEME_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.treeTheme);
+export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field) => (
+  !["themeColors", "themeBackgrounds", "treeTheme"].includes(field)
+));
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+const BACKGROUND_URL_LIMIT = 800;
 
 const normalizeString = (value, fallback = "", maxLength = 300) => {
   const text = String(value ?? "").trim();
@@ -68,6 +92,8 @@ export function normalizeSiteConfig(config = {}) {
   }, {});
 
   normalized.themeColors = normalizeThemeColors(config.themeColors);
+  normalized.themeBackgrounds = normalizeThemeBackgrounds(config.themeBackgrounds);
+  normalized.treeTheme = normalizeTreeTheme(config.treeTheme);
   return normalized;
 }
 
@@ -80,6 +106,31 @@ export function normalizeThemeColors(colors = {}) {
       : DEFAULT_SITE_CONFIG.themeColors[field];
     return acc;
   }, {});
+}
+
+export function normalizeThemeBackgrounds(backgrounds = {}) {
+  const source = backgrounds && typeof backgrounds === "object" ? backgrounds : {};
+  return SITE_THEME_BACKGROUND_FIELDS.reduce((acc, field) => {
+    acc[field] = normalizeBackgroundUrl(source[field], DEFAULT_SITE_CONFIG.themeBackgrounds[field]);
+    return acc;
+  }, {});
+}
+
+export function normalizeTreeTheme(colors = {}) {
+  const source = colors && typeof colors === "object" ? colors : {};
+  return SITE_TREE_THEME_FIELDS.reduce((acc, field) => {
+    const rawValue = String(source[field] || "").trim();
+    acc[field] = HEX_COLOR_PATTERN.test(rawValue)
+      ? rawValue.toUpperCase()
+      : DEFAULT_SITE_CONFIG.treeTheme[field];
+    return acc;
+  }, {});
+}
+
+export function normalizeBackgroundUrl(value, fallback = "") {
+  const url = String(value ?? "").trim().slice(0, BACKGROUND_URL_LIMIT);
+  if (!url) return fallback || "";
+  return /^(\/|https?:\/\/|data:image\/)/i.test(url) ? url : (fallback || "");
 }
 
 export function parseSiteConfigValue(value) {
@@ -113,11 +164,23 @@ export function validateSiteConfigInput(config = {}) {
     throw new Error("Logo phải là đường dẫn nội bộ, URL http/https hoặc data image.");
   }
 
+  for (const field of SITE_THEME_BACKGROUND_FIELDS) {
+    const rawUrl = config.themeBackgrounds?.[field];
+    const normalizedUrl = normalized.themeBackgrounds[field];
+    if (rawUrl && String(rawUrl).trim() && !normalizedUrl) {
+      throw new Error("Hình nền phải là đường dẫn nội bộ, URL http/https hoặc data image.");
+    }
+  }
+
   return normalized;
 }
 
 export function buildThemeCssVariables(config = {}) {
-  const colors = normalizeSiteConfig(config).themeColors;
+  const normalized = normalizeSiteConfig(config);
+  const colors = normalized.themeColors;
+  const backgrounds = normalized.themeBackgrounds;
+  const tree = normalized.treeTheme;
+  const appBackgroundLayer = buildCssImageLayer(backgrounds.app);
   return {
     "--color-brand-primary": colors.primary,
     "--color-brand-secondary": colors.secondary,
@@ -125,7 +188,10 @@ export function buildThemeCssVariables(config = {}) {
     "--heritage-red": colors.primary,
     "--heritage-green": colors.secondary,
     "--heritage-gold": colors.accent,
-    "--bg-app": `radial-gradient(circle at top left, ${colors.cardBackground}, ${colors.appBackground})`,
+    "--bg-app": [
+      appBackgroundLayer,
+      `radial-gradient(circle at top left, ${colors.cardBackground}, ${colors.appBackground})`
+    ].filter(Boolean).join(", "),
     "--bg-main": colors.appBackground,
     "--bg-card": colors.cardBackground,
     "--bg-card-hover": colors.cardHover,
@@ -136,6 +202,25 @@ export function buildThemeCssVariables(config = {}) {
     "--bg-input": colors.appBackground,
     "--bg-nav": `linear-gradient(180deg, ${colors.navbarTop}, ${colors.navbarBottom})`,
     "--theme-navbar-top": colors.navbarTop,
-    "--theme-navbar-bottom": colors.navbarBottom
+    "--theme-navbar-bottom": colors.navbarBottom,
+    "--theme-home-background-image": buildCssImageLayer(backgrounds.home),
+    "--theme-pages-background-image": buildCssImageLayer(backgrounds.pages),
+    "--theme-tree-background-image": buildCssImageLayer(backgrounds.tree),
+    "--node-living-male-bg": tree.maleBackground,
+    "--node-living-male-border": tree.maleBorder,
+    "--node-living-female-bg": tree.femaleBackground,
+    "--node-living-female-border": tree.femaleBorder,
+    "--node-deceased-bg": tree.deceasedBackground,
+    "--node-deceased-border": tree.deceasedBorder,
+    "--node-deceased-text": tree.deceasedText,
+    "--tree-connector-color": tree.connector,
+    "--tree-spouse-connector-color": tree.spouseConnector,
+    "--tree-selected-ring": tree.selectedRing,
+    "--tree-search-highlight": tree.searchHighlight
   };
+}
+
+function buildCssImageLayer(url) {
+  if (!url) return "";
+  return `linear-gradient(rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.34)), url("${url.replaceAll('"', "%22")}") center / cover no-repeat`;
 }

@@ -53,6 +53,25 @@ function buildSiteConfig(familyName) {
       textMuted: "#8E7F72",
       navbarTop: "#9C130F",
       navbarBottom: "#690604"
+    },
+    themeBackgrounds: {
+      app: "",
+      home: "",
+      pages: "",
+      tree: ""
+    },
+    treeTheme: {
+      maleBackground: "#1E2D3A",
+      maleBorder: "#4A90E2",
+      femaleBackground: "#3A2230",
+      femaleBorder: "#E24A90",
+      deceasedBackground: "#1B120C",
+      deceasedBorder: "#8E7F72",
+      deceasedText: "#8E7F72",
+      connector: "#8E7F72",
+      spouseConnector: "#D6A85A",
+      selectedRing: "#B64235",
+      searchHighlight: "#D6A85A"
     }
   };
 }

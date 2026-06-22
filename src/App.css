@@ -853,6 +853,10 @@
   cursor: grab;
   position: relative;
   user-select: none;
+  background:
+    radial-gradient(circle at 16% 10%, rgba(191, 161, 95, 0.12), transparent 28%),
+    var(--theme-tree-background-image, none),
+    var(--bg-main);
 }
 
 .tree-canvas-wrapper:active {
@@ -869,7 +873,7 @@
 
 .tree-connector {
   fill: none;
-  stroke: var(--text-muted);
+  stroke: var(--tree-connector-color, var(--text-muted));
   stroke-width: 2px;
   stroke-dasharray: none;
   opacity: 0.4;
@@ -884,7 +888,7 @@
 
 .tree-connector-spouse {
   fill: none;
-  stroke: var(--color-brand-primary);
+  stroke: var(--tree-spouse-connector-color, var(--color-brand-primary));
   stroke-width: 2px;
   stroke-dasharray: 4,4;
   opacity: 0.7;
@@ -925,7 +929,7 @@
 }
 
 .member-card.selected {
-  box-shadow: 0 0 0 3px var(--color-brand-primary) !important;
+  box-shadow: 0 0 0 3px var(--tree-selected-ring, var(--color-brand-primary)) !important;
   transform: scale(1.03);
   opacity: 1 !important;
 }
@@ -1164,6 +1168,7 @@
   background:
     radial-gradient(circle at 14% 8%, rgba(191, 161, 95, 0.12), transparent 26%),
     radial-gradient(circle at 86% 92%, rgba(139, 13, 11, 0.12), transparent 24%),
+    var(--theme-pages-background-image, none),
     var(--bg-main);
   animation: fadeIn var(--transition-normal) forwards;
 }
@@ -3978,7 +3983,47 @@
   gap: 12px;
 }
 
+.theme-background-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.theme-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(215, 169, 77, 0.16);
+}
+
+.theme-section-title strong {
+  color: var(--color-brand-accent);
+  font-size: 1rem;
+}
+
+.theme-section-title span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
 .theme-color-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: rgba(44, 29, 19, 0.58);
+  color: var(--text-secondary);
+  font-weight: 900;
+}
+
+.theme-background-field {
   display: grid;
   gap: 8px;
   min-width: 0;
@@ -5010,6 +5055,7 @@
   .setup-import-grid,
   .setup-review-grid,
   .theme-color-grid,
+  .theme-background-grid,
   .member-sync-stats,
   .member-sync-detail-grid {
     grid-template-columns: 1fr;
@@ -5017,8 +5063,13 @@
 
   .setup-wizard-head,
   .theme-config-head,
+  .theme-section-title,
   .setup-wizard-footer {
     flex-direction: column;
+  }
+
+  .theme-section-title span {
+    text-align: left;
   }
 
   .setup-wizard-progress {

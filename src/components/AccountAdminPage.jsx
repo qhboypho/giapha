@@ -3,7 +3,13 @@ import { Copy, Download, ExternalLink, KeyRound, LockKeyhole, Palette, Plus, Sav
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
-import { DEFAULT_SITE_CONFIG, SITE_THEME_COLOR_FIELDS, normalizeSiteConfig } from "../utils/siteConfigUtils";
+import {
+  DEFAULT_SITE_CONFIG,
+  SITE_THEME_BACKGROUND_FIELDS,
+  SITE_THEME_COLOR_FIELDS,
+  SITE_TREE_THEME_FIELDS,
+  normalizeSiteConfig
+} from "../utils/siteConfigUtils";
 import { AI_PROVIDERS, getAiProviderConfig } from "../utils/aiConfigUtils";
 import { SETUP_WIZARD_STEPS, SETUP_WIZARD_STORAGE_KEY, getSetupProgress } from "../utils/setupWizardUtils";
 
@@ -36,6 +42,25 @@ const THEME_COLOR_LABELS = {
   textMuted: "Chữ mờ",
   navbarTop: "Navbar trên",
   navbarBottom: "Navbar dưới"
+};
+const THEME_BACKGROUND_LABELS = {
+  app: "Nền toàn app",
+  home: "Nền trang chủ",
+  pages: "Nền các trang danh sách",
+  tree: "Nền cây gia phả"
+};
+const TREE_THEME_LABELS = {
+  maleBackground: "Node nam",
+  maleBorder: "Viền nam",
+  femaleBackground: "Node nữ",
+  femaleBorder: "Viền nữ",
+  deceasedBackground: "Node đã mất",
+  deceasedBorder: "Viền đã mất",
+  deceasedText: "Chữ đã mất",
+  connector: "Đường nối",
+  spouseConnector: "Đường vợ/chồng",
+  selectedRing: "Viền đang chọn",
+  searchHighlight: "Highlight tìm kiếm"
 };
 const defaultAiConfigForm = {
   provider: "openai",
@@ -310,10 +335,38 @@ export default function AccountAdminPage({
     });
   };
 
+  const handleThemeBackgroundChange = (field, value) => {
+    setSiteConfigDraft((prev) => {
+      const base = prev || normalizedSiteConfig;
+      return {
+        ...base,
+        themeBackgrounds: {
+          ...base.themeBackgrounds,
+          [field]: value
+        }
+      };
+    });
+  };
+
+  const handleTreeThemeChange = (field, value) => {
+    setSiteConfigDraft((prev) => {
+      const base = prev || normalizedSiteConfig;
+      return {
+        ...base,
+        treeTheme: {
+          ...base.treeTheme,
+          [field]: value
+        }
+      };
+    });
+  };
+
   const resetThemeColors = () => {
     setSiteConfigDraft((prev) => ({
       ...(prev || normalizedSiteConfig),
-      themeColors: { ...DEFAULT_SITE_CONFIG.themeColors }
+      themeColors: { ...DEFAULT_SITE_CONFIG.themeColors },
+      themeBackgrounds: { ...DEFAULT_SITE_CONFIG.themeBackgrounds },
+      treeTheme: { ...DEFAULT_SITE_CONFIG.treeTheme }
     }));
   };
 
@@ -1174,9 +1227,59 @@ export default function AccountAdminPage({
                 })}
               </div>
 
+              <div className="theme-section-title">
+                <strong>Hình nền</strong>
+                <span>Dùng đường dẫn nội bộ như /background.jpg, URL https hoặc data image.</span>
+              </div>
+              <div className="theme-background-grid">
+                {SITE_THEME_BACKGROUND_FIELDS.map((field) => (
+                  <label className="theme-background-field" key={field}>
+                    <span>{THEME_BACKGROUND_LABELS[field] || field}</span>
+                    <input
+                      className="form-input"
+                      value={siteConfigForm.themeBackgrounds?.[field] || ""}
+                      onChange={(event) => handleThemeBackgroundChange(field, event.target.value)}
+                      placeholder="/images/nen-gia-pha.jpg"
+                    />
+                  </label>
+                ))}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Cây gia phả</strong>
+                <span>Điều chỉnh node, đường nối và màu highlight trong màn cây.</span>
+              </div>
+              <div className="theme-color-grid tree-theme-grid">
+                {SITE_TREE_THEME_FIELDS.map((field) => {
+                  const value = siteConfigForm.treeTheme?.[field] || DEFAULT_SITE_CONFIG.treeTheme[field];
+                  const swatchValue = HEX_COLOR_INPUT_PATTERN.test(value) ? value : DEFAULT_SITE_CONFIG.treeTheme[field];
+                  return (
+                    <label className="theme-color-field" key={field}>
+                      <span>{TREE_THEME_LABELS[field] || field}</span>
+                      <div className="theme-color-control">
+                        <input
+                          className="theme-color-swatch"
+                          type="color"
+                          value={swatchValue}
+                          onChange={(event) => handleTreeThemeChange(field, event.target.value)}
+                          aria-label={TREE_THEME_LABELS[field] || field}
+                        />
+                        <input
+                          className="form-input"
+                          value={value}
+                          onChange={(event) => handleTreeThemeChange(field, event.target.value)}
+                          placeholder="#D6A85A"
+                          maxLength={7}
+                        />
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+
               <div className="account-form-actions">
                 <button className="btn btn-secondary" type="button" onClick={resetThemeColors}>
-                  Màu mặc định
+                  Giao diện mặc định
                 </button>
                 <button className="btn btn-primary" type="submit" disabled={saving}>
                   {saving ? "Đang lưu..." : "Lưu giao diện"}

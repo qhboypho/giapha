@@ -25,10 +25,22 @@ const themedConfig = normalizeSiteConfig({
   themeColors: {
     primary: "#123abc",
     accent: "red"
+  },
+  themeBackgrounds: {
+    home: "/images/home.jpg",
+    tree: "javascript:alert(1)"
+  },
+  treeTheme: {
+    connector: "#abcdef",
+    selectedRing: "blue"
   }
 });
 assert.equal(themedConfig.themeColors.primary, "#123ABC");
 assert.equal(themedConfig.themeColors.accent, DEFAULT_SITE_CONFIG.themeColors.accent);
+assert.equal(themedConfig.themeBackgrounds.home, "/images/home.jpg");
+assert.equal(themedConfig.themeBackgrounds.tree, "");
+assert.equal(themedConfig.treeTheme.connector, "#ABCDEF");
+assert.equal(themedConfig.treeTheme.selectedRing, DEFAULT_SITE_CONFIG.treeTheme.selectedRing);
 
 const serialized = serializeSiteConfig(partialConfig);
 const parsed = parseSiteConfigValue(serialized);
@@ -51,5 +63,15 @@ assert.throws(
 const cssVariables = buildThemeCssVariables(themedConfig);
 assert.equal(cssVariables["--color-brand-primary"], "#123ABC");
 assert.match(cssVariables["--bg-app"], /radial-gradient/);
+assert.match(cssVariables["--theme-home-background-image"], /home\.jpg/);
+assert.equal(cssVariables["--tree-connector-color"], "#ABCDEF");
+
+assert.throws(
+  () => validateSiteConfigInput({
+    ...DEFAULT_SITE_CONFIG,
+    themeBackgrounds: { ...DEFAULT_SITE_CONFIG.themeBackgrounds, pages: "javascript:alert(1)" }
+  }),
+  /Hình nền/
+);
 
 console.log("site config utils tests passed");
