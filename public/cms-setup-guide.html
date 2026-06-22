@@ -99,6 +99,86 @@
       .step-list {
         padding-left: 1.25rem;
       }
+
+      .tabs {
+        margin-top: 22px;
+      }
+
+      .tabs > input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .tab-labels {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .tab-label {
+        display: flex;
+        min-height: 54px;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(33, 21, 14, 0.72);
+        color: var(--muted);
+        cursor: pointer;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      #tab-nontech:checked ~ .tab-labels label[for="tab-nontech"],
+      #tab-dev:checked ~ .tab-labels label[for="tab-dev"] {
+        border-color: rgba(215, 169, 77, 0.72);
+        background: rgba(200, 63, 52, 0.28);
+        color: var(--text);
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      #tab-nontech:checked ~ .tab-panels .nontech-panel,
+      #tab-dev:checked ~ .tab-panels .dev-panel {
+        display: block;
+      }
+
+      .command-card {
+        border-color: rgba(215, 169, 77, 0.52);
+        background: rgba(11, 7, 5, 0.72);
+      }
+
+      .result-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .result-item {
+        min-height: 72px;
+        padding: 14px;
+        border: 1px solid rgba(215, 169, 77, 0.2);
+        border-radius: 8px;
+        background: rgba(11, 7, 5, 0.42);
+      }
+
+      .result-item strong {
+        display: block;
+        color: var(--gold);
+      }
+
+      @media (max-width: 720px) {
+        .tab-labels,
+        .result-grid {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
@@ -111,6 +191,88 @@
         </p>
       </header>
 
+      <div class="tabs">
+        <input id="tab-nontech" name="setup-tabs" type="radio" checked />
+        <input id="tab-dev" name="setup-tabs" type="radio" />
+        <div class="tab-labels" aria-label="Chọn loại hướng dẫn">
+          <label class="tab-label" for="tab-nontech">For non-tech: setup bằng 1 command</label>
+          <label class="tab-label" for="tab-dev">For dev: quy trình chi tiết</label>
+        </div>
+
+        <div class="tab-panels">
+          <div class="tab-panel nontech-panel">
+            <section class="command-card">
+              <h2>Setup nhanh bằng một command</h2>
+              <p>
+                Dành cho người không chuyên kỹ thuật hoặc lúc cần dựng nhanh một site khách mới.
+                Chỉ cần đăng nhập Cloudflare trước, sau đó chạy một command từ repo base.
+              </p>
+              <pre><code>cd C:\Users\DinhTungPC\.gemini\antigravity\scratch\giapha-tc
+npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy</code></pre>
+              <p>Nếu folder local khách đã tồn tại và muốn tạo lại từ đầu:</p>
+              <pre><code>npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force</code></pre>
+            </section>
+
+            <section>
+              <h2>Trước khi chạy</h2>
+              <ul class="step-list">
+                <li>Máy đã cài Node.js 20+ và npm.</li>
+                <li>Đã đăng nhập Cloudflare Wrangler bằng tài khoản có quyền tạo Pages, D1, R2.</li>
+                <li>Đang đứng ở folder repo base <code>giapha-tc</code>.</li>
+                <li>Đổi <code>family-name</code>, <code>slug</code> và <code>admin-password</code> theo khách thật.</li>
+              </ul>
+              <pre><code>npx wrangler login</code></pre>
+            </section>
+
+            <section>
+              <h2>Command sẽ tự làm gì</h2>
+              <ul class="step-list">
+                <li>Tạo folder project khách nằm ngang hàng repo base.</li>
+                <li>Cài dependencies bằng <code>npm install</code>.</li>
+                <li>Tạo Cloudflare D1 và R2 riêng cho khách.</li>
+                <li>Tự lấy D1 UUID và ghi vào <code>wrangler.jsonc</code>.</li>
+                <li>Apply migrations lên D1 remote.</li>
+                <li>Tạo tài khoản <code>admin</code> bằng mật khẩu đã nhập.</li>
+                <li>Build và deploy Cloudflare Pages.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2>Kết quả sau khi chạy</h2>
+              <p>Cuối quá trình, terminal sẽ in ra các thông tin cần bàn giao hoặc kiểm tra.</p>
+              <div class="result-grid">
+                <div class="result-item">
+                  <strong>URL</strong>
+                  <span><code>https://giapha-tran-xuan.pages.dev/</code></span>
+                </div>
+                <div class="result-item">
+                  <strong>Tài khoản</strong>
+                  <span><code>admin</code> / mật khẩu đã đặt</span>
+                </div>
+                <div class="result-item">
+                  <strong>Folder local</strong>
+                  <span><code>..\giapha-tran-xuan</code></span>
+                </div>
+                <div class="result-item">
+                  <strong>Cloudflare</strong>
+                  <span>D1, R2 và Pages project riêng</span>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h2>Sau khi site chạy được</h2>
+              <ul class="step-list">
+                <li>Đăng nhập bằng <code>admin</code>.</li>
+                <li>Mở Setup Wizard trong app để đổi tên dòng họ, logo, footer và nội dung.</li>
+                <li>Import CMS package hoặc nhập dữ liệu gia phả bằng AI/JSON.</li>
+                <li>Đổi mật khẩu admin trước khi bàn giao khách.</li>
+                <li>GitHub repo riêng là bước optional, làm sau khi site đã ổn.</li>
+              </ul>
+            </section>
+          </div>
+
+          <div class="tab-panel dev-panel">
       <section>
         <h2>1. Chuẩn bị</h2>
         <ul class="step-list">
@@ -120,11 +282,7 @@
           <li>File CMS package <code>.json</code> của khách.</li>
         </ul>
         <pre><code>npx wrangler login</code></pre>
-        <p class="note">Cách dễ nhất từ repo base là tạo folder project khách mới, rồi script sẽ tự chạy Provision Wizard trong folder đó.</p>
-        <p>Cách nhanh nhất là dùng một lệnh one-command setup từ repo base:</p>
-        <pre><code>npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy</code></pre>
-        <p>Nếu folder local khách đã tồn tại và muốn test lại từ đầu:</p>
-        <pre><code>npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force</code></pre>
+        <p class="note">Tab này giữ quy trình chi tiết để dev kiểm tra từng bước. Nếu muốn setup nhanh, dùng tab For non-tech.</p>
         <pre><code>npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan</code></pre>
         <p>Nếu muốn tạo luôn git local branch và initial commit:</p>
         <pre><code>npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --git-init</code></pre>
@@ -285,6 +443,9 @@ npx wrangler pages deploy ./dist --project-name giapha-khach-a</code></pre>
           để upload ảnh vào đúng key mà lịch sử dòng họ đang tham chiếu.
         </p>
       </section>
+          </div>
+        </div>
+      </div>
     </main>
   </body>
 </html>
