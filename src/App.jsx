@@ -41,6 +41,44 @@ const LEGACY_THEME_VARIABLES = [
   "--bg-input",
   "--theme-generations-background"
 ];
+const VALID_APP_VIEWS = new Set([
+  "home",
+  "tree",
+  "generations",
+  "featured",
+  "anniversary",
+  "history",
+  "accounts",
+  "history-admin",
+  "list"
+]);
+const VALID_ACCOUNT_PAGE_MODES = new Set(["manage", "password", "setup"]);
+
+const parseBrowserViewState = () => {
+  const params = new URLSearchParams(window.location.search);
+  const page = params.get("page") || "home";
+  const mode = params.get("mode") || "manage";
+  return {
+    view: VALID_APP_VIEWS.has(page) ? page : "home",
+    accountMode: VALID_ACCOUNT_PAGE_MODES.has(mode) ? mode : "manage"
+  };
+};
+
+const buildBrowserViewUrl = (view, accountMode = "manage") => {
+  const url = new URL(window.location.href);
+  if (!view || view === "home") {
+    url.searchParams.delete("page");
+    url.searchParams.delete("mode");
+  } else {
+    url.searchParams.set("page", view);
+    if (view === "accounts" && accountMode !== "manage") {
+      url.searchParams.set("mode", accountMode);
+    } else {
+      url.searchParams.delete("mode");
+    }
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+};
 
 const getOrCreateViewerId = () => {
   const existing = localStorage.getItem(VIEWER_ID_STORAGE_KEY);
@@ -135,6 +173,7 @@ const updateSeoHead = (siteConfig) => {
 };
 
 export default function App() {
+  const initialBrowserView = useMemo(() => parseBrowserViewState(), []);
   // Family tree members from database
   const [members, setMembers] = useState([]);
   const [historyEvents, setHistoryEvents] = useState([]);
@@ -157,9 +196,9 @@ export default function App() {
   });
 
   // View states
-  const [activeView, setActiveView] = useState("home");
+  const [activeView, setActiveView] = useState(initialBrowserView.view);
   const [viewHistory, setViewHistory] = useState([]);
-  const [accountPageMode, setAccountPageMode] = useState("manage");
+  const [accountPageMode, setAccountPageMode] = useState(initialBrowserView.accountMode);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const [activeViewersCount, setActiveViewersCount] = useState(0);
@@ -193,6 +232,28 @@ export default function App() {
   useEffect(() => {
     updateSeoHead(siteConfig);
   }, [siteConfig]);
+
+  useEffect(() => {
+    const initial = parseBrowserViewState();
+    window.history.replaceState(
+      { page: initial.view, mode: initial.accountMode },
+      "",
+      buildBrowserViewUrl(initial.view, initial.accountMode)
+    );
+
+    const handleBrowserPopState = () => {
+      const next = parseBrowserViewState();
+      closeTransientOverlays();
+      setActiveView(next.view);
+      setAccountPageMode(next.view === "accounts" ? next.accountMode : "manage");
+      setViewHistory((history) => history.slice(0, -1));
+    };
+
+    window.addEventListener("popstate", handleBrowserPopState);
+    return () => {
+      window.removeEventListener("popstate", handleBrowserPopState);
+    };
+  }, [closeTransientOverlays]);
 
   useEffect(() => {
     for (const name of LEGACY_THEME_VARIABLES) {
@@ -309,16 +370,37 @@ export default function App() {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  const handleViewChange = useCallback((view) => {
+  const handleViewChange = useCallback((view, options = {}) => {
+    if (!VALID_APP_VIEWS.has(view)) return;
+    const nextAccountMode = view === "accounts"
+      ? (options.accountMode || accountPageMode || "manage")
+      : "manage";
+    if (!options.replace && view === activeView && nextAccountMode === accountPageMode) {
+      closeTransientOverlays();
+      return;
+    }
+
     closeTransientOverlays();
     if (view !== "accounts") {
       setAccountPageMode("manage");
+    } else {
+      setAccountPageMode(nextAccountMode);
     }
     setViewHistory((history) => pushViewHistory(history, activeView, view));
     setActiveView(view);
-  }, [activeView, closeTransientOverlays]);
+    if (options.replace) {
+      window.history.replaceState({ page: view, mode: nextAccountMode }, "", buildBrowserViewUrl(view, nextAccountMode));
+    } else {
+      window.history.pushState({ page: view, mode: nextAccountMode }, "", buildBrowserViewUrl(view, nextAccountMode));
+    }
+  }, [accountPageMode, activeView, closeTransientOverlays]);
 
   const handleGoBack = useCallback(() => {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
     if (!viewHistory.length) return;
 
     closeTransientOverlays();
@@ -328,11 +410,11 @@ export default function App() {
       setAccountPageMode("manage");
     }
     setActiveView(previousView);
+    window.history.replaceState({ page: previousView, mode: "manage" }, "", buildBrowserViewUrl(previousView, "manage"));
   }, [activeView, closeTransientOverlays, viewHistory]);
 
   const handleOpenAccounts = (mode = "manage") => {
-    setAccountPageMode(mode);
-    handleViewChange("accounts");
+    handleViewChange("accounts", { accountMode: mode });
   };
 
   const handleOpenHistoryAdmin = () => {
