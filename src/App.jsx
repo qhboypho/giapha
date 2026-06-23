@@ -234,28 +234,6 @@ export default function App() {
   }, [siteConfig]);
 
   useEffect(() => {
-    const initial = parseBrowserViewState();
-    window.history.replaceState(
-      { page: initial.view, mode: initial.accountMode },
-      "",
-      buildBrowserViewUrl(initial.view, initial.accountMode)
-    );
-
-    const handleBrowserPopState = () => {
-      const next = parseBrowserViewState();
-      closeTransientOverlays();
-      setActiveView(next.view);
-      setAccountPageMode(next.view === "accounts" ? next.accountMode : "manage");
-      setViewHistory((history) => history.slice(0, -1));
-    };
-
-    window.addEventListener("popstate", handleBrowserPopState);
-    return () => {
-      window.removeEventListener("popstate", handleBrowserPopState);
-    };
-  }, [closeTransientOverlays]);
-
-  useEffect(() => {
     for (const name of LEGACY_THEME_VARIABLES) {
       document.documentElement.style.removeProperty(name);
     }
@@ -300,6 +278,28 @@ export default function App() {
     setEditPerson(null);
     setAddRelativeOf(null);
   }, []);
+
+  useEffect(() => {
+    const initial = parseBrowserViewState();
+    window.history.replaceState(
+      { page: initial.view, mode: initial.accountMode },
+      "",
+      buildBrowserViewUrl(initial.view, initial.accountMode)
+    );
+
+    const handleBrowserPopState = () => {
+      const next = parseBrowserViewState();
+      closeTransientOverlays();
+      setActiveView(next.view);
+      setAccountPageMode(next.view === "accounts" ? next.accountMode : "manage");
+      setViewHistory((history) => history.slice(0, -1));
+    };
+
+    window.addEventListener("popstate", handleBrowserPopState);
+    return () => {
+      window.removeEventListener("popstate", handleBrowserPopState);
+    };
+  }, [closeTransientOverlays]);
 
   // Load user session, settings, and family tree data on mount
   useEffect(() => {
