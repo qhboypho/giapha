@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   DEFAULT_SITE_CONFIG,
+  buildSeoMetadata,
   buildThemeCssVariables,
   normalizeSiteConfig,
   parseSiteConfigValue,
@@ -22,6 +23,7 @@ assert.equal(partialConfig.themeColors.primary, DEFAULT_SITE_CONFIG.themeColors.
 
 const themedConfig = normalizeSiteConfig({
   familyName: "Nguyen Van",
+  siteTitle: "Gia pha ho Nguyen Van",
   themeColors: {
     primary: "#123abc",
     generationsBackground: "#101820",
@@ -72,6 +74,13 @@ assert.match(cssVariables["--theme-home-background-image"], /home\.jpg/);
 assert.equal(cssVariables["--cms-generations-background"], "#101820");
 assert.match(cssVariables["--theme-generations-background-image"], /generations\.jpg/);
 assert.equal(cssVariables["--tree-connector-color"], "#ABCDEF");
+
+const seo = buildSeoMetadata(themedConfig, { origin: "https://giapha-nguyen-van.pages.dev/" });
+assert.equal(seo.ogTitle, "Gia pha ho Nguyen Van");
+assert.match(seo.title, /Gia pha ho Nguyen Van/);
+assert.match(seo.description, /thông tin thành viên/);
+assert.match(seo.keywords, /gia phả họ Nguyen Van/);
+assert.equal(seo.canonicalUrl, "https://giapha-nguyen-van.pages.dev/");
 
 assert.throws(
   () => validateSiteConfigInput({

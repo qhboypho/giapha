@@ -15,7 +15,7 @@ import MemberModal from "./components/MemberModal";
 import LoginModal from "./components/LoginModal";
 import { canEditMembers, getRoleLabel, isAuthenticatedViewer } from "./utils/authRoles";
 import { buildFamilyNotifications } from "./utils/notificationUtils";
-import { DEFAULT_SITE_CONFIG, buildThemeCssVariables, normalizeSiteConfig } from "./utils/siteConfigUtils";
+import { DEFAULT_SITE_CONFIG, buildSeoMetadata, buildThemeCssVariables, normalizeSiteConfig } from "./utils/siteConfigUtils";
 import { getPreviousView, pushViewHistory } from "./utils/viewHistory";
 import "./App.css";
 
@@ -49,6 +49,52 @@ const getOrCreateViewerId = () => {
   const nextId = crypto.randomUUID?.() || `viewer_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   localStorage.setItem(VIEWER_ID_STORAGE_KEY, nextId);
   return nextId;
+};
+
+const upsertHeadElement = (selector, createElement, attributes = {}) => {
+  let element = document.head.querySelector(selector);
+  if (!element) {
+    element = createElement();
+    document.head.appendChild(element);
+  }
+  for (const [name, value] of Object.entries(attributes)) {
+    if (value) {
+      element.setAttribute(name, value);
+    }
+  }
+  return element;
+};
+
+const setMetaContent = (selector, attributes, content) => {
+  upsertHeadElement(selector, () => {
+    const element = document.createElement("meta");
+    for (const [name, value] of Object.entries(attributes)) {
+      element.setAttribute(name, value);
+    }
+    return element;
+  }, { ...attributes, content });
+};
+
+const updateSeoHead = (siteConfig) => {
+  const seo = buildSeoMetadata(siteConfig, { origin: window.location.origin });
+  document.title = seo.title;
+  setMetaContent('meta[name="description"]', { name: "description" }, seo.description);
+  setMetaContent('meta[name="keywords"]', { name: "keywords" }, seo.keywords);
+  setMetaContent('meta[name="author"]', { name: "author" }, seo.author);
+  setMetaContent('meta[name="application-name"]', { name: "application-name" }, seo.applicationName);
+  setMetaContent('meta[name="apple-mobile-web-app-title"]', { name: "apple-mobile-web-app-title" }, seo.appleTitle);
+  setMetaContent('meta[property="og:site_name"]', { property: "og:site_name" }, seo.ogSiteName);
+  setMetaContent('meta[property="og:title"]', { property: "og:title" }, seo.ogTitle);
+  setMetaContent('meta[property="og:description"]', { property: "og:description" }, seo.ogDescription);
+  setMetaContent('meta[property="og:image"]', { property: "og:image" }, seo.ogImage);
+  setMetaContent('meta[name="twitter:title"]', { name: "twitter:title" }, seo.twitterTitle);
+  setMetaContent('meta[name="twitter:description"]', { name: "twitter:description" }, seo.twitterDescription);
+  setMetaContent('meta[name="twitter:image"]', { name: "twitter:image" }, seo.twitterImage);
+  upsertHeadElement('link[rel="canonical"]', () => {
+    const element = document.createElement("link");
+    element.setAttribute("rel", "canonical");
+    return element;
+  }, { href: seo.canonicalUrl });
 };
 
 export default function App() {
@@ -108,8 +154,8 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    document.title = siteConfig.siteTitle;
-  }, [siteConfig.siteTitle]);
+    updateSeoHead(siteConfig);
+  }, [siteConfig]);
 
   useEffect(() => {
     for (const name of LEGACY_THEME_VARIABLES) {

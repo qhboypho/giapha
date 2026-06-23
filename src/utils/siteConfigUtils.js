@@ -224,6 +224,45 @@ export function buildThemeCssVariables(config = {}) {
   };
 }
 
+export function buildSeoMetadata(config = {}, options = {}) {
+  const normalized = normalizeSiteConfig(config);
+  const familyName = normalized.familyName;
+  const siteName = normalized.siteTitle || `Gia phả họ ${familyName}`;
+  const shortName = normalized.shortName || "GP";
+  const origin = String(options.origin || "").trim().replace(/\/+$/, "");
+  const canonicalUrl = String(options.canonicalUrl || (origin ? `${origin}/` : "")).trim();
+  const imageUrl = String(options.imageUrl || "/web-app-manifest-512x512.png").trim();
+  const description = `${siteName} là không gian lưu giữ phả hệ, thông tin thành viên, ngày giỗ, sự kiện và ký ức gia đình qua nhiều thế hệ.`;
+  const socialDescription = `Lưu giữ phả hệ, thành viên, ngày giỗ và ký ức gia đình của dòng họ ${familyName}.`;
+  const keywords = [
+    `gia phả họ ${familyName}`,
+    "gia phả",
+    "cây gia phả",
+    "phả hệ",
+    `dòng họ ${familyName}`,
+    "ngày giỗ",
+    "lịch giỗ",
+    "thành viên gia đình"
+  ].join(", ");
+
+  return {
+    title: `${siteName} - Lưu giữ cội nguồn dòng họ`,
+    description,
+    keywords,
+    author: siteName,
+    applicationName: siteName,
+    appleTitle: shortName,
+    ogSiteName: siteName,
+    ogTitle: siteName,
+    ogDescription: socialDescription,
+    ogImage: imageUrl,
+    twitterTitle: siteName,
+    twitterDescription: `Lưu giữ cội nguồn và kết nối các thế hệ trong dòng họ ${familyName}.`,
+    twitterImage: imageUrl,
+    canonicalUrl
+  };
+}
+
 function buildCssImageLayer(url) {
   if (!url) return "";
   return `linear-gradient(rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.34)), url("${url.replaceAll('"', "%22")}") center / cover no-repeat`;

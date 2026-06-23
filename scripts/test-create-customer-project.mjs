@@ -61,6 +61,30 @@ mkdirSync(resolve(sandbox, "migrations"), { recursive: true });
 mkdirSync(resolve(sandbox, "src", "config"), { recursive: true });
 mkdirSync(resolve(sandbox, "public"), { recursive: true });
 writeFileSync(resolve(sandbox, "public", "cms-setup-guide.html"), "<html>setup</html>", "utf8");
+writeFileSync(resolve(sandbox, "index.html"), `<!doctype html>
+<html lang="vi">
+  <head>
+    <title>Gia Phả Họ Trần Công - Lưu Giữ Cội Nguồn Dòng Họ</title>
+    <meta name="description" content="old description" />
+    <meta name="keywords" content="old keywords" />
+    <meta name="author" content="old author" />
+    <meta name="application-name" content="old app" />
+    <meta name="apple-mobile-web-app-title" content="old apple" />
+    <meta property="og:site_name" content="old og site" />
+    <meta property="og:title" content="old og title" />
+    <meta property="og:description" content="old og desc" />
+    <meta name="twitter:title" content="old twitter title" />
+    <meta name="twitter:description" content="old twitter desc" />
+    <link rel="canonical" href="https://giapha-tc.pages.dev/" />
+  </head>
+  <body></body>
+</html>
+`, "utf8");
+writeFileSync(resolve(sandbox, "public", "site.webmanifest"), JSON.stringify({
+  name: "Giapha TC",
+  short_name: "Giapha TC",
+  display: "standalone"
+}, null, 2), "utf8");
 
 sanitizeCustomerProject(sandbox, { familyName: "Trần Xuân", slug: "tran-xuan" });
 
@@ -77,6 +101,16 @@ assert.doesNotMatch(featuredSql, /g3_8/);
 const runtimeConfig = readFileSync(resolve(sandbox, "src", "config", "cmsRuntime.js"), "utf8");
 assert.match(runtimeConfig, /ENABLE_SETUP_WIZARD = false/);
 assert.equal(existsSync(resolve(sandbox, "public", "cms-setup-guide.html")), false);
+
+const indexHtml = readFileSync(resolve(sandbox, "index.html"), "utf8");
+assert.match(indexHtml, /<title>Gia phả họ Trần Xuân - Lưu giữ cội nguồn dòng họ<\/title>/);
+assert.match(indexHtml, /gia phả họ Trần Xuân/);
+assert.match(indexHtml, /https:\/\/giapha-tran-xuan\.pages\.dev\//);
+assert.doesNotMatch(indexHtml, /giapha-tc\.pages\.dev/);
+
+const manifest = JSON.parse(readFileSync(resolve(sandbox, "public", "site.webmanifest"), "utf8"));
+assert.equal(manifest.name, "Gia phả họ Trần Xuân");
+assert.equal(manifest.short_name, "TX");
 
 rmSync(sandbox, { recursive: true, force: true });
 

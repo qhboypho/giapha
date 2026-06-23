@@ -1,5 +1,6 @@
-import { existsSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { buildSeoMetadata } from "../src/utils/siteConfigUtils.js";
 
 const DEFAULT_PASSWORDS = {
   admin: "pbkdf2:831d51423ca7c9f63e35ffadc5e6a778:31bc8b0f51a53df1f077ae3b274d3b101dfcc690899791882ba4930b1e66d34f",
@@ -76,6 +77,58 @@ function buildSiteConfig(familyName) {
       searchHighlight: "#D6A85A"
     }
   };
+}
+
+function buildCustomerSeo(familyName, slug) {
+  return buildSeoMetadata(buildSiteConfig(familyName), {
+    origin: `https://giapha-${slug}.pages.dev`
+  });
+}
+
+function escapeHtmlAttribute(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function replaceHeadContent(html, selectorPattern, nextValue) {
+  return html.replace(selectorPattern, (match) => (
+    match.replace(/content="[^"]*"/, `content="${escapeHtmlAttribute(nextValue)}"`)
+  ));
+}
+
+function sanitizeIndexHtml(root, familyName, slug) {
+  const indexPath = resolve(root, "index.html");
+  if (!existsSync(indexPath)) return;
+
+  const seo = buildCustomerSeo(familyName, slug);
+  let html = readFileSync(indexPath, "utf8");
+  html = html.replace(/<title>.*?<\/title>/s, `<title>${escapeHtmlAttribute(seo.title)}</title>`);
+  html = replaceHeadContent(html, /<meta name="description" content="[^"]*" \/>/, seo.description);
+  html = replaceHeadContent(html, /<meta name="keywords" content="[^"]*" \/>/, seo.keywords);
+  html = replaceHeadContent(html, /<meta name="author" content="[^"]*" \/>/, seo.author);
+  html = replaceHeadContent(html, /<meta name="application-name" content="[^"]*" \/>/, seo.applicationName);
+  html = replaceHeadContent(html, /<meta name="apple-mobile-web-app-title" content="[^"]*" \/>/, seo.appleTitle);
+  html = replaceHeadContent(html, /<meta property="og:site_name" content="[^"]*" \/>/, seo.ogSiteName);
+  html = replaceHeadContent(html, /<meta property="og:title" content="[^"]*" \/>/, seo.ogTitle);
+  html = replaceHeadContent(html, /<meta property="og:description" content="[^"]*" \/>/, seo.ogDescription);
+  html = replaceHeadContent(html, /<meta name="twitter:title" content="[^"]*" \/>/, seo.twitterTitle);
+  html = replaceHeadContent(html, /<meta name="twitter:description" content="[^"]*" \/>/, seo.twitterDescription);
+  html = html.replace(/<link rel="canonical" href="[^"]*" \/>/, `<link rel="canonical" href="${escapeHtmlAttribute(seo.canonicalUrl)}" />`);
+  writeFileSync(indexPath, html, "utf8");
+}
+
+function sanitizeManifest(root, familyName) {
+  const manifestPath = resolve(root, "public", "site.webmanifest");
+  if (!existsSync(manifestPath)) return;
+
+  const siteConfig = buildSiteConfig(familyName);
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  manifest.name = siteConfig.siteTitle;
+  manifest.short_name = siteConfig.shortName;
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 }
 
 function buildSampleMembers(familyName) {
@@ -173,6 +226,7 @@ WHERE NOT EXISTS (
 
 export function sanitizeCustomerProject(targetDir, options = {}) {
   const familyName = String(options.familyName || "Khách mới").trim();
+  const slug = String(options.slug || "").trim() || initialsFromFamilyName(familyName).toLowerCase();
   const root = resolve(targetDir);
 
   writeFileSync(resolve(root, "migrations", "0002_seed.sql"), buildSeedSql(familyName), "utf8");
@@ -180,6 +234,8 @@ export function sanitizeCustomerProject(targetDir, options = {}) {
   writeFileSync(resolve(root, "migrations", "0005_family_history_events.sql"), buildHistorySql(familyName), "utf8");
   writeFileSync(resolve(root, "migrations", "0008_site_config_setting.sql"), buildSiteConfigMigrationSql(familyName), "utf8");
   writeFileSync(resolve(root, "src", "config", "cmsRuntime.js"), "export const ENABLE_SETUP_WIZARD = false;\n", "utf8");
+  sanitizeIndexHtml(root, familyName, slug);
+  sanitizeManifest(root, familyName);
 
   const setupGuidePath = resolve(root, "public", "cms-setup-guide.html");
   if (existsSync(setupGuidePath)) {
