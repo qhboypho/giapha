@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Download, ExternalLink, Image, KeyRound, LockKeyhole, Palette, Plus, Save, ShieldCheck, Trash2, Upload, UserRound, Wand2 } from "lucide-react";
+import { Copy, Download, ExternalLink, Image, KeyRound, LockKeyhole, Palette, Plus, Save, ShieldCheck, Smartphone, Trash2, Upload, UserRound, Wand2 } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
 import { SHOW_SETUP_GUIDE_LINK } from "../config/cmsRuntime";
 import {
   DEFAULT_SITE_CONFIG,
+  SITE_APP_IDENTITY_FIELDS,
+  SITE_CONTACT_FIELDS,
+  SITE_HOMEPAGE_FIELDS,
+  SITE_NOTIFICATION_FIELDS,
   SITE_THEME_BACKGROUND_FIELDS,
   SITE_THEME_COLOR_FIELDS,
   SITE_SEO_FIELDS,
@@ -72,6 +76,59 @@ const SEO_FIELD_LABELS = {
 };
 const SEO_LONG_FIELDS = new Set(["description", "keywords", "ogDescription", "twitterDescription"]);
 const SEO_IMAGE_FIELDS = new Set(["ogImage", "twitterImage"]);
+const APP_IDENTITY_LABELS = {
+  faviconUrl: "Favicon",
+  appleTouchIconUrl: "Apple touch icon",
+  appIconUrl: "Icon app/PWA",
+  themeColor: "Theme color trình duyệt",
+  statusBarStyle: "iOS status bar"
+};
+const CONTACT_FIELD_LABELS = {
+  managerName: "Người quản trị/chủ gia phả",
+  phone: "Số điện thoại",
+  zalo: "Zalo",
+  email: "Email",
+  address: "Địa chỉ/quê gốc",
+  facebookUrl: "Facebook URL",
+  youtubeUrl: "YouTube URL",
+  showInFooter: "Hiển thị liên hệ ở footer"
+};
+const HOMEPAGE_FIELD_LABELS = {
+  showStats: "Hiển thị thống kê",
+  showFeatures: "Hiển thị lối vào nhanh",
+  showFeatured: "Hiển thị người tiêu biểu",
+  showAnniversaries: "Hiển thị ngày giỗ sắp tới",
+  showHistory: "Hiển thị lịch sử dòng họ",
+  featuredLimit: "Số người tiêu biểu",
+  anniversaryLimit: "Số ngày giỗ hiển thị",
+  anniversaryWindowDays: "Khoảng ngày giỗ sắp tới"
+};
+const NOTIFICATION_FIELD_LABELS = {
+  enableAnniversary: "Thông báo ngày giỗ",
+  anniversaryDaysAhead: "Nhắc trước số ngày",
+  anniversaryLimit: "Số thông báo ngày giỗ",
+  enableHistory: "Thông báo lịch sử",
+  historyLimit: "Số thông báo lịch sử",
+  enableFeatured: "Thông báo người tiêu biểu",
+  featuredLimit: "Số thông báo người tiêu biểu",
+  enablePrivacy: "Thông báo chế độ riêng tư",
+  enablePresence: "Thông báo người đang xem",
+  maxVisible: "Số thông báo tối đa"
+};
+const SYSTEM_ASSET_FIELDS = new Set(["faviconUrl", "appleTouchIconUrl", "appIconUrl"]);
+const SYSTEM_BOOLEAN_FIELDS = new Set([
+  "showInFooter",
+  "showStats",
+  "showFeatures",
+  "showFeatured",
+  "showAnniversaries",
+  "showHistory",
+  "enableAnniversary",
+  "enableHistory",
+  "enableFeatured",
+  "enablePrivacy",
+  "enablePresence"
+]);
 const TREE_THEME_LABELS = {
   maleBackground: "Node nam",
   maleBorder: "Viền nam",
@@ -458,6 +515,19 @@ export default function AccountAdminPage({
         ...base,
         seo: {
           ...base.seo,
+          [field]: value
+        }
+      };
+    });
+  };
+
+  const handleNestedSiteConfigChange = (section, field, value) => {
+    setSiteConfigDraft((prev) => {
+      const base = prev || normalizedSiteConfig;
+      return {
+        ...base,
+        [section]: {
+          ...base[section],
           [field]: value
         }
       };
@@ -1540,6 +1610,201 @@ export default function AccountAdminPage({
                 </button>
                 <button className="btn btn-primary" type="submit" disabled={saving}>
                   {saving ? "Đang lưu..." : "Lưu giao diện"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {wizardStep === "system" && (
+            <form className="setup-wizard-panel" onSubmit={handleSiteConfigSubmit}>
+              <div className="theme-config-head">
+                <div>
+                  <span className="accounts-eyebrow">
+                    <Smartphone size={16} strokeWidth={2.2} />
+                    Cài đặt hệ thống
+                  </span>
+                  <h3>PWA, liên hệ, trang chủ và thông báo</h3>
+                  <p>Các cấu hình này đi theo CMS package và project khách mới, nhưng để trống vẫn giữ hành vi hiện tại.</p>
+                </div>
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Icon và PWA</strong>
+                <span>Upload icon để đổi biểu tượng trình duyệt, icon iOS và app install.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_APP_IDENTITY_FIELDS.map((field) => {
+                  const value = siteConfigForm.appIdentity?.[field] || "";
+                  if (SYSTEM_ASSET_FIELDS.has(field)) {
+                    return (
+                      <AssetUploadField
+                        key={field}
+                        label={APP_IDENTITY_LABELS[field] || field}
+                        value={value}
+                        placeholder={DEFAULT_SITE_CONFIG.appIdentity[field]}
+                        scope={`identity-${field}`}
+                        onChange={(nextValue) => handleNestedSiteConfigChange("appIdentity", field, nextValue)}
+                        onUpload={(file, options) => uploadSiteAsset(file, {
+                          ...options,
+                          onUploaded: (src) => handleNestedSiteConfigChange("appIdentity", field, src)
+                        })}
+                        uploading={assetUploadingScope === `identity-${field}`}
+                        dragging={assetDraggingScope}
+                        onDragStart={setAssetDraggingScope}
+                        onDragEnd={() => setAssetDraggingScope("")}
+                      />
+                    );
+                  }
+                  if (field === "themeColor") {
+                    const swatchValue = HEX_COLOR_INPUT_PATTERN.test(value) ? value : DEFAULT_SITE_CONFIG.appIdentity.themeColor;
+                    return (
+                      <label className="theme-color-field" key={field}>
+                        <span>{APP_IDENTITY_LABELS[field] || field}</span>
+                        <div className="theme-color-control">
+                          <input
+                            className="theme-color-swatch"
+                            type="color"
+                            value={swatchValue}
+                            onChange={(event) => handleNestedSiteConfigChange("appIdentity", field, event.target.value)}
+                          />
+                          <input
+                            className="form-input"
+                            value={value}
+                            onChange={(event) => handleNestedSiteConfigChange("appIdentity", field, event.target.value)}
+                            placeholder="#7A1819"
+                            maxLength={7}
+                          />
+                        </div>
+                      </label>
+                    );
+                  }
+                  return (
+                    <label className="theme-color-field" key={field}>
+                      <span>{APP_IDENTITY_LABELS[field] || field}</span>
+                      <select
+                        className="form-input"
+                        value={value}
+                        onChange={(event) => handleNestedSiteConfigChange("appIdentity", field, event.target.value)}
+                      >
+                        <option value="black-translucent">black-translucent</option>
+                        <option value="black">black</option>
+                        <option value="default">default</option>
+                      </select>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Liên hệ</strong>
+                <span>Thông tin phục vụ bàn giao và có thể hiện ở footer.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_CONTACT_FIELDS.map((field) => {
+                  if (SYSTEM_BOOLEAN_FIELDS.has(field)) {
+                    return (
+                      <label className="system-toggle-field" key={field}>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(siteConfigForm.contact?.[field])}
+                          onChange={(event) => handleNestedSiteConfigChange("contact", field, event.target.checked)}
+                        />
+                        <span>{CONTACT_FIELD_LABELS[field] || field}</span>
+                      </label>
+                    );
+                  }
+                  return (
+                    <label key={field}>
+                      {CONTACT_FIELD_LABELS[field] || field}
+                      <input
+                        className="form-input"
+                        value={siteConfigForm.contact?.[field] || ""}
+                        onChange={(event) => handleNestedSiteConfigChange("contact", field, event.target.value)}
+                        placeholder={field.endsWith("Url") ? "https://..." : ""}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Trang chủ</strong>
+                <span>Bật tắt block và giới hạn số item trên trang chủ.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_HOMEPAGE_FIELDS.map((field) => {
+                  if (SYSTEM_BOOLEAN_FIELDS.has(field)) {
+                    return (
+                      <label className="system-toggle-field" key={field}>
+                        <input
+                          type="checkbox"
+                          checked={siteConfigForm.homepage?.[field] !== false}
+                          onChange={(event) => handleNestedSiteConfigChange("homepage", field, event.target.checked)}
+                        />
+                        <span>{HOMEPAGE_FIELD_LABELS[field] || field}</span>
+                      </label>
+                    );
+                  }
+                  return (
+                    <label key={field}>
+                      {HOMEPAGE_FIELD_LABELS[field] || field}
+                      <input
+                        className="form-input"
+                        type="number"
+                        min={1}
+                        max={field === "anniversaryWindowDays" ? 365 : 24}
+                        value={siteConfigForm.homepage?.[field] || DEFAULT_SITE_CONFIG.homepage[field]}
+                        onChange={(event) => handleNestedSiteConfigChange("homepage", field, event.target.value)}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Thông báo</strong>
+                <span>Bật tắt từng loại notification và giới hạn số lượng hiển thị.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_NOTIFICATION_FIELDS.map((field) => {
+                  if (SYSTEM_BOOLEAN_FIELDS.has(field)) {
+                    return (
+                      <label className="system-toggle-field" key={field}>
+                        <input
+                          type="checkbox"
+                          checked={siteConfigForm.notifications?.[field] !== false}
+                          onChange={(event) => handleNestedSiteConfigChange("notifications", field, event.target.checked)}
+                        />
+                        <span>{NOTIFICATION_FIELD_LABELS[field] || field}</span>
+                      </label>
+                    );
+                  }
+                  return (
+                    <label key={field}>
+                      {NOTIFICATION_FIELD_LABELS[field] || field}
+                      <input
+                        className="form-input"
+                        type="number"
+                        min={field.endsWith("Limit") ? 0 : 1}
+                        max={field === "anniversaryDaysAhead" ? 365 : 30}
+                        value={siteConfigForm.notifications?.[field] ?? DEFAULT_SITE_CONFIG.notifications[field]}
+                        onChange={(event) => handleNestedSiteConfigChange("notifications", field, event.target.value)}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="account-form-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => {
+                  handleNestedSiteConfigChange("appIdentity", "faviconUrl", DEFAULT_SITE_CONFIG.appIdentity.faviconUrl);
+                  handleNestedSiteConfigChange("appIdentity", "appleTouchIconUrl", DEFAULT_SITE_CONFIG.appIdentity.appleTouchIconUrl);
+                  handleNestedSiteConfigChange("appIdentity", "appIconUrl", DEFAULT_SITE_CONFIG.appIdentity.appIconUrl);
+                }}>
+                  Icon mặc định
+                </button>
+                <button className="btn btn-primary" type="submit" disabled={saving}>
+                  {saving ? "Đang lưu..." : "Lưu cài đặt hệ thống"}
                 </button>
               </div>
             </form>

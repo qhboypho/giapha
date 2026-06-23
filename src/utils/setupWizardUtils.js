@@ -17,6 +17,11 @@ export const SETUP_WIZARD_STEPS = [
     description: "Tùy chỉnh màu thương hiệu, nền, thẻ và thanh điều hướng."
   },
   {
+    id: "system",
+    title: "Cài đặt hệ thống",
+    description: "PWA, liên hệ, trang chủ và thông báo."
+  },
+  {
     id: "security",
     title: "Bảo mật và AI",
     description: "Chế độ riêng tư và API key AI nếu muốn nhập liệu từ ảnh/PDF."

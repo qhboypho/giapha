@@ -44,6 +44,26 @@ const themedConfig = normalizeSiteConfig({
     canonicalUrl: "https://example.com/gia-pha-nguyen-van",
     ogImage: "/api/media/site/seo/og.jpg",
     twitterImage: "https://cdn.example.com/twitter.jpg"
+  },
+  appIdentity: {
+    faviconUrl: "/api/media/site/icon/favicon.png",
+    appIconUrl: "/api/media/site/icon/app.png",
+    themeColor: "#123456"
+  },
+  contact: {
+    managerName: "Nguyen Van A",
+    facebookUrl: "https://facebook.com/example",
+    showInFooter: true
+  },
+  homepage: {
+    showHistory: false,
+    featuredLimit: 12,
+    anniversaryWindowDays: 45
+  },
+  notifications: {
+    enablePresence: false,
+    anniversaryDaysAhead: 45,
+    maxVisible: 5
   }
 });
 assert.equal(themedConfig.themeColors.primary, "#123ABC");
@@ -57,6 +77,16 @@ assert.equal(themedConfig.treeTheme.selectedRing, DEFAULT_SITE_CONFIG.treeTheme.
 assert.equal(themedConfig.seo.title, "Gia pha Nguyen Van custom");
 assert.equal(themedConfig.seo.canonicalUrl, "https://example.com/gia-pha-nguyen-van");
 assert.equal(themedConfig.seo.ogImage, "/api/media/site/seo/og.jpg");
+assert.equal(themedConfig.appIdentity.faviconUrl, "/api/media/site/icon/favicon.png");
+assert.equal(themedConfig.appIdentity.themeColor, "#123456");
+assert.equal(themedConfig.contact.managerName, "Nguyen Van A");
+assert.equal(themedConfig.contact.showInFooter, true);
+assert.equal(themedConfig.homepage.showHistory, false);
+assert.equal(themedConfig.homepage.featuredLimit, 12);
+assert.equal(themedConfig.homepage.anniversaryWindowDays, 45);
+assert.equal(themedConfig.notifications.enablePresence, false);
+assert.equal(themedConfig.notifications.anniversaryDaysAhead, 45);
+assert.equal(themedConfig.notifications.maxVisible, 5);
 
 const serialized = serializeSiteConfig(partialConfig);
 const parsed = parseSiteConfigValue(serialized);
@@ -108,6 +138,14 @@ assert.throws(
     seo: { ...DEFAULT_SITE_CONFIG.seo, canonicalUrl: "/khong-hop-le" }
   }),
   /Canonical URL/
+);
+
+assert.throws(
+  () => validateSiteConfigInput({
+    ...DEFAULT_SITE_CONFIG,
+    contact: { ...DEFAULT_SITE_CONFIG.contact, facebookUrl: "facebook.com/example" }
+  }),
+  /Link liên hệ/
 );
 
 console.log("site config utils tests passed");

@@ -95,6 +95,7 @@ function HeritageIcon({ type }) {
 
 export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate, onOpenPerson, members = [], historyEvents = [], isLoading = false, activeViewersCount = 0 }) {
   const config = normalizeSiteConfig(siteConfig);
+  const homepageConfig = config.homepage;
   const currentLunarDateLabel = getCurrentLunarDateLabel();
   const homepageHistoryEvents = buildHomepageHistoryEvents(historyEvents);
 
@@ -277,14 +278,15 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
       member: m
     }));
   }
-  const visibleFeaturedMembers = featuredMembers.slice(0, 8);
+  const visibleFeaturedMembers = featuredMembers.slice(0, homepageConfig.featuredLimit);
   const shouldScrollFeaturedMembers = visibleFeaturedMembers.length > 4;
 
   const upcomingAnniversaries = buildUpcomingAnniversaries(members);
   const upcomingAnniversariesCount = members.length > 0
-    ? upcomingAnniversaries.filter((event) => event.daysUntil <= 30).length
+    ? upcomingAnniversaries.filter((event) => event.daysUntil <= homepageConfig.anniversaryWindowDays).length
     : 0;
-  const visibleAnniversaries = upcomingAnniversaries.slice(0, 6);
+  const visibleAnniversaries = upcomingAnniversaries.slice(0, homepageConfig.anniversaryLimit);
+  const shouldShowBottomGrid = homepageConfig.showFeatured || homepageConfig.showAnniversaries || homepageConfig.showHistory;
 
   const stats = [
     { value: String(generations), label: "Đời", note: "Lịch sử dòng họ", tone: "green", icon: "temple" },
@@ -587,7 +589,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
         </aside>
       </section>
 
-      <section className="homepage-stats-row" aria-label="Thống kê dòng họ">
+      {homepageConfig.showStats && <section className="homepage-stats-row" aria-label="Thống kê dòng họ">
         {stats.map((stat) => (
           <article className={`stat-card stat-${stat.tone}`} key={stat.label}>
             <div className="stat-icon-wrapper">
@@ -602,9 +604,9 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
             </div>
           </article>
         ))}
-      </section>
+      </section>}
 
-      <section className="homepage-features-section" aria-label="Lối vào nhanh">
+      {homepageConfig.showFeatures && <section className="homepage-features-section" aria-label="Lối vào nhanh">
         {features.map((feature) => (
           <button
             className={`feature-card feature-${feature.tone}`}
@@ -621,10 +623,10 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
             </span>
           </button>
         ))}
-      </section>
+      </section>}
 
-      <section className="homepage-bottom-grid">
-        <article className="home-panel panel-notables">
+      {shouldShowBottomGrid && <section className="homepage-bottom-grid">
+        {homepageConfig.showFeatured && <article className="home-panel panel-notables">
           <div className="column-header-row">
             <h2 className="column-title serif">
               <span className="header-mark" aria-hidden="true" />
@@ -663,9 +665,9 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
               )
             )}
           </div>
-        </article>
+        </article>}
 
-        <article className="home-panel panel-events">
+        {homepageConfig.showAnniversaries && <article className="home-panel panel-events">
           <div className="column-header-row">
             <h2 className="column-title serif">
               <span className="header-mark calendar-mark" aria-hidden="true" />
@@ -699,9 +701,9 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
               </div>
             ))}
           </div>
-        </article>
+        </article>}
 
-        <article className="home-panel panel-history">
+        {homepageConfig.showHistory && <article className="home-panel panel-history">
           <div className="column-header-row">
             <h2 className="column-title serif">
               <span className="header-mark record-mark" aria-hidden="true" />
@@ -717,14 +719,25 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
               </div>
             ))}
           </div>
-        </article>
-      </section>
+        </article>}
+      </section>}
 
       <footer className="traditional-footer">
         <p className="footer-quote serif">
           {config.footerQuote}
           <span>{config.footerMessage}</span>
         </p>
+        {config.contact.showInFooter && (
+          <div className="footer-contact">
+            {config.contact.managerName && <span>Quản trị: {config.contact.managerName}</span>}
+            {config.contact.phone && <span>Điện thoại: {config.contact.phone}</span>}
+            {config.contact.zalo && <span>Zalo: {config.contact.zalo}</span>}
+            {config.contact.email && <span>Email: {config.contact.email}</span>}
+            {config.contact.address && <span>{config.contact.address}</span>}
+            {config.contact.facebookUrl && <a href={config.contact.facebookUrl} target="_blank" rel="noreferrer">Facebook</a>}
+            {config.contact.youtubeUrl && <a href={config.contact.youtubeUrl} target="_blank" rel="noreferrer">YouTube</a>}
+          </div>
+        )}
       </footer>
     </main>
   );

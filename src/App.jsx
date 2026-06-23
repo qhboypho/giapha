@@ -77,12 +77,33 @@ const setMetaContent = (selector, attributes, content) => {
 
 const updateSeoHead = (siteConfig) => {
   const seo = buildSeoMetadata(siteConfig, { origin: window.location.origin });
+  const config = normalizeSiteConfig(siteConfig);
+  const identity = config.appIdentity;
+  const manifest = {
+    name: config.siteTitle,
+    short_name: config.shortName,
+    icons: [
+      {
+        src: identity.appIconUrl,
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any maskable"
+      }
+    ],
+    theme_color: identity.themeColor,
+    background_color: config.themeColors.appBackground,
+    display: "standalone",
+    scope: "/",
+    start_url: "/"
+  };
   document.title = seo.title;
   setMetaContent('meta[name="description"]', { name: "description" }, seo.description);
   setMetaContent('meta[name="keywords"]', { name: "keywords" }, seo.keywords);
   setMetaContent('meta[name="author"]', { name: "author" }, seo.author);
+  setMetaContent('meta[name="theme-color"]', { name: "theme-color" }, identity.themeColor);
   setMetaContent('meta[name="application-name"]', { name: "application-name" }, seo.applicationName);
   setMetaContent('meta[name="apple-mobile-web-app-title"]', { name: "apple-mobile-web-app-title" }, seo.appleTitle);
+  setMetaContent('meta[name="apple-mobile-web-app-status-bar-style"]', { name: "apple-mobile-web-app-status-bar-style" }, identity.statusBarStyle);
   setMetaContent('meta[property="og:site_name"]', { property: "og:site_name" }, seo.ogSiteName);
   setMetaContent('meta[property="og:title"]', { property: "og:title" }, seo.ogTitle);
   setMetaContent('meta[property="og:description"]', { property: "og:description" }, seo.ogDescription);
@@ -95,6 +116,22 @@ const updateSeoHead = (siteConfig) => {
     element.setAttribute("rel", "canonical");
     return element;
   }, { href: seo.canonicalUrl });
+  upsertHeadElement('link[rel="icon"][type="image/png"]', () => {
+    const element = document.createElement("link");
+    element.setAttribute("rel", "icon");
+    element.setAttribute("type", "image/png");
+    return element;
+  }, { href: identity.faviconUrl });
+  upsertHeadElement('link[rel="apple-touch-icon"]', () => {
+    const element = document.createElement("link");
+    element.setAttribute("rel", "apple-touch-icon");
+    return element;
+  }, { href: identity.appleTouchIconUrl });
+  upsertHeadElement('link[rel="manifest"]', () => {
+    const element = document.createElement("link");
+    element.setAttribute("rel", "manifest");
+    return element;
+  }, { href: `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}` });
 };
 
 export default function App() {
@@ -539,8 +576,9 @@ export default function App() {
     historyEvents,
     currentUser,
     isPrivateMode,
-    activeViewersCount
-  }), [activeViewersCount, currentUser, historyEvents, isPrivateMode, members]);
+    activeViewersCount,
+    siteConfig
+  }), [activeViewersCount, currentUser, historyEvents, isPrivateMode, members, siteConfig]);
 
   const unreadNotificationCount = useMemo(() => {
     const readSet = new Set(readNotificationIds);

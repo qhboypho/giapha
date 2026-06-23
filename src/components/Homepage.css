@@ -1319,6 +1319,8 @@
   min-height: 86px;
   display: grid;
   place-items: center;
+  gap: 0.7rem;
+  padding: 1.2rem;
   position: relative;
   overflow: hidden;
   color: #f5dfb7;
@@ -1360,6 +1362,32 @@
 
 .footer-quote span {
   display: block;
+}
+
+.footer-contact {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem 1rem;
+  max-width: 920px;
+  color: rgba(245, 223, 183, 0.82);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.footer-contact span,
+.footer-contact a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.footer-contact a {
+  color: #f7ca68;
+  text-decoration: none;
 }
 
 @media (max-width: 1280px) {

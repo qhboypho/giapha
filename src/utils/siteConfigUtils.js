@@ -65,6 +65,52 @@ export const DEFAULT_SITE_CONFIG = {
     twitterTitle: "",
     twitterDescription: "",
     twitterImage: ""
+  },
+  appIdentity: {
+    faviconUrl: "/favicon-96x96.png",
+    appleTouchIconUrl: "/apple-touch-icon.png",
+    appIconUrl: "/web-app-manifest-512x512.png",
+    themeColor: "#7A1819",
+    statusBarStyle: "black-translucent"
+  },
+  contact: {
+    managerName: "",
+    phone: "",
+    zalo: "",
+    email: "",
+    address: "",
+    facebookUrl: "",
+    youtubeUrl: "",
+    showInFooter: false
+  },
+  homepage: {
+    showStats: true,
+    showFeatures: true,
+    showFeatured: true,
+    showAnniversaries: true,
+    showHistory: true,
+    featuredLimit: 8,
+    anniversaryLimit: 6,
+    anniversaryWindowDays: 30
+  },
+  notifications: {
+    enableAnniversary: true,
+    anniversaryDaysAhead: 30,
+    anniversaryLimit: 5,
+    enableHistory: true,
+    historyLimit: 3,
+    enableFeatured: true,
+    featuredLimit: 2,
+    enablePrivacy: true,
+    enablePresence: true,
+    maxVisible: 8
+  },
+  privacyDisplay: {
+    guestCanSeeNavbar: true,
+    maskPhone: true,
+    maskAddress: true,
+    maskBirthPlace: true,
+    maskRestingPlace: true
   }
 };
 
@@ -89,8 +135,23 @@ export const SITE_THEME_COLOR_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeColo
 export const SITE_THEME_BACKGROUND_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeBackgrounds);
 export const SITE_TREE_THEME_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.treeTheme);
 export const SITE_SEO_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.seo);
+export const SITE_APP_IDENTITY_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.appIdentity);
+export const SITE_CONTACT_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.contact);
+export const SITE_HOMEPAGE_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.homepage);
+export const SITE_NOTIFICATION_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.notifications);
+export const SITE_PRIVACY_DISPLAY_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.privacyDisplay);
 export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field) => (
-  !["themeColors", "themeBackgrounds", "treeTheme", "seo"].includes(field)
+  ![
+    "themeColors",
+    "themeBackgrounds",
+    "treeTheme",
+    "seo",
+    "appIdentity",
+    "contact",
+    "homepage",
+    "notifications",
+    "privacyDisplay"
+  ].includes(field)
 ));
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const BACKGROUND_URL_LIMIT = 800;
@@ -109,6 +170,23 @@ const SEO_TEXT_LIMITS = {
   twitterTitle: 160,
   twitterDescription: 320,
   twitterImage: 800
+};
+const APP_IDENTITY_TEXT_LIMITS = {
+  faviconUrl: 800,
+  appleTouchIconUrl: 800,
+  appIconUrl: 800,
+  themeColor: 7,
+  statusBarStyle: 40
+};
+const CONTACT_TEXT_LIMITS = {
+  managerName: 120,
+  phone: 40,
+  zalo: 80,
+  email: 120,
+  address: 240,
+  facebookUrl: 800,
+  youtubeUrl: 800,
+  showInFooter: 10
 };
 
 const normalizeString = (value, fallback = "", maxLength = 300) => {
@@ -130,6 +208,11 @@ export function normalizeSiteConfig(config = {}) {
   normalized.themeBackgrounds = normalizeThemeBackgrounds(config.themeBackgrounds);
   normalized.treeTheme = normalizeTreeTheme(config.treeTheme);
   normalized.seo = normalizeSeoConfig(config.seo);
+  normalized.appIdentity = normalizeAppIdentity(config.appIdentity);
+  normalized.contact = normalizeContactConfig(config.contact);
+  normalized.homepage = normalizeHomepageConfig(config.homepage);
+  normalized.notifications = normalizeNotificationConfig(config.notifications);
+  normalized.privacyDisplay = normalizePrivacyDisplayConfig(config.privacyDisplay);
   return normalized;
 }
 
@@ -179,6 +262,78 @@ export function normalizeSeoConfig(seo = {}) {
   }, {});
 }
 
+export function normalizeAppIdentity(identity = {}) {
+  const source = identity && typeof identity === "object" ? identity : {};
+  return SITE_APP_IDENTITY_FIELDS.reduce((acc, field) => {
+    const fallback = DEFAULT_SITE_CONFIG.appIdentity[field];
+    const value = normalizeString(source[field], fallback, APP_IDENTITY_TEXT_LIMITS[field]);
+    if (["faviconUrl", "appleTouchIconUrl", "appIconUrl"].includes(field)) {
+      acc[field] = normalizeSeoUrl(value, fallback);
+    } else if (field === "themeColor") {
+      acc[field] = HEX_COLOR_PATTERN.test(value) ? value.toUpperCase() : fallback;
+    } else {
+      acc[field] = ["default", "black", "black-translucent"].includes(value) ? value : fallback;
+    }
+    return acc;
+  }, {});
+}
+
+export function normalizeContactConfig(contact = {}) {
+  const source = contact && typeof contact === "object" ? contact : {};
+  return SITE_CONTACT_FIELDS.reduce((acc, field) => {
+    if (field === "showInFooter") {
+      acc[field] = Boolean(source[field]);
+      return acc;
+    }
+    const fallback = DEFAULT_SITE_CONFIG.contact[field];
+    const value = normalizeString(source[field], fallback, CONTACT_TEXT_LIMITS[field]);
+    if (["facebookUrl", "youtubeUrl"].includes(field)) {
+      acc[field] = normalizeExternalUrl(value, fallback);
+    } else {
+      acc[field] = value;
+    }
+    return acc;
+  }, {});
+}
+
+export function normalizeHomepageConfig(homepage = {}) {
+  const source = homepage && typeof homepage === "object" ? homepage : {};
+  return {
+    showStats: source.showStats !== false,
+    showFeatures: source.showFeatures !== false,
+    showFeatured: source.showFeatured !== false,
+    showAnniversaries: source.showAnniversaries !== false,
+    showHistory: source.showHistory !== false,
+    featuredLimit: clampNumber(source.featuredLimit, DEFAULT_SITE_CONFIG.homepage.featuredLimit, 1, 24),
+    anniversaryLimit: clampNumber(source.anniversaryLimit, DEFAULT_SITE_CONFIG.homepage.anniversaryLimit, 1, 24),
+    anniversaryWindowDays: clampNumber(source.anniversaryWindowDays, DEFAULT_SITE_CONFIG.homepage.anniversaryWindowDays, 1, 365)
+  };
+}
+
+export function normalizeNotificationConfig(notifications = {}) {
+  const source = notifications && typeof notifications === "object" ? notifications : {};
+  return {
+    enableAnniversary: source.enableAnniversary !== false,
+    anniversaryDaysAhead: clampNumber(source.anniversaryDaysAhead, DEFAULT_SITE_CONFIG.notifications.anniversaryDaysAhead, 1, 365),
+    anniversaryLimit: clampNumber(source.anniversaryLimit, DEFAULT_SITE_CONFIG.notifications.anniversaryLimit, 0, 20),
+    enableHistory: source.enableHistory !== false,
+    historyLimit: clampNumber(source.historyLimit, DEFAULT_SITE_CONFIG.notifications.historyLimit, 0, 20),
+    enableFeatured: source.enableFeatured !== false,
+    featuredLimit: clampNumber(source.featuredLimit, DEFAULT_SITE_CONFIG.notifications.featuredLimit, 0, 20),
+    enablePrivacy: source.enablePrivacy !== false,
+    enablePresence: source.enablePresence !== false,
+    maxVisible: clampNumber(source.maxVisible, DEFAULT_SITE_CONFIG.notifications.maxVisible, 1, 30)
+  };
+}
+
+export function normalizePrivacyDisplayConfig(privacy = {}) {
+  const source = privacy && typeof privacy === "object" ? privacy : {};
+  return SITE_PRIVACY_DISPLAY_FIELDS.reduce((acc, field) => {
+    acc[field] = source[field] !== false;
+    return acc;
+  }, {});
+}
+
 export function normalizeBackgroundUrl(value, fallback = "") {
   const url = String(value ?? "").trim().slice(0, BACKGROUND_URL_LIMIT);
   if (!url) return fallback || "";
@@ -195,6 +350,18 @@ function normalizeCanonicalUrl(value, fallback = "") {
   const url = String(value ?? "").trim().slice(0, BACKGROUND_URL_LIMIT);
   if (!url) return fallback || "";
   return /^https?:\/\//i.test(url) ? url : (fallback || "");
+}
+
+function normalizeExternalUrl(value, fallback = "") {
+  const url = String(value ?? "").trim().slice(0, BACKGROUND_URL_LIMIT);
+  if (!url) return fallback || "";
+  return /^https?:\/\//i.test(url) ? url : (fallback || "");
+}
+
+function clampNumber(value, fallback, min, max) {
+  const number = Number.parseInt(value, 10);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
 }
 
 export function parseSiteConfigValue(value) {
@@ -247,6 +414,22 @@ export function validateSiteConfigInput(config = {}) {
     const normalizedUrl = seo[field];
     if (rawUrl && String(rawUrl).trim() && !normalizedUrl) {
       throw new Error("Ảnh SEO/OGP phải là đường dẫn nội bộ, URL http/https hoặc data image.");
+    }
+  }
+
+  for (const field of ["faviconUrl", "appleTouchIconUrl", "appIconUrl"]) {
+    const rawUrl = config.appIdentity?.[field];
+    const normalizedUrl = normalized.appIdentity[field];
+    if (rawUrl && String(rawUrl).trim() && !normalizedUrl) {
+      throw new Error("Icon/PWA phải là đường dẫn nội bộ, URL http/https hoặc data image.");
+    }
+  }
+
+  for (const field of ["facebookUrl", "youtubeUrl"]) {
+    const rawUrl = config.contact?.[field];
+    const normalizedUrl = normalized.contact[field];
+    if (rawUrl && String(rawUrl).trim() && !normalizedUrl) {
+      throw new Error("Link liên hệ phải là URL http/https đầy đủ.");
     }
   }
 

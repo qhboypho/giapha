@@ -1,8 +1,7 @@
 import { buildUpcomingAnniversaries } from "./anniversaryUtils";
 import { formatHistoryEventDate } from "./familyHistoryUtils";
 import { isAdmin } from "./authRoles";
-
-const MAX_VISIBLE_NOTIFICATIONS = 8;
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "./siteConfigUtils";
 
 const getAnniversaryTone = (daysUntil) => {
   if (daysUntil === 0) return "critical";
@@ -21,47 +20,54 @@ export function buildFamilyNotifications({
   historyEvents = [],
   currentUser = null,
   isPrivateMode = true,
-  activeViewersCount = 0
+  activeViewersCount = 0,
+  siteConfig = DEFAULT_SITE_CONFIG
 } = {}) {
+  const config = normalizeSiteConfig(siteConfig);
+  const notificationConfig = config.notifications;
   const notifications = [];
 
-  buildUpcomingAnniversaries(members)
-    .filter((event) => event.daysUntil <= 30)
-    .slice(0, 5)
-    .forEach((event) => {
-      notifications.push({
-        id: `anniversary:${event.member.id}:${event.day}:${event.month}`,
-        type: "anniversary",
-        tone: getAnniversaryTone(event.daysUntil),
-        title: event.title,
-        description: `${event.date} - ${getAnniversaryTimeLabel(event.daysUntil)}`,
-        timeLabel: getAnniversaryTimeLabel(event.daysUntil),
-        actionLabel: "Xem hồ sơ",
-        action: { type: "member", memberId: event.member.id }
+  if (notificationConfig.enableAnniversary) {
+    buildUpcomingAnniversaries(members)
+      .filter((event) => event.daysUntil <= notificationConfig.anniversaryDaysAhead)
+      .slice(0, notificationConfig.anniversaryLimit)
+      .forEach((event) => {
+        notifications.push({
+          id: `anniversary:${event.member.id}:${event.day}:${event.month}`,
+          type: "anniversary",
+          tone: getAnniversaryTone(event.daysUntil),
+          title: event.title,
+          description: `${event.date} - ${getAnniversaryTimeLabel(event.daysUntil)}`,
+          timeLabel: getAnniversaryTimeLabel(event.daysUntil),
+          actionLabel: "Xem hồ sơ",
+          action: { type: "member", memberId: event.member.id }
+        });
       });
-    });
+  }
 
-  historyEvents
-    .filter((event) => event?.isHomepageVisible)
-    .slice(-3)
-    .reverse()
-    .forEach((event) => {
-      notifications.push({
-        id: `history:${event.id || event.eventDate}:${event.title}`,
-        type: "history",
-        tone: "heritage",
-        title: event.title || "Cột mốc dòng họ",
-        description: event.description || "Có cột mốc lịch sử đang được hiển thị.",
-        timeLabel: formatHistoryEventDate(event.eventDate),
-        actionLabel: "Xem lịch sử",
-        action: { type: "view", view: "history" }
+  if (notificationConfig.enableHistory && notificationConfig.historyLimit > 0) {
+    historyEvents
+      .filter((event) => event?.isHomepageVisible)
+      .slice(-notificationConfig.historyLimit)
+      .reverse()
+      .forEach((event) => {
+        notifications.push({
+          id: `history:${event.id || event.eventDate}:${event.title}`,
+          type: "history",
+          tone: "heritage",
+          title: event.title || "Cột mốc dòng họ",
+          description: event.description || "Có cột mốc lịch sử đang được hiển thị.",
+          timeLabel: formatHistoryEventDate(event.eventDate),
+          actionLabel: "Xem lịch sử",
+          action: { type: "view", view: "history" }
+        });
       });
-    });
+  }
 
-  const featuredMembers = members
+  const featuredMembers = notificationConfig.enableFeatured && notificationConfig.featuredLimit > 0 ? members
     .filter((member) => member.isFeatured)
     .sort((a, b) => (a.generation || 0) - (b.generation || 0) || a.name.localeCompare(b.name, "vi"))
-    .slice(0, 2);
+    .slice(0, notificationConfig.featuredLimit) : [];
 
   featuredMembers.forEach((member) => {
     notifications.push({
@@ -76,7 +82,7 @@ export function buildFamilyNotifications({
     });
   });
 
-  if (isAdmin(currentUser)) {
+  if (notificationConfig.enablePrivacy && isAdmin(currentUser)) {
     notifications.push({
       id: `privacy:${isPrivateMode ? "private" : "public"}`,
       type: "security",
@@ -91,7 +97,7 @@ export function buildFamilyNotifications({
     });
   }
 
-  if (activeViewersCount > 0) {
+  if (notificationConfig.enablePresence && activeViewersCount > 0) {
     notifications.push({
       id: "presence:active-viewers",
       type: "presence",
@@ -104,5 +110,5 @@ export function buildFamilyNotifications({
     });
   }
 
-  return notifications.slice(0, MAX_VISIBLE_NOTIFICATIONS);
+  return notifications.slice(0, notificationConfig.maxVisible);
 }
