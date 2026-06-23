@@ -2867,7 +2867,6 @@
   transition: all var(--transition-fast);
 }
 
-.mobile-back-btn,
 .mobile-search-btn,
 .mobile-notification-btn {
   width: 36px;
@@ -2881,7 +2880,6 @@
   color: #fff8ef;
 }
 
-.mobile-back-btn svg,
 .mobile-search-btn svg,
 .mobile-notification-btn svg {
   width: 18px;
@@ -3554,7 +3552,6 @@
 }
 
 .navbar .hamburger-btn,
-.navbar .mobile-back-btn,
 .navbar .mobile-search-btn,
 .navbar .mobile-notification-btn {
   background: rgba(0, 0, 0, 0.2) !important;
@@ -3563,7 +3560,6 @@
 }
 
 .navbar .hamburger-btn:hover,
-.navbar .mobile-back-btn:hover,
 .navbar .mobile-search-btn:hover,
 .navbar .mobile-notification-btn:hover {
   background: rgba(255, 248, 239, 0.1) !important;

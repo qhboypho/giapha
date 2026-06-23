@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft,
   Award,
   Bell,
   BookOpenText,
@@ -80,8 +79,6 @@ export default function Navbar({
   members = [],
   activeView,
   setActiveView,
-  canGoBack = false,
-  onBack,
   suppressOverlays = false,
   currentUser,
   authReady = true,
@@ -737,18 +734,6 @@ export default function Navbar({
 
       {/* Mobile Navigation Toggle (Visible on Mobile) */}
       {!isGuestLocked && <div className="mobile-nav-toggle">
-        {canGoBack && (
-          <button
-            className="mobile-back-btn"
-            onClick={onBack}
-            aria-label="Quay lại trang trước"
-            title="Quay lại"
-            type="button"
-          >
-            <ArrowLeft aria-hidden="true" strokeWidth={2.4} />
-          </button>
-        )}
-
         {/* View Toggle */}
         <div className="btn-group" style={{ padding: "2px" }}>
           <button
