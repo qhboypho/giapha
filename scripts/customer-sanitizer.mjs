@@ -227,18 +227,19 @@ WHERE NOT EXISTS (
 export function sanitizeCustomerProject(targetDir, options = {}) {
   const familyName = String(options.familyName || "Khách mới").trim();
   const slug = String(options.slug || "").trim() || initialsFromFamilyName(familyName).toLowerCase();
+  const setupWizard = options.setupWizard !== false;
   const root = resolve(targetDir);
 
   writeFileSync(resolve(root, "migrations", "0002_seed.sql"), buildSeedSql(familyName), "utf8");
   writeFileSync(resolve(root, "migrations", "0003_featured_members.sql"), buildFeaturedSql(), "utf8");
   writeFileSync(resolve(root, "migrations", "0005_family_history_events.sql"), buildHistorySql(familyName), "utf8");
   writeFileSync(resolve(root, "migrations", "0008_site_config_setting.sql"), buildSiteConfigMigrationSql(familyName), "utf8");
-  writeFileSync(resolve(root, "src", "config", "cmsRuntime.js"), "export const ENABLE_SETUP_WIZARD = false;\n", "utf8");
+  writeFileSync(resolve(root, "src", "config", "cmsRuntime.js"), `export const ENABLE_SETUP_WIZARD = ${setupWizard ? "true" : "false"};\n`, "utf8");
   sanitizeIndexHtml(root, familyName, slug);
   sanitizeManifest(root, familyName);
 
   const setupGuidePath = resolve(root, "public", "cms-setup-guide.html");
-  if (existsSync(setupGuidePath)) {
+  if (!setupWizard && existsSync(setupGuidePath)) {
     rmSync(setupGuidePath, { force: true });
   }
 }

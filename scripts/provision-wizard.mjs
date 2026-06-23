@@ -24,6 +24,7 @@ function parseArgs(argv) {
     aiSecret: "",
     writeWrangler: false,
     customerProject: false,
+    handoffReady: false,
     yes: false,
     help: false
   };
@@ -68,6 +69,8 @@ function parseArgs(argv) {
       args.writeWrangler = true;
     } else if (arg === "--customer-project") {
       args.customerProject = true;
+    } else if (arg === "--handoff-ready" || arg === "--no-setup-wizard") {
+      args.handoffReady = true;
     } else if (arg === "--yes") {
       args.yes = true;
     } else if (arg === "--help" || arg === "-h") {
@@ -99,7 +102,9 @@ Options:
   --output-root <dir>        Thư mục output. Default: ${DEFAULT_OUTPUT_ROOT}
   --ai-secret <secret>       AI_CONFIG_SECRET. Nếu bỏ trống script tự sinh
   --write-wrangler           Ghi wrangler.jsonc ở root sau khi sinh bản backup
-  --customer-project         Sinh guide cho project khách đã sample hóa, không dùng Setup Wizard nội bộ
+  --customer-project         Sinh guide cho project khách đã sample hóa
+  --handoff-ready            Guide cho bản đã cấu hình xong và ẩn Setup Wizard
+  --no-setup-wizard          Alias của --handoff-ready
   --yes                      Không hỏi tương tác, dùng default từ tham số
   --help                     Hiện hướng dẫn
 
@@ -204,7 +209,8 @@ export function buildProvisionPlan(options = {}) {
     cmsPackagePath: normalizePathForDocs(options.cmsPackagePath || ""),
     aiSecret: ensureValue(options.aiSecret, generateAiSecret()),
     writeWrangler: Boolean(options.writeWrangler),
-    customerProject: Boolean(options.customerProject)
+    customerProject: Boolean(options.customerProject),
+    setupWizard: options.setupWizard === false ? false : !options.handoffReady
   };
 }
 
@@ -242,7 +248,7 @@ export function buildProvisionGuide(plan) {
   const d1IdNote = plan.d1Id === D1_ID_PLACEHOLDER
     ? "- D1 id đang là placeholder. Sau khi chạy lệnh tạo D1, copy id vào `wrangler.generated.jsonc` hoặc root `wrangler.jsonc`."
     : "- D1 id đã được điền trong config sinh ra.";
-  const setupSection = plan.customerProject
+  const setupSection = plan.customerProject && !plan.setupWizard
     ? `Nếu chưa có CMS package, project khách đã có sẵn dữ liệu mẫu vài người. Đăng nhập admin, kiểm tra cây mẫu, rồi sửa/xóa/thêm thành viên thật trực tiếp trong app.
 
 ## 11. Sau deploy
@@ -252,6 +258,18 @@ export function buildProvisionGuide(plan) {
 - Kiểm tra tên dòng họ, logo, footer và nội dung trang chủ.
 - Xóa dữ liệu mẫu khi bắt đầu nhập dữ liệu thật.
 - Thêm thành viên thật thủ công hoặc import bằng script nếu đội triển khai đã chuẩn bị file dữ liệu.`
+    : plan.customerProject
+      ? `Nếu chưa có CMS package, project khách đã có sẵn dữ liệu mẫu vài người. Đăng nhập admin rồi mở Setup Wizard trong app để khách tự đổi tên, logo, màu sắc, nền, quyền riêng tư, AI và nhập dữ liệu thật.
+
+## 11. Sau deploy
+
+- Đăng nhập admin.
+- Mở Setup Wizard trong app.
+- Cấu hình tên dòng họ, logo, footer, màu sắc và hình nền.
+- Cấu hình AI nếu dùng ảnh/PDF.
+- Import CMS package, JSON cây, media package hoặc dùng AI nhận diện.
+- Xóa dữ liệu mẫu khi bắt đầu nhập dữ liệu thật.
+- Đổi mật khẩu admin trước khi bàn giao hoặc sau khi khách nhận quyền quản trị.`
     : `Nếu chưa có CMS package, deploy site base rồi đăng nhập admin, mở Setup Wizard trong app để cấu hình và nhập dữ liệu.
 
 ## 11. Sau deploy
@@ -477,7 +495,8 @@ export function buildProvisionSummary(plan) {
     cmsPackagePath: plan.cmsPackagePath,
     outputDir: plan.outputDir,
     aiSecretPreview: `${plan.aiSecret.slice(0, 6)}...${plan.aiSecret.slice(-6)}`,
-    customerProject: plan.customerProject
+    customerProject: plan.customerProject,
+    setupWizard: plan.setupWizard
   };
 }
 
@@ -546,7 +565,9 @@ async function main() {
   console.log("2. Tạo D1/R2 nếu chưa có");
   console.log("3. Điền D1 database_id nếu đang là placeholder");
   console.log(plan.customerProject
-    ? "4. Build/deploy, rồi đăng nhập admin để kiểm tra dữ liệu mẫu"
+    ? (plan.setupWizard
+      ? "4. Build/deploy, rồi đăng nhập admin mở Setup Wizard trong app"
+      : "4. Build/deploy, rồi đăng nhập admin để kiểm tra dữ liệu mẫu")
     : "4. Build/deploy, rồi mở Setup Wizard trong app");
 }
 

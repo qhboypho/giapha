@@ -33,6 +33,12 @@ npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-
 
 Script sẽ in ra URL Pages và tài khoản `admin`. GitHub repo riêng là bước optional, làm sau khi site đã chạy ổn.
 
+Mặc định project khách vẫn giữ `Setup Wizard` để khách/admin tự cấu hình trong app. Nếu đã cấu hình xong và muốn bàn giao bản gọn, thêm:
+
+```powershell
+npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force --handoff-ready
+```
+
 Neu dang dung o repo base va muon tao han mot folder project moi cho khach:
 
 ```powershell
@@ -56,6 +62,8 @@ npm run provision:wizard
 Wizard se hoi ten khach/project, sinh `wrangler.generated.jsonc`, `AI_CONFIG_SECRET`, checklist tao Cloudflare D1/R2/Pages va huong dan deploy trong thu muc `.provision/<slug>/`.
 
 Sau khi deploy xong, admin vao app mo `Setup Wizard` de cau hinh noi dung website va nhap du lieu.
+
+Neu muon tao project khach da an `Setup Wizard`, them `--handoff-ready` hoac `--no-setup-wizard` vao lenh `create-customer`/`customer:setup`.
 
 ## Quy Trinh Mau: Ho Tran Xuan
 

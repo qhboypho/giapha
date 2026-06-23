@@ -127,6 +127,12 @@ npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-
 
 Kết quả script sẽ in ra folder project, D1/R2, URL Pages và tài khoản `admin`. GitHub repo riêng là bước optional, làm sau khi site đã chạy ổn.
 
+Mặc định project khách mới vẫn giữ `Setup Wizard` để khách hoặc admin không chuyên kỹ thuật tự đổi logo, màu sắc, nội dung, quyền riêng tư, AI và import dữ liệu ngay trong app. Nếu mày đã cấu hình xong hết và muốn bàn giao bản vận hành gọn, thêm `--handoff-ready` hoặc `--no-setup-wizard` để ẩn wizard:
+
+```powershell
+npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force --handoff-ready
+```
+
 Nếu đang đứng ở repo base và muốn tạo hẳn một folder project mới cho khách:
 
 ```powershell
@@ -149,6 +155,12 @@ Nếu muốn tạo luôn git repo local, branch khách và initial commit:
 
 ```powershell
 npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --git-init
+```
+
+Nếu muốn clone ra bản đã sẵn sàng bàn giao và ẩn `Setup Wizard`:
+
+```powershell
+npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --handoff-ready
 ```
 
 Script chỉ tạo git local, chưa tạo GitHub remote. Khi muốn push, thêm remote thủ công rồi push branch khách.
@@ -304,6 +316,8 @@ npm run provision:wizard -- --family-name "Trần Công" --slug tran-cong --writ
 ```
 
 Sau khi deploy xong, admin vào app dùng `Setup Wizard` để cấu hình nội dung website và nhập dữ liệu.
+
+Với dự án khách tự setup, cứ giữ `Setup Wizard`. Với dự án mày đã cấu hình xong trước khi bàn giao, chạy lại setup/create với `--handoff-ready` hoặc chỉnh `src/config/cmsRuntime.js` thành `ENABLE_SETUP_WIZARD = false`.
 
 ## Setup Khách Mới Bằng CMS Package
 

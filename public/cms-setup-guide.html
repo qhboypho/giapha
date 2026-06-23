@@ -211,6 +211,8 @@
 npm run customer:setup -- --family-name="Trần Công" --slug=tran-cong --admin-password="TranCong@2026" --deploy</code></pre>
               <p>Nếu folder local khách đã tồn tại và muốn tạo lại từ đầu:</p>
               <pre><code>npm run customer:setup -- --family-name="Trần Công" --slug=tran-cong --admin-password="TranCong@2026" --deploy --force</code></pre>
+              <p>Mặc định project khách vẫn giữ Setup Wizard để khách tự cấu hình. Nếu đã setup xong và muốn bàn giao bản gọn:</p>
+              <pre><code>npm run customer:setup -- --family-name="Trần Công" --slug=tran-cong --admin-password="TranCong@2026" --deploy --force --handoff-ready</code></pre>
             </section>
 
             <section>
@@ -267,6 +269,7 @@ npm run customer:setup -- --family-name="Trần Công" --slug=tran-cong --admin-
                 <li>Mở Setup Wizard trong app để đổi tên dòng họ, logo, footer và nội dung.</li>
                 <li>Import CMS package hoặc nhập dữ liệu gia phả bằng AI/JSON.</li>
                 <li>Đổi mật khẩu admin trước khi bàn giao khách.</li>
+                <li>Nếu muốn ẩn Setup Wizard sau khi cấu hình xong, tạo project bằng <code>--handoff-ready</code> hoặc đổi <code>ENABLE_SETUP_WIZARD</code> về <code>false</code>.</li>
                 <li>GitHub repo riêng là bước optional, làm sau khi site đã ổn.</li>
               </ul>
             </section>
@@ -286,6 +289,8 @@ npm run customer:setup -- --family-name="Trần Công" --slug=tran-cong --admin-
         <pre><code>npm run create-customer -- --family-name "Trần Công" --slug tran-cong</code></pre>
         <p>Nếu muốn tạo luôn git local branch và initial commit:</p>
         <pre><code>npm run create-customer -- --family-name "Trần Công" --slug tran-cong --git-init</code></pre>
+        <p>Nếu tạo bản đã cấu hình xong để bàn giao và không muốn hiện Setup Wizard:</p>
+        <pre><code>npm run create-customer -- --family-name "Trần Công" --slug tran-cong --handoff-ready</code></pre>
         <p>Nếu đã ở trong folder project khách rồi, chạy riêng Provision Wizard:</p>
         <pre><code>npm run provision:wizard</code></pre>
       </section>

@@ -46,8 +46,18 @@ const customerPlan = buildProvisionPlan({
 });
 const customerGuide = buildProvisionGuide(customerPlan);
 assert.match(customerGuide, /dữ liệu mẫu vài người/);
-assert.doesNotMatch(customerGuide, /Mở Setup Wizard trong app/);
+assert.match(customerGuide, /Mở Setup Wizard trong app/);
 assert.equal(buildProvisionSummary(customerPlan).customerProject, true);
+
+const handoffCustomerPlan = buildProvisionPlan({
+  familyName: "Trần Xuân",
+  customerProject: true,
+  setupWizard: false
+});
+const handoffCustomerGuide = buildProvisionGuide(handoffCustomerPlan);
+assert.match(handoffCustomerGuide, /đã có sẵn dữ liệu mẫu vài người/);
+assert.doesNotMatch(handoffCustomerGuide, /Mở Setup Wizard trong app/);
+assert.equal(buildProvisionSummary(handoffCustomerPlan).setupWizard, false);
 
 const summary = buildProvisionSummary(plan);
 assert.equal(summary.familyName, "Trần Công");

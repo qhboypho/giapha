@@ -21,6 +21,7 @@ export function parseArgs(argv) {
     install: true,
     force: false,
     gitInit: false,
+    handoffReady: false,
     yes: false,
     help: false
   };
@@ -54,6 +55,8 @@ export function parseArgs(argv) {
       args.force = true;
     } else if (arg === "--git-init") {
       args.gitInit = true;
+    } else if (arg === "--handoff-ready" || arg === "--no-setup-wizard") {
+      args.handoffReady = true;
     } else if (arg === "--yes") {
       args.yes = true;
     } else if (arg === "--help" || arg === "-h") {
@@ -83,6 +86,8 @@ Options:
   --no-install              Bỏ qua npm install trong project mới
   --force                   Xóa folder project local nếu đã tồn tại
   --git-init                Tạo git repo local trong project khách
+  --handoff-ready           Ẩn Setup Wizard sau khi tạo project khách
+  --no-setup-wizard         Alias của --handoff-ready
   --yes                     Không hỏi tương tác, dùng tham số/default
   --help                    Hiện hướng dẫn
 
@@ -90,6 +95,7 @@ Examples:
   npm run customer:setup
   npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy
   npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --force
+  npm run customer:setup -- --family-name="Trần Xuân" --slug=tran-xuan --admin-password="TranXuan@2026" --deploy --handoff-ready
 `);
 }
 
@@ -202,7 +208,8 @@ export function buildCustomerSetupPlan(options = {}) {
     familyName,
     slug,
     outputRoot: ".provision",
-    customerProject: true
+    customerProject: true,
+    handoffReady: Boolean(options.handoffReady)
   });
 
   return {
@@ -214,6 +221,8 @@ export function buildCustomerSetupPlan(options = {}) {
     install: options.install !== false,
     force: Boolean(options.force),
     gitInit: Boolean(options.gitInit),
+    handoffReady: Boolean(options.handoffReady),
+    setupWizard: !options.handoffReady,
     provision
   };
 }
@@ -265,6 +274,7 @@ async function main() {
     "--slug",
     plan.slug,
     "--customer-project",
+    ...(plan.handoffReady ? ["--handoff-ready"] : []),
     ...(options.targetDir ? ["--target-dir", options.targetDir] : []),
     ...(options.parentDir ? ["--parent-dir", options.parentDir] : []),
     "--write-wrangler",
@@ -286,6 +296,7 @@ async function main() {
     "--slug",
     plan.slug,
     "--customer-project",
+    ...(plan.handoffReady ? ["--handoff-ready"] : []),
     "--d1-id",
     d1Id,
     "--write-wrangler"

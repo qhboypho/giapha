@@ -40,6 +40,7 @@ export function parseArgs(argv) {
     targetDir: "",
     parentDir: DEFAULT_PARENT_DIR,
     customerProject: false,
+    handoffReady: false,
     install: false,
     writeWrangler: false,
     gitInit: false,
@@ -69,6 +70,8 @@ export function parseArgs(argv) {
       if (!inlineValue) i += 1;
     } else if (arg === "--customer-project") {
       args.customerProject = true;
+    } else if (arg === "--handoff-ready" || arg === "--no-setup-wizard") {
+      args.handoffReady = true;
     } else if (arg === "--install") {
       args.install = true;
     } else if (arg === "--write-wrangler") {
@@ -105,6 +108,8 @@ Options:
   --target-dir <path>    Folder project mới. Default: ../giapha-<slug>
   --parent-dir <path>    Folder cha khi không truyền target-dir. Default: ..
   --customer-project     Clone ở chế độ khách mới, dùng dữ liệu sample
+  --handoff-ready        Ẩn Setup Wizard trong project khách đã cấu hình xong
+  --no-setup-wizard      Alias của --handoff-ready
   --install              Chạy npm install trong project mới
   --write-wrangler       Ghi luôn wrangler.jsonc trong project mới
   --git-init             Tạo git repo local, branch customer/<slug>, initial commit
@@ -117,6 +122,7 @@ Examples:
   npm run create-customer
   npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan
   npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --git-init --install --write-wrangler
+  npm run create-customer -- --family-name "Trần Xuân" --slug tran-xuan --handoff-ready
 `);
 }
 
@@ -232,7 +238,8 @@ export function buildCustomerProjectPlan(options = {}) {
     slug,
     outputRoot: ".provision",
     writeWrangler: Boolean(options.writeWrangler),
-    customerProject: true
+    customerProject: true,
+    handoffReady: Boolean(options.handoffReady)
   });
 
   return {
@@ -244,6 +251,7 @@ export function buildCustomerProjectPlan(options = {}) {
     gitInit: Boolean(options.gitInit),
     gitBranch: `customer/${slug}`,
     commitMessage: String(options.commitMessage || `chore: initialize ${familyName} customer project`).trim(),
+    setupWizard: !options.handoffReady,
     force: Boolean(options.force),
     provisionArgs: [
       "--yes",
@@ -252,6 +260,7 @@ export function buildCustomerProjectPlan(options = {}) {
       "--slug",
       slug,
       "--customer-project",
+      ...(options.handoffReady ? ["--handoff-ready"] : []),
       ...(options.writeWrangler ? ["--write-wrangler"] : [])
     ],
     provision
@@ -288,7 +297,7 @@ async function main() {
 
   ensureTargetAvailable(plan.targetDir, plan.force);
   copyProjectTree(resolve("."), plan.targetDir);
-  sanitizeCustomerProject(plan.targetDir, { familyName: plan.familyName, slug: plan.slug });
+  sanitizeCustomerProject(plan.targetDir, { familyName: plan.familyName, slug: plan.slug, setupWizard: plan.setupWizard });
 
   runCommand("node", ["scripts/provision-wizard.mjs", ...plan.provisionArgs], plan.targetDir);
 

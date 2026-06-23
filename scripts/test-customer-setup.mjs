@@ -8,7 +8,8 @@ const args = parseArgs([
   "--admin-password=TranXuan@2026",
   "--deploy",
   "--force",
-  "--git-init"
+  "--git-init",
+  "--handoff-ready"
 ]);
 
 assert.equal(args.familyName, "Trần Xuân");
@@ -17,6 +18,7 @@ assert.equal(args.adminPassword, "TranXuan@2026");
 assert.equal(args.deploy, true);
 assert.equal(args.force, true);
 assert.equal(args.gitInit, true);
+assert.equal(args.handoffReady, true);
 assert.equal(args.install, true);
 
 const plan = buildCustomerSetupPlan(args);
@@ -27,7 +29,17 @@ assert.equal(plan.provision.projectName, "giapha-tran-xuan");
 assert.equal(plan.provision.d1Name, "giapha-tran-xuan-db");
 assert.equal(plan.provision.r2Name, "giapha-tran-xuan-media");
 assert.equal(plan.provision.customerProject, true);
+assert.equal(plan.provision.setupWizard, false);
+assert.equal(plan.setupWizard, false);
 assert.equal(plan.deploy, true);
+
+const selfSetupPlan = buildCustomerSetupPlan({
+  familyName: "Trần Xuân",
+  slug: "tran-xuan",
+  adminPassword: "TranXuan@2026"
+});
+assert.equal(selfSetupPlan.setupWizard, true);
+assert.equal(selfSetupPlan.provision.setupWizard, true);
 
 const d1Id = extractD1IdFromListJson(JSON.stringify([
   { uuid: "11111111-1111-1111-1111-111111111111", name: "other-db" },

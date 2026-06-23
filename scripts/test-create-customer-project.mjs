@@ -22,6 +22,7 @@ assert.equal(plan.writeWrangler, true);
 assert.equal(plan.gitInit, true);
 assert.equal(plan.gitBranch, "customer/tran-xuan");
 assert.equal(plan.commitMessage, "chore: init tran xuan");
+assert.equal(plan.setupWizard, true);
 assert.deepEqual(plan.provisionArgs, [
   "--yes",
   "--family-name",
@@ -41,6 +42,22 @@ assert.equal(defaultPlan.slug, "ho-nguyen");
 assert.equal(defaultPlan.targetDir, resolve("..", "giapha-ho-nguyen"));
 assert.equal(defaultPlan.gitBranch, "customer/ho-nguyen");
 assert.equal(defaultPlan.commitMessage, "chore: initialize Họ Nguyễn customer project");
+
+const handoffPlan = buildCustomerProjectPlan({
+  familyName: "Trần Xuân",
+  slug: "tran-xuan",
+  handoffReady: true
+});
+assert.equal(handoffPlan.setupWizard, false);
+assert.deepEqual(handoffPlan.provisionArgs, [
+  "--yes",
+  "--family-name",
+  "Trần Xuân",
+  "--slug",
+  "tran-xuan",
+  "--customer-project",
+  "--handoff-ready"
+]);
 
 const relativeTargetPlan = buildCustomerProjectPlan({
   familyName: "Trần Xuân",
@@ -99,8 +116,8 @@ assert.match(featuredSql, /sample_g1_1/);
 assert.doesNotMatch(featuredSql, /g3_8/);
 
 const runtimeConfig = readFileSync(resolve(sandbox, "src", "config", "cmsRuntime.js"), "utf8");
-assert.match(runtimeConfig, /ENABLE_SETUP_WIZARD = false/);
-assert.equal(existsSync(resolve(sandbox, "public", "cms-setup-guide.html")), false);
+assert.match(runtimeConfig, /ENABLE_SETUP_WIZARD = true/);
+assert.equal(existsSync(resolve(sandbox, "public", "cms-setup-guide.html")), true);
 
 const indexHtml = readFileSync(resolve(sandbox, "index.html"), "utf8");
 assert.match(indexHtml, /<title>Gia phả họ Trần Xuân - Lưu giữ cội nguồn dòng họ<\/title>/);
@@ -111,6 +128,11 @@ assert.doesNotMatch(indexHtml, /giapha-tc\.pages\.dev/);
 const manifest = JSON.parse(readFileSync(resolve(sandbox, "public", "site.webmanifest"), "utf8"));
 assert.equal(manifest.name, "Gia phả họ Trần Xuân");
 assert.equal(manifest.short_name, "TX");
+
+sanitizeCustomerProject(sandbox, { familyName: "Trần Xuân", slug: "tran-xuan", setupWizard: false });
+const handoffRuntimeConfig = readFileSync(resolve(sandbox, "src", "config", "cmsRuntime.js"), "utf8");
+assert.match(handoffRuntimeConfig, /ENABLE_SETUP_WIZARD = false/);
+assert.equal(existsSync(resolve(sandbox, "public", "cms-setup-guide.html")), false);
 
 rmSync(sandbox, { recursive: true, force: true });
 
