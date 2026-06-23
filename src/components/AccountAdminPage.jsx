@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Download, ExternalLink, KeyRound, LockKeyhole, Palette, Plus, Save, ShieldCheck, Trash2, Upload, UserRound, Wand2 } from "lucide-react";
+import { Copy, Download, ExternalLink, Image, KeyRound, LockKeyhole, Palette, Plus, Save, ShieldCheck, Trash2, Upload, UserRound, Wand2 } from "lucide-react";
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
@@ -8,7 +8,9 @@ import {
   DEFAULT_SITE_CONFIG,
   SITE_THEME_BACKGROUND_FIELDS,
   SITE_THEME_COLOR_FIELDS,
+  SITE_SEO_FIELDS,
   SITE_TREE_THEME_FIELDS,
+  buildSeoMetadata,
   normalizeSiteConfig
 } from "../utils/siteConfigUtils";
 import { AI_PROVIDERS, getAiProviderConfig } from "../utils/aiConfigUtils";
@@ -52,6 +54,24 @@ const THEME_BACKGROUND_LABELS = {
   generations: "Nền trang các đời",
   tree: "Nền cây gia phả"
 };
+const SEO_FIELD_LABELS = {
+  title: "Meta title",
+  description: "Meta description",
+  keywords: "Meta keywords",
+  author: "Meta author",
+  applicationName: "Application name",
+  appleTitle: "Apple app title",
+  canonicalUrl: "Canonical URL",
+  ogSiteName: "OG site name",
+  ogTitle: "OG title",
+  ogDescription: "OG description",
+  ogImage: "OG image",
+  twitterTitle: "Twitter title",
+  twitterDescription: "Twitter description",
+  twitterImage: "Twitter image"
+};
+const SEO_LONG_FIELDS = new Set(["description", "keywords", "ogDescription", "twitterDescription"]);
+const SEO_IMAGE_FIELDS = new Set(["ogImage", "twitterImage"]);
 const TREE_THEME_LABELS = {
   maleBackground: "Node nam",
   maleBorder: "Viền nam",
@@ -71,6 +91,79 @@ const defaultAiConfigForm = {
   apiKey: "",
   clearApiKey: false
 };
+
+function AssetUploadField({
+  label,
+  value,
+  placeholder,
+  scope,
+  onChange,
+  onUpload,
+  uploading,
+  dragging,
+  onDragStart,
+  onDragEnd,
+  className = ""
+}) {
+  const handleFileInput = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) {
+      await onUpload(file, { scope });
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    if (uploading) return;
+    event.dataTransfer.dropEffect = "copy";
+    onDragStart(scope);
+  };
+
+  const handleDragLeave = (event) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      onDragEnd();
+    }
+  };
+
+  const handleDrop = async (event) => {
+    event.preventDefault();
+    onDragEnd();
+    if (uploading) return;
+    const file = Array.from(event.dataTransfer.files || []).find((item) => item.type?.startsWith("image/"));
+    if (file) {
+      await onUpload(file, { scope });
+    }
+  };
+
+  return (
+    <label className={`asset-url-field ${className}`}>
+      <span>{label}</span>
+      <input
+        className="form-input"
+        value={value || ""}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+      />
+      <div
+        className={`asset-upload-box ${dragging === scope ? "is-dragging" : ""} ${uploading ? "is-disabled" : ""}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <Upload size={17} strokeWidth={2.2} />
+        <span>{uploading ? "Đang tải ảnh..." : "Chọn hoặc kéo ảnh vào đây"}</span>
+        <input type="file" accept="image/*" onChange={handleFileInput} disabled={uploading} />
+      </div>
+      {value ? (
+        <div className="asset-url-preview">
+          <img src={value} alt="" />
+          <small>{value}</small>
+        </div>
+      ) : null}
+    </label>
+  );
+}
 
 export default function AccountAdminPage({
   currentUser,
@@ -120,6 +213,8 @@ export default function AccountAdminPage({
   const [aiPreview, setAiPreview] = useState(null);
   const [aiErrors, setAiErrors] = useState([]);
   const [aiBusy, setAiBusy] = useState(false);
+  const [assetUploadingScope, setAssetUploadingScope] = useState("");
+  const [assetDraggingScope, setAssetDraggingScope] = useState("");
 
   const adminCount = useMemo(
     () => users.filter((user) => user.role === "admin").length,
@@ -132,6 +227,11 @@ export default function AccountAdminPage({
   );
   const normalizedSiteConfig = useMemo(() => normalizeSiteConfig(siteConfig), [siteConfig]);
   const siteConfigForm = siteConfigDraft || normalizedSiteConfig;
+  const currentOrigin = typeof window !== "undefined" ? window.location.origin : "";
+  const seoPreview = useMemo(
+    () => buildSeoMetadata(siteConfigForm, { origin: currentOrigin }),
+    [currentOrigin, siteConfigForm]
+  );
   const setupProgress = useMemo(
     () => getSetupProgress({ siteConfig: siteConfigForm, aiConfig, members }),
     [aiConfig, members, siteConfigForm]
@@ -351,6 +451,19 @@ export default function AccountAdminPage({
     });
   };
 
+  const handleSeoChange = (field, value) => {
+    setSiteConfigDraft((prev) => {
+      const base = prev || normalizedSiteConfig;
+      return {
+        ...base,
+        seo: {
+          ...base.seo,
+          [field]: value
+        }
+      };
+    });
+  };
+
   const handleTreeThemeChange = (field, value) => {
     setSiteConfigDraft((prev) => {
       const base = prev || normalizedSiteConfig;
@@ -371,6 +484,35 @@ export default function AccountAdminPage({
       themeBackgrounds: { ...DEFAULT_SITE_CONFIG.themeBackgrounds },
       treeTheme: { ...DEFAULT_SITE_CONFIG.treeTheme }
     }));
+  };
+
+  const uploadSiteAsset = async (file, { scope, onUploaded }) => {
+    if (!file?.type?.startsWith("image/")) {
+      onToast?.("Chỉ hỗ trợ upload file ảnh.");
+      return;
+    }
+
+    setAssetUploadingScope(scope);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("scope", scope);
+      const res = await fetch("/api/site-assets", {
+        method: "POST",
+        body
+      });
+      const data = await res.json();
+      if (!data.success) {
+        onToast?.(data.error || "Không thể tải ảnh lên.");
+        return;
+      }
+      onUploaded?.(data.asset?.src || "");
+      onToast?.("Đã tải ảnh lên và điền đường dẫn.");
+    } catch {
+      onToast?.("Lỗi kết nối máy chủ khi tải ảnh.");
+    } finally {
+      setAssetUploadingScope("");
+    }
   };
 
   const handleSiteConfigSubmit = async (event) => {
@@ -1131,10 +1273,21 @@ export default function AccountAdminPage({
                   Tiêu đề website
                   <input className="form-input" value={siteConfigForm.siteTitle} onChange={(event) => handleSiteConfigChange("siteTitle", event.target.value)} required />
                 </label>
-                <label>
-                  Logo URL
-                  <input className="form-input" value={siteConfigForm.logoUrl} onChange={(event) => handleSiteConfigChange("logoUrl", event.target.value)} placeholder="/tranconglogo.png" />
-                </label>
+                <AssetUploadField
+                  label="Logo"
+                  value={siteConfigForm.logoUrl}
+                  placeholder="/tranconglogo.png"
+                  scope="logo"
+                  onChange={(value) => handleSiteConfigChange("logoUrl", value)}
+                  onUpload={(file, options) => uploadSiteAsset(file, {
+                    ...options,
+                    onUploaded: (src) => handleSiteConfigChange("logoUrl", src)
+                  })}
+                  uploading={assetUploadingScope === "logo"}
+                  dragging={assetDraggingScope}
+                  onDragStart={setAssetDraggingScope}
+                  onDragEnd={() => setAssetDraggingScope("")}
+                />
                 <label>
                   Hero dòng 1
                   <input className="form-input" value={siteConfigForm.heroTitle} onChange={(event) => handleSiteConfigChange("heroTitle", event.target.value)} />
@@ -1178,6 +1331,97 @@ export default function AccountAdminPage({
                 </button>
                 <button className="btn btn-primary" type="submit" disabled={saving}>
                   {saving ? "Đang lưu..." : "Lưu cấu hình website"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {wizardStep === "seo" && (
+            <form className="setup-wizard-panel" onSubmit={handleSiteConfigSubmit}>
+              <div className="theme-config-head">
+                <div>
+                  <span className="accounts-eyebrow">
+                    <Image size={16} strokeWidth={2.2} />
+                    SEO và chia sẻ
+                  </span>
+                  <h3>Cài đặt meta tag</h3>
+                  <p>Bỏ trống trường nào thì hệ thống tự sinh theo tên dòng họ; nhập vào khi muốn tối ưu SEO hoặc chia sẻ mạng xã hội.</p>
+                </div>
+              </div>
+
+              <div className="seo-config-grid">
+                {SITE_SEO_FIELDS.map((field) => {
+                  const value = siteConfigForm.seo?.[field] || "";
+                  if (SEO_IMAGE_FIELDS.has(field)) {
+                    return (
+                      <AssetUploadField
+                        key={field}
+                        className="seo-config-wide"
+                        label={SEO_FIELD_LABELS[field] || field}
+                        value={value}
+                        placeholder="/api/media/site/seo/anh-chia-se.jpg"
+                        scope={`seo-${field}`}
+                        onChange={(nextValue) => handleSeoChange(field, nextValue)}
+                        onUpload={(file, options) => uploadSiteAsset(file, {
+                          ...options,
+                          onUploaded: (src) => {
+                            handleSeoChange(field, src);
+                            if (field === "ogImage" && !siteConfigForm.seo?.twitterImage) {
+                              handleSeoChange("twitterImage", src);
+                            }
+                          }
+                        })}
+                        uploading={assetUploadingScope === `seo-${field}`}
+                        dragging={assetDraggingScope}
+                        onDragStart={setAssetDraggingScope}
+                        onDragEnd={() => setAssetDraggingScope("")}
+                      />
+                    );
+                  }
+                  if (SEO_LONG_FIELDS.has(field)) {
+                    return (
+                      <label className="seo-config-wide" key={field}>
+                        {SEO_FIELD_LABELS[field] || field}
+                        <textarea
+                          className="form-input"
+                          rows={field === "keywords" ? 2 : 3}
+                          value={value}
+                          onChange={(event) => handleSeoChange(field, event.target.value)}
+                          placeholder={seoPreview[field] || ""}
+                        />
+                      </label>
+                    );
+                  }
+                  return (
+                    <label key={field}>
+                      {SEO_FIELD_LABELS[field] || field}
+                      <input
+                        className="form-input"
+                        value={value}
+                        onChange={(event) => handleSeoChange(field, event.target.value)}
+                        placeholder={seoPreview[field] || ""}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="seo-preview-card">
+                <div>
+                  <span>Xem trước khi chia sẻ</span>
+                  <strong>{seoPreview.ogTitle}</strong>
+                  <p>{seoPreview.ogDescription}</p>
+                  <small>{seoPreview.canonicalUrl || currentOrigin}</small>
+                </div>
+                {seoPreview.ogImage ? <img src={seoPreview.ogImage} alt="" /> : null}
+              </div>
+
+              <div className="account-form-actions">
+                <button className="btn btn-secondary" type="button" onClick={() => handleSeoChange("ogImage", "")}>
+                  Xóa ảnh OGP
+                </button>
+                <button className="btn btn-primary" type="submit" disabled={saving}>
+                  {saving ? "Đang lưu..." : "Lưu cài đặt SEO"}
                 </button>
               </div>
             </form>
@@ -1238,15 +1482,23 @@ export default function AccountAdminPage({
               </div>
               <div className="theme-background-grid">
                 {SITE_THEME_BACKGROUND_FIELDS.map((field) => (
-                  <label className="theme-background-field" key={field}>
-                    <span>{THEME_BACKGROUND_LABELS[field] || field}</span>
-                    <input
-                      className="form-input"
-                      value={siteConfigForm.themeBackgrounds?.[field] || ""}
-                      onChange={(event) => handleThemeBackgroundChange(field, event.target.value)}
-                      placeholder="/images/nen-gia-pha.jpg"
-                    />
-                  </label>
+                  <AssetUploadField
+                    className="theme-background-field"
+                    key={field}
+                    label={THEME_BACKGROUND_LABELS[field] || field}
+                    value={siteConfigForm.themeBackgrounds?.[field] || ""}
+                    placeholder="/images/nen-gia-pha.jpg"
+                    scope={`background-${field}`}
+                    onChange={(value) => handleThemeBackgroundChange(field, value)}
+                    onUpload={(file, options) => uploadSiteAsset(file, {
+                      ...options,
+                      onUploaded: (src) => handleThemeBackgroundChange(field, src)
+                    })}
+                    uploading={assetUploadingScope === `background-${field}`}
+                    dragging={assetDraggingScope}
+                    onDragStart={setAssetDraggingScope}
+                    onDragEnd={() => setAssetDraggingScope("")}
+                  />
                 ))}
               </div>
 

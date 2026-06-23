@@ -114,8 +114,10 @@ function sanitizeIndexHtml(root, familyName, slug) {
   html = replaceHeadContent(html, /<meta property="og:site_name" content="[^"]*" \/>/, seo.ogSiteName);
   html = replaceHeadContent(html, /<meta property="og:title" content="[^"]*" \/>/, seo.ogTitle);
   html = replaceHeadContent(html, /<meta property="og:description" content="[^"]*" \/>/, seo.ogDescription);
+  html = replaceHeadContent(html, /<meta property="og:image" content="[^"]*" \/>/, seo.ogImage);
   html = replaceHeadContent(html, /<meta name="twitter:title" content="[^"]*" \/>/, seo.twitterTitle);
   html = replaceHeadContent(html, /<meta name="twitter:description" content="[^"]*" \/>/, seo.twitterDescription);
+  html = replaceHeadContent(html, /<meta name="twitter:image" content="[^"]*" \/>/, seo.twitterImage);
   html = html.replace(/<link rel="canonical" href="[^"]*" \/>/, `<link rel="canonical" href="${escapeHtmlAttribute(seo.canonicalUrl)}" />`);
   writeFileSync(indexPath, html, "utf8");
 }

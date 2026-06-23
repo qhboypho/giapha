@@ -37,6 +37,13 @@ const themedConfig = normalizeSiteConfig({
   treeTheme: {
     connector: "#abcdef",
     selectedRing: "blue"
+  },
+  seo: {
+    title: "Gia pha Nguyen Van custom",
+    description: "Mo ta SEO rieng cho dong ho Nguyen Van.",
+    canonicalUrl: "https://example.com/gia-pha-nguyen-van",
+    ogImage: "/api/media/site/seo/og.jpg",
+    twitterImage: "https://cdn.example.com/twitter.jpg"
   }
 });
 assert.equal(themedConfig.themeColors.primary, "#123ABC");
@@ -47,6 +54,9 @@ assert.equal(themedConfig.themeBackgrounds.generations, "/images/generations.jpg
 assert.equal(themedConfig.themeBackgrounds.tree, "");
 assert.equal(themedConfig.treeTheme.connector, "#ABCDEF");
 assert.equal(themedConfig.treeTheme.selectedRing, DEFAULT_SITE_CONFIG.treeTheme.selectedRing);
+assert.equal(themedConfig.seo.title, "Gia pha Nguyen Van custom");
+assert.equal(themedConfig.seo.canonicalUrl, "https://example.com/gia-pha-nguyen-van");
+assert.equal(themedConfig.seo.ogImage, "/api/media/site/seo/og.jpg");
 
 const serialized = serializeSiteConfig(partialConfig);
 const parsed = parseSiteConfigValue(serialized);
@@ -77,10 +87,12 @@ assert.equal(cssVariables["--tree-connector-color"], "#ABCDEF");
 
 const seo = buildSeoMetadata(themedConfig, { origin: "https://giapha-nguyen-van.pages.dev/" });
 assert.equal(seo.ogTitle, "Gia pha ho Nguyen Van");
-assert.match(seo.title, /Gia pha ho Nguyen Van/);
-assert.match(seo.description, /thông tin thành viên/);
+assert.equal(seo.title, "Gia pha Nguyen Van custom");
+assert.equal(seo.description, "Mo ta SEO rieng cho dong ho Nguyen Van.");
 assert.match(seo.keywords, /gia phả họ Nguyen Van/);
-assert.equal(seo.canonicalUrl, "https://giapha-nguyen-van.pages.dev/");
+assert.equal(seo.ogImage, "https://giapha-nguyen-van.pages.dev/api/media/site/seo/og.jpg");
+assert.equal(seo.twitterImage, "https://cdn.example.com/twitter.jpg");
+assert.equal(seo.canonicalUrl, "https://example.com/gia-pha-nguyen-van");
 
 assert.throws(
   () => validateSiteConfigInput({
@@ -88,6 +100,14 @@ assert.throws(
     themeBackgrounds: { ...DEFAULT_SITE_CONFIG.themeBackgrounds, pages: "javascript:alert(1)" }
   }),
   /Hình nền/
+);
+
+assert.throws(
+  () => validateSiteConfigInput({
+    ...DEFAULT_SITE_CONFIG,
+    seo: { ...DEFAULT_SITE_CONFIG.seo, canonicalUrl: "/khong-hop-le" }
+  }),
+  /Canonical URL/
 );
 
 console.log("site config utils tests passed");

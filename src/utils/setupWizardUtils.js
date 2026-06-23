@@ -7,6 +7,11 @@ export const SETUP_WIZARD_STEPS = [
     description: "Tên dòng họ, tiêu đề, logo và nội dung trang chủ."
   },
   {
+    id: "seo",
+    title: "Cài đặt SEO",
+    description: "Meta tag, canonical URL và ảnh OGP khi chia sẻ."
+  },
+  {
     id: "theme",
     title: "Giao diện",
     description: "Tùy chỉnh màu thương hiệu, nền, thẻ và thanh điều hướng."

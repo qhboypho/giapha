@@ -49,6 +49,22 @@ export const DEFAULT_SITE_CONFIG = {
     spouseConnector: "#D6A85A",
     selectedRing: "#B64235",
     searchHighlight: "#D6A85A"
+  },
+  seo: {
+    title: "",
+    description: "",
+    keywords: "",
+    author: "",
+    applicationName: "",
+    appleTitle: "",
+    canonicalUrl: "",
+    ogSiteName: "",
+    ogTitle: "",
+    ogDescription: "",
+    ogImage: "",
+    twitterTitle: "",
+    twitterDescription: "",
+    twitterImage: ""
   }
 };
 
@@ -72,11 +88,28 @@ const SITE_CONFIG_TEXT_LIMITS = {
 export const SITE_THEME_COLOR_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeColors);
 export const SITE_THEME_BACKGROUND_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeBackgrounds);
 export const SITE_TREE_THEME_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.treeTheme);
+export const SITE_SEO_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.seo);
 export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field) => (
-  !["themeColors", "themeBackgrounds", "treeTheme"].includes(field)
+  !["themeColors", "themeBackgrounds", "treeTheme", "seo"].includes(field)
 ));
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const BACKGROUND_URL_LIMIT = 800;
+const SEO_TEXT_LIMITS = {
+  title: 160,
+  description: 320,
+  keywords: 500,
+  author: 160,
+  applicationName: 160,
+  appleTitle: 64,
+  canonicalUrl: 800,
+  ogSiteName: 160,
+  ogTitle: 160,
+  ogDescription: 320,
+  ogImage: 800,
+  twitterTitle: 160,
+  twitterDescription: 320,
+  twitterImage: 800
+};
 
 const normalizeString = (value, fallback = "", maxLength = 300) => {
   const text = String(value ?? "").trim();
@@ -96,6 +129,7 @@ export function normalizeSiteConfig(config = {}) {
   normalized.themeColors = normalizeThemeColors(config.themeColors);
   normalized.themeBackgrounds = normalizeThemeBackgrounds(config.themeBackgrounds);
   normalized.treeTheme = normalizeTreeTheme(config.treeTheme);
+  normalized.seo = normalizeSeoConfig(config.seo);
   return normalized;
 }
 
@@ -129,10 +163,38 @@ export function normalizeTreeTheme(colors = {}) {
   }, {});
 }
 
+export function normalizeSeoConfig(seo = {}) {
+  const source = seo && typeof seo === "object" ? seo : {};
+  return SITE_SEO_FIELDS.reduce((acc, field) => {
+    const fallback = DEFAULT_SITE_CONFIG.seo[field];
+    const value = normalizeString(source[field], fallback, SEO_TEXT_LIMITS[field]);
+    if (field === "canonicalUrl") {
+      acc[field] = normalizeCanonicalUrl(value, fallback);
+    } else if (["ogImage", "twitterImage"].includes(field)) {
+      acc[field] = normalizeSeoUrl(value, fallback);
+    } else {
+      acc[field] = value;
+    }
+    return acc;
+  }, {});
+}
+
 export function normalizeBackgroundUrl(value, fallback = "") {
   const url = String(value ?? "").trim().slice(0, BACKGROUND_URL_LIMIT);
   if (!url) return fallback || "";
   return /^(\/|https?:\/\/|data:image\/)/i.test(url) ? url : (fallback || "");
+}
+
+function normalizeSeoUrl(value, fallback = "") {
+  const url = String(value ?? "").trim().slice(0, BACKGROUND_URL_LIMIT);
+  if (!url) return fallback || "";
+  return /^(\/|https?:\/\/|data:image\/)/i.test(url) ? url : (fallback || "");
+}
+
+function normalizeCanonicalUrl(value, fallback = "") {
+  const url = String(value ?? "").trim().slice(0, BACKGROUND_URL_LIMIT);
+  if (!url) return fallback || "";
+  return /^https?:\/\//i.test(url) ? url : (fallback || "");
 }
 
 export function parseSiteConfigValue(value) {
@@ -171,6 +233,20 @@ export function validateSiteConfigInput(config = {}) {
     const normalizedUrl = normalized.themeBackgrounds[field];
     if (rawUrl && String(rawUrl).trim() && !normalizedUrl) {
       throw new Error("Hình nền phải là đường dẫn nội bộ, URL http/https hoặc data image.");
+    }
+  }
+
+  const seo = normalized.seo;
+  const rawCanonicalUrl = String(config.seo?.canonicalUrl || "").trim();
+  if (rawCanonicalUrl && !/^https?:\/\//i.test(rawCanonicalUrl)) {
+    throw new Error("Canonical URL SEO phải là URL http/https đầy đủ.");
+  }
+
+  for (const field of ["ogImage", "twitterImage"]) {
+    const rawUrl = config.seo?.[field];
+    const normalizedUrl = seo[field];
+    if (rawUrl && String(rawUrl).trim() && !normalizedUrl) {
+      throw new Error("Ảnh SEO/OGP phải là đường dẫn nội bộ, URL http/https hoặc data image.");
     }
   }
 
@@ -226,12 +302,14 @@ export function buildThemeCssVariables(config = {}) {
 
 export function buildSeoMetadata(config = {}, options = {}) {
   const normalized = normalizeSiteConfig(config);
+  const customSeo = normalized.seo || {};
   const familyName = normalized.familyName;
   const siteName = normalized.siteTitle || `Gia phả họ ${familyName}`;
   const shortName = normalized.shortName || "GP";
   const origin = String(options.origin || "").trim().replace(/\/+$/, "");
-  const canonicalUrl = String(options.canonicalUrl || (origin ? `${origin}/` : "")).trim();
-  const imageUrl = String(options.imageUrl || "/web-app-manifest-512x512.png").trim();
+  const canonicalUrl = String(customSeo.canonicalUrl || options.canonicalUrl || (origin ? `${origin}/` : "")).trim();
+  const imageUrl = resolvePublicUrl(customSeo.ogImage || options.imageUrl || "/web-app-manifest-512x512.png", origin);
+  const twitterImageUrl = resolvePublicUrl(customSeo.twitterImage || customSeo.ogImage || options.imageUrl || "/web-app-manifest-512x512.png", origin);
   const description = `${siteName} là không gian lưu giữ phả hệ, thông tin thành viên, ngày giỗ, sự kiện và ký ức gia đình qua nhiều thế hệ.`;
   const socialDescription = `Lưu giữ phả hệ, thành viên, ngày giỗ và ký ức gia đình của dòng họ ${familyName}.`;
   const keywords = [
@@ -246,21 +324,29 @@ export function buildSeoMetadata(config = {}, options = {}) {
   ].join(", ");
 
   return {
-    title: `${siteName} - Lưu giữ cội nguồn dòng họ`,
-    description,
-    keywords,
-    author: siteName,
-    applicationName: siteName,
-    appleTitle: shortName,
-    ogSiteName: siteName,
-    ogTitle: siteName,
-    ogDescription: socialDescription,
+    title: customSeo.title || `${siteName} - Lưu giữ cội nguồn dòng họ`,
+    description: customSeo.description || description,
+    keywords: customSeo.keywords || keywords,
+    author: customSeo.author || siteName,
+    applicationName: customSeo.applicationName || siteName,
+    appleTitle: customSeo.appleTitle || shortName,
+    ogSiteName: customSeo.ogSiteName || siteName,
+    ogTitle: customSeo.ogTitle || siteName,
+    ogDescription: customSeo.ogDescription || socialDescription,
     ogImage: imageUrl,
-    twitterTitle: siteName,
-    twitterDescription: `Lưu giữ cội nguồn và kết nối các thế hệ trong dòng họ ${familyName}.`,
-    twitterImage: imageUrl,
+    twitterTitle: customSeo.twitterTitle || customSeo.ogTitle || siteName,
+    twitterDescription: customSeo.twitterDescription || customSeo.ogDescription || `Lưu giữ cội nguồn và kết nối các thế hệ trong dòng họ ${familyName}.`,
+    twitterImage: twitterImageUrl,
     canonicalUrl
   };
+}
+
+function resolvePublicUrl(value, origin = "") {
+  const url = String(value || "").trim();
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url) || /^data:image\//i.test(url)) return url;
+  if (url.startsWith("/") && origin) return `${origin}${url}`;
+  return url;
 }
 
 function buildCssImageLayer(url) {

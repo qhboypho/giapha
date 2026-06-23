@@ -51,6 +51,8 @@ const SENSITIVE_LOCATION_MASK = 'Đã ẩn địa chỉ';
 const HISTORY_IMAGE_LIMIT = 8;
 const HISTORY_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 const ALLOWED_HISTORY_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const SITE_ASSET_MAX_BYTES = 4 * 1024 * 1024;
+const ALLOWED_SITE_ASSET_TYPES = ALLOWED_HISTORY_IMAGE_TYPES;
 const ACTIVE_VIEWER_WINDOW_SECONDS = 90;
 const AI_IMPORT_MAX_FILES = 8;
 const AI_IMPORT_MAX_FILE_BYTES = 8 * 1024 * 1024;
@@ -2138,6 +2140,69 @@ app.post('/history-images', async (c) => {
     return c.json({
       success: true,
       image: {
+        key,
+        src: buildMediaUrl(key),
+        name: file.name,
+        type: file.type,
+        size: file.size
+      }
+    });
+  } catch (err) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 16b. POST /api/site-assets - Upload CMS visual assets such as logo, background, OGP image (Admin only)
+app.post('/site-assets', async (c) => {
+  const user = await getAuthenticatedUser(c);
+  if (!isAdmin(user)) {
+    return c.json({ success: false, error: 'Bạn không có quyền thực hiện thao tác này.' }, 403);
+  }
+  if (!c.env.MEDIA_BUCKET) {
+    return c.json({ success: false, error: 'Chưa cấu hình R2 MEDIA_BUCKET.' }, 500);
+  }
+
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file');
+    const scope = String(formData.get('scope') || 'site')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40) || 'site';
+
+    if (!(file instanceof File)) {
+      return c.json({ success: false, error: 'Vui lòng chọn ảnh cần tải lên.' }, 400);
+    }
+    if (!ALLOWED_SITE_ASSET_TYPES.has(file.type)) {
+      return c.json({ success: false, error: 'Ảnh chỉ hỗ trợ JPG, PNG, WEBP hoặc GIF.' }, 400);
+    }
+    if (file.size > SITE_ASSET_MAX_BYTES) {
+      return c.json({ success: false, error: 'Ảnh cần nhỏ hơn 4MB.' }, 400);
+    }
+
+    const safeName = sanitizeFileName(file.name || 'site-asset');
+    const extension = safeName.includes('.') ? safeName.split('.').pop() : file.type.split('/').pop();
+    const key = `site/${scope}/${crypto.randomUUID()}.${extension}`;
+    const body = await file.arrayBuffer();
+
+    await c.env.MEDIA_BUCKET.put(key, body, {
+      httpMetadata: {
+        contentType: file.type,
+        cacheControl: 'public, max-age=31536000, immutable'
+      },
+      customMetadata: {
+        originalName: safeName,
+        uploadedBy: user.username,
+        purpose: 'site-config'
+      }
+    });
+
+    return c.json({
+      success: true,
+      asset: {
         key,
         src: buildMediaUrl(key),
         name: file.name,

@@ -3849,7 +3849,7 @@
 
 .setup-wizard-steps {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
 }
 
@@ -4011,6 +4011,12 @@
   gap: 12px;
 }
 
+.seo-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
 .theme-section-title {
   display: flex;
   align-items: baseline;
@@ -4045,7 +4051,8 @@
   font-weight: 900;
 }
 
-.theme-background-field {
+.theme-background-field,
+.asset-url-field {
   display: grid;
   gap: 8px;
   min-width: 0;
@@ -4055,6 +4062,144 @@
   background: rgba(44, 29, 19, 0.58);
   color: var(--text-secondary);
   font-weight: 900;
+}
+
+.seo-config-grid label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-weight: 900;
+}
+
+.seo-config-wide {
+  grid-column: 1 / -1;
+}
+
+.asset-upload-box {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 10px 12px;
+  overflow: hidden;
+  border: 1px dashed rgba(215, 169, 77, 0.42);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+.asset-upload-box.is-dragging {
+  border-color: var(--color-brand-primary);
+  background: rgba(191, 161, 95, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(215, 169, 77, 0.34), 0 0 0 3px rgba(215, 169, 77, 0.12);
+  color: var(--color-brand-accent);
+}
+
+.asset-upload-box.is-disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.asset-upload-box input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.asset-upload-box.is-disabled input {
+  cursor: wait;
+}
+
+.asset-upload-box svg {
+  color: var(--color-brand-primary);
+}
+
+.asset-upload-box span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.asset-url-preview {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid rgba(215, 169, 77, 0.16);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.asset-url-preview img {
+  width: 78px;
+  height: 48px;
+  border-radius: 7px;
+  object-fit: cover;
+  border: 1px solid rgba(215, 169, 77, 0.18);
+}
+
+.asset-url-preview small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.seo-preview-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 14px;
+  align-items: stretch;
+  padding: 14px;
+  border: 1px solid rgba(215, 169, 77, 0.24);
+  border-radius: var(--radius-md);
+  background: rgba(44, 29, 19, 0.68);
+}
+
+.seo-preview-card div {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+
+.seo-preview-card span,
+.seo-preview-card small {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.seo-preview-card strong {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.seo-preview-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.seo-preview-card img {
+  width: 100%;
+  min-height: 112px;
+  max-height: 148px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 1px solid rgba(215, 169, 77, 0.2);
 }
 
 .theme-color-control {
@@ -5078,6 +5223,7 @@
   .setup-review-grid,
   .theme-color-grid,
   .theme-background-grid,
+  .seo-config-grid,
   .member-sync-stats,
   .member-sync-detail-grid {
     grid-template-columns: 1fr;
@@ -5101,6 +5247,16 @@
 
   .setup-wizard-steps {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .seo-preview-card,
+  .asset-url-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .seo-preview-card img,
+  .asset-url-preview img {
+    width: 100%;
   }
 
   .accounts-hero {
