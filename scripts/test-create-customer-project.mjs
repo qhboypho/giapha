@@ -77,7 +77,9 @@ rmSync(sandbox, { recursive: true, force: true });
 mkdirSync(resolve(sandbox, "migrations"), { recursive: true });
 mkdirSync(resolve(sandbox, "src", "config"), { recursive: true });
 mkdirSync(resolve(sandbox, "public"), { recursive: true });
+mkdirSync(resolve(sandbox, "docs"), { recursive: true });
 writeFileSync(resolve(sandbox, "public", "cms-setup-guide.html"), "<html>setup</html>", "utf8");
+writeFileSync(resolve(sandbox, "docs", "CMS_SETUP.md"), "# Setup base only\n", "utf8");
 writeFileSync(resolve(sandbox, "index.html"), `<!doctype html>
 <html lang="vi">
   <head>
@@ -117,7 +119,9 @@ assert.doesNotMatch(featuredSql, /g3_8/);
 
 const runtimeConfig = readFileSync(resolve(sandbox, "src", "config", "cmsRuntime.js"), "utf8");
 assert.match(runtimeConfig, /ENABLE_SETUP_WIZARD = true/);
-assert.equal(existsSync(resolve(sandbox, "public", "cms-setup-guide.html")), true);
+assert.match(runtimeConfig, /SHOW_SETUP_GUIDE_LINK = false/);
+assert.equal(existsSync(resolve(sandbox, "public", "cms-setup-guide.html")), false);
+assert.equal(existsSync(resolve(sandbox, "docs", "CMS_SETUP.md")), false);
 
 const indexHtml = readFileSync(resolve(sandbox, "index.html"), "utf8");
 assert.match(indexHtml, /<title>Gia phả họ Trần Xuân - Lưu giữ cội nguồn dòng họ<\/title>/);

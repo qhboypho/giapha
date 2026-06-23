@@ -3,6 +3,7 @@ import { Copy, Download, ExternalLink, KeyRound, LockKeyhole, Palette, Plus, Sav
 import { EDITABLE_ROLES, ROLE_DESCRIPTIONS, getRoleLabel, isAdmin } from "../utils/authRoles";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getScopeRootOptions } from "../utils/editorScope";
+import { SHOW_SETUP_GUIDE_LINK } from "../config/cmsRuntime";
 import {
   DEFAULT_SITE_CONFIG,
   SITE_THEME_BACKGROUND_FIELDS,
@@ -1092,10 +1093,12 @@ export default function AccountAdminPage({
             <div className="setup-wizard-progress">
               <strong>{wizardStepIndex + 1}/{SETUP_WIZARD_STEPS.length}</strong>
               <span>{wizardDone ? "Đã hoàn tất" : `${setupProgress.completedCount}/${setupProgress.requiredCount} mục bắt buộc`}</span>
-              <a className="btn btn-secondary" href="/cms-setup-guide.html" target="_blank" rel="noreferrer">
-                <ExternalLink size={16} strokeWidth={2.2} />
-                Hướng dẫn setup
-              </a>
+              {SHOW_SETUP_GUIDE_LINK && (
+                <a className="btn btn-secondary" href="/cms-setup-guide.html" target="_blank" rel="noreferrer">
+                  <ExternalLink size={16} strokeWidth={2.2} />
+                  Hướng dẫn setup
+                </a>
+              )}
             </div>
           </div>
 

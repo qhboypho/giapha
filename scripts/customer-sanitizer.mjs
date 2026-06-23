@@ -234,12 +234,20 @@ export function sanitizeCustomerProject(targetDir, options = {}) {
   writeFileSync(resolve(root, "migrations", "0003_featured_members.sql"), buildFeaturedSql(), "utf8");
   writeFileSync(resolve(root, "migrations", "0005_family_history_events.sql"), buildHistorySql(familyName), "utf8");
   writeFileSync(resolve(root, "migrations", "0008_site_config_setting.sql"), buildSiteConfigMigrationSql(familyName), "utf8");
-  writeFileSync(resolve(root, "src", "config", "cmsRuntime.js"), `export const ENABLE_SETUP_WIZARD = ${setupWizard ? "true" : "false"};\n`, "utf8");
+  writeFileSync(
+    resolve(root, "src", "config", "cmsRuntime.js"),
+    `export const ENABLE_SETUP_WIZARD = ${setupWizard ? "true" : "false"};\nexport const SHOW_SETUP_GUIDE_LINK = false;\n`,
+    "utf8"
+  );
   sanitizeIndexHtml(root, familyName, slug);
   sanitizeManifest(root, familyName);
 
   const setupGuidePath = resolve(root, "public", "cms-setup-guide.html");
-  if (!setupWizard && existsSync(setupGuidePath)) {
+  if (existsSync(setupGuidePath)) {
     rmSync(setupGuidePath, { force: true });
+  }
+  const setupGuideMdPath = resolve(root, "docs", "CMS_SETUP.md");
+  if (existsSync(setupGuideMdPath)) {
+    rmSync(setupGuideMdPath, { force: true });
   }
 }
