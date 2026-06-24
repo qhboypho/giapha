@@ -64,6 +64,30 @@ const themedConfig = normalizeSiteConfig({
     enablePresence: false,
     anniversaryDaysAhead: 45,
     maxVisible: 5
+  },
+  navigation: {
+    treeLabel: "Phả đồ",
+    aboutLabel: "Về dòng họ"
+  },
+  anniversary: {
+    calendarMode: "solar",
+    pageTitle: "Ngày tưởng nhớ",
+    upcomingWindowDays: 60,
+    showSolarDate: false
+  },
+  memberFields: {
+    phone: false,
+    restingPlace: false
+  },
+  sampleData: {
+    generationCount: 4,
+    rootMaleName: "Cụ ông {familyName} Tổ"
+  },
+  aboutPage: {
+    enabled: true,
+    title: "Về họ Nguyễn Văn",
+    imageUrl: "/api/media/site/about.jpg",
+    showContact: false
   }
 });
 assert.equal(themedConfig.themeColors.primary, "#123ABC");
@@ -87,6 +111,21 @@ assert.equal(themedConfig.homepage.anniversaryWindowDays, 45);
 assert.equal(themedConfig.notifications.enablePresence, false);
 assert.equal(themedConfig.notifications.anniversaryDaysAhead, 45);
 assert.equal(themedConfig.notifications.maxVisible, 5);
+assert.equal(themedConfig.navigation.treeLabel, "Phả đồ");
+assert.equal(themedConfig.navigation.aboutLabel, "Về dòng họ");
+assert.equal(themedConfig.anniversary.calendarMode, "solar");
+assert.equal(themedConfig.anniversary.pageTitle, "Ngày tưởng nhớ");
+assert.equal(themedConfig.anniversary.upcomingWindowDays, 60);
+assert.equal(themedConfig.anniversary.showSolarDate, false);
+assert.equal(themedConfig.memberFields.phone, false);
+assert.equal(themedConfig.memberFields.address, true);
+assert.equal(themedConfig.memberFields.restingPlace, false);
+assert.equal(themedConfig.sampleData.generationCount, 4);
+assert.equal(themedConfig.sampleData.rootMaleName, "Cụ ông {familyName} Tổ");
+assert.equal(themedConfig.aboutPage.enabled, true);
+assert.equal(themedConfig.aboutPage.title, "Về họ Nguyễn Văn");
+assert.equal(themedConfig.aboutPage.imageUrl, "/api/media/site/about.jpg");
+assert.equal(themedConfig.aboutPage.showContact, false);
 
 const serialized = serializeSiteConfig(partialConfig);
 const parsed = parseSiteConfigValue(serialized);
@@ -146,6 +185,14 @@ assert.throws(
     contact: { ...DEFAULT_SITE_CONFIG.contact, facebookUrl: "facebook.com/example" }
   }),
   /Link liên hệ/
+);
+
+assert.throws(
+  () => validateSiteConfigInput({
+    ...DEFAULT_SITE_CONFIG,
+    aboutPage: { ...DEFAULT_SITE_CONFIG.aboutPage, imageUrl: "javascript:alert(1)" }
+  }),
+  /Ảnh trang giới thiệu/
 );
 
 console.log("site config utils tests passed");

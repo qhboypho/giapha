@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getEditableScopeIds } from "../utils/editorScope";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
 const memberVal = (val) => val === undefined || val === null ? "" : val;
 
@@ -65,11 +66,14 @@ export default function MemberModal({
   editPerson,
   addRelativeOf,
   members,
-  currentUser
+  currentUser,
+  siteConfig = DEFAULT_SITE_CONFIG
 }) {
   const [formData, setFormData] = useState(() => createInitialFormData(editPerson, addRelativeOf));
 
   if (!isOpen) return null;
+
+  const fieldConfig = normalizeSiteConfig(siteConfig).memberFields;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -290,7 +294,7 @@ export default function MemberModal({
                 />
               </div>
 
-              {formData.isDeceased ? (
+              {formData.isDeceased && fieldConfig.restingPlace ? (
                 <div className="form-group">
                   <label>Nơi an nghỉ (Mộ phần)</label>
                   <input
@@ -302,7 +306,7 @@ export default function MemberModal({
                     placeholder="Địa chỉ nghĩa trang..."
                   />
                 </div>
-              ) : (
+              ) : !formData.isDeceased && fieldConfig.phone ? (
                 <div className="form-group">
                   <label>Số điện thoại</label>
                   <input
@@ -314,9 +318,9 @@ export default function MemberModal({
                     placeholder="Số liên hệ..."
                   />
                 </div>
-              )}
+              ) : null}
 
-              {!formData.isDeceased && (
+              {!formData.isDeceased && fieldConfig.address && (
                 <div className="form-group form-group-wide">
                   <label>Địa chỉ hiện tại</label>
                   <input
@@ -330,17 +334,19 @@ export default function MemberModal({
                 </div>
               )}
 
-              <div className="form-group">
-                <label>Nghề nghiệp</label>
-                <input
-                  type="text"
-                  name="occupation"
-                  value={formData.occupation}
-                  onChange={handleChange}
-                  className="form-input"
-                  placeholder="Công việc..."
-                />
-              </div>
+              {fieldConfig.occupation && (
+                <div className="form-group">
+                  <label>Nghề nghiệp</label>
+                  <input
+                    type="text"
+                    name="occupation"
+                    value={formData.occupation}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="Công việc..."
+                  />
+                </div>
+              )}
             </div>
 
             <hr style={{ border: "none", borderTop: "1px solid var(--border-card)", margin: "20px 0" }} />

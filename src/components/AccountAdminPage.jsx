@@ -6,10 +6,15 @@ import { getScopeRootOptions } from "../utils/editorScope";
 import { SHOW_SETUP_GUIDE_LINK } from "../config/cmsRuntime";
 import {
   DEFAULT_SITE_CONFIG,
+  SITE_ABOUT_PAGE_FIELDS,
+  SITE_ANNIVERSARY_FIELDS,
   SITE_APP_IDENTITY_FIELDS,
   SITE_CONTACT_FIELDS,
   SITE_HOMEPAGE_FIELDS,
+  SITE_MEMBER_FIELD_FIELDS,
+  SITE_NAVIGATION_FIELDS,
   SITE_NOTIFICATION_FIELDS,
+  SITE_SAMPLE_DATA_FIELDS,
   SITE_THEME_BACKGROUND_FIELDS,
   SITE_THEME_COLOR_FIELDS,
   SITE_SEO_FIELDS,
@@ -115,6 +120,56 @@ const NOTIFICATION_FIELD_LABELS = {
   enablePresence: "Thông báo người đang xem",
   maxVisible: "Số thông báo tối đa"
 };
+const NAVIGATION_FIELD_LABELS = {
+  treeLabel: "Menu cây gia phả",
+  generationsLabel: "Menu các đời",
+  anniversaryLabel: "Menu lịch giỗ",
+  membersLabel: "Menu thành viên",
+  featuredLabel: "Nhãn người tiêu biểu",
+  historyLabel: "Nhãn lịch sử dòng họ",
+  aboutLabel: "Menu giới thiệu"
+};
+const ANNIVERSARY_FIELD_LABELS = {
+  calendarMode: "Kiểu lịch giỗ",
+  pageTitle: "Tiêu đề trang",
+  pageDescription: "Mô tả trang",
+  summaryLabel: "Text thẻ thống kê",
+  upcomingWindowDays: "Số ngày sắp tới",
+  showSolarDate: "Hiển thị ngày dương lịch",
+  emptyTitle: "Tiêu đề khi trống",
+  emptyDescription: "Mô tả khi trống"
+};
+const MEMBER_FIELD_LABELS = {
+  phone: "Hiện field số điện thoại",
+  address: "Hiện field địa chỉ",
+  occupation: "Hiện field nghề nghiệp",
+  restingPlace: "Hiện field nơi an nghỉ"
+};
+const SAMPLE_DATA_FIELD_LABELS = {
+  generationCount: "Số đời mẫu",
+  rootMaleName: "Tên cụ ông mẫu",
+  rootFemaleName: "Tên cụ bà mẫu",
+  secondGenerationName: "Tên đời 2 mẫu",
+  thirdGenerationName: "Tên đời 3 mẫu",
+  historyOriginTitle: "Tiêu đề lịch sử khởi nguồn",
+  historyBranchTitle: "Tiêu đề lịch sử phát triển",
+  historyTodayTitle: "Tiêu đề lịch sử hiện nay"
+};
+const ABOUT_PAGE_FIELD_LABELS = {
+  enabled: "Bật trang giới thiệu",
+  title: "Tiêu đề trang",
+  subtitle: "Mô tả ngắn",
+  description: "Nội dung tổng quan",
+  origin: "Quê gốc và thủy tổ",
+  tradition: "Truyền thống",
+  representativeText: "Dấu ấn dòng họ",
+  imageUrl: "Ảnh trang giới thiệu",
+  showContact: "Hiển thị liên hệ"
+};
+const ANNIVERSARY_BOOLEAN_FIELDS = new Set(["showSolarDate"]);
+const ABOUT_BOOLEAN_FIELDS = new Set(["enabled", "showContact"]);
+const ABOUT_LONG_FIELDS = new Set(["description", "origin", "tradition", "representativeText"]);
+const SAMPLE_NUMBER_FIELDS = new Set(["generationCount"]);
 const SYSTEM_ASSET_FIELDS = new Set(["faviconUrl", "appleTouchIconUrl", "appIconUrl"]);
 const SYSTEM_BOOLEAN_FIELDS = new Set([
   "showInFooter",
@@ -127,7 +182,10 @@ const SYSTEM_BOOLEAN_FIELDS = new Set([
   "enableHistory",
   "enableFeatured",
   "enablePrivacy",
-  "enablePresence"
+  "enablePresence",
+  ...ANNIVERSARY_BOOLEAN_FIELDS,
+  ...SITE_MEMBER_FIELD_FIELDS,
+  ...ABOUT_BOOLEAN_FIELDS
 ]);
 const TREE_THEME_LABELS = {
   maleBackground: "Node nam",
@@ -1790,6 +1848,178 @@ export default function AccountAdminPage({
                         value={siteConfigForm.notifications?.[field] ?? DEFAULT_SITE_CONFIG.notifications[field]}
                         onChange={(event) => handleNestedSiteConfigChange("notifications", field, event.target.value)}
                       />
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Menu và điều hướng</strong>
+                <span>Đổi nhãn navbar/menu để phù hợp từng dòng họ hoặc từng bản CMS.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_NAVIGATION_FIELDS.map((field) => (
+                  <label key={field}>
+                    {NAVIGATION_FIELD_LABELS[field] || field}
+                    <input
+                      className="form-input"
+                      value={siteConfigForm.navigation?.[field] || DEFAULT_SITE_CONFIG.navigation[field]}
+                      onChange={(event) => handleNestedSiteConfigChange("navigation", field, event.target.value)}
+                    />
+                  </label>
+                ))}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Lịch giỗ</strong>
+                <span>Cấu hình kiểu lịch, khoảng ngày sắp tới và text hiển thị trên trang lịch giỗ.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_ANNIVERSARY_FIELDS.map((field) => {
+                  if (field === "calendarMode") {
+                    return (
+                      <label key={field}>
+                        {ANNIVERSARY_FIELD_LABELS[field] || field}
+                        <select
+                          className="form-input"
+                          value={siteConfigForm.anniversary?.[field] || DEFAULT_SITE_CONFIG.anniversary[field]}
+                          onChange={(event) => handleNestedSiteConfigChange("anniversary", field, event.target.value)}
+                        >
+                          <option value="lunar">Âm lịch</option>
+                          <option value="solar">Dương lịch</option>
+                        </select>
+                      </label>
+                    );
+                  }
+                  if (SYSTEM_BOOLEAN_FIELDS.has(field)) {
+                    return (
+                      <label className="system-toggle-field" key={field}>
+                        <input
+                          type="checkbox"
+                          checked={siteConfigForm.anniversary?.[field] !== false}
+                          onChange={(event) => handleNestedSiteConfigChange("anniversary", field, event.target.checked)}
+                        />
+                        <span>{ANNIVERSARY_FIELD_LABELS[field] || field}</span>
+                      </label>
+                    );
+                  }
+                  return (
+                    <label key={field}>
+                      {ANNIVERSARY_FIELD_LABELS[field] || field}
+                      {field === "pageDescription" || field === "emptyDescription" ? (
+                        <textarea
+                          className="form-input"
+                          rows={2}
+                          value={siteConfigForm.anniversary?.[field] || DEFAULT_SITE_CONFIG.anniversary[field]}
+                          onChange={(event) => handleNestedSiteConfigChange("anniversary", field, event.target.value)}
+                        />
+                      ) : (
+                        <input
+                          className="form-input"
+                          type={field === "upcomingWindowDays" ? "number" : "text"}
+                          min={field === "upcomingWindowDays" ? 1 : undefined}
+                          max={field === "upcomingWindowDays" ? 365 : undefined}
+                          value={siteConfigForm.anniversary?.[field] || DEFAULT_SITE_CONFIG.anniversary[field]}
+                          onChange={(event) => handleNestedSiteConfigChange("anniversary", field, event.target.value)}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Trường hồ sơ thành viên</strong>
+                <span>Bật tắt các field phụ trong modal thêm/sửa và hồ sơ chi tiết.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_MEMBER_FIELD_FIELDS.map((field) => (
+                  <label className="system-toggle-field" key={field}>
+                    <input
+                      type="checkbox"
+                      checked={siteConfigForm.memberFields?.[field] !== false}
+                      onChange={(event) => handleNestedSiteConfigChange("memberFields", field, event.target.checked)}
+                    />
+                    <span>{MEMBER_FIELD_LABELS[field] || field}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Dữ liệu mẫu khi tạo project mới</strong>
+                <span>Dùng placeholder <code>{"{familyName}"}</code> để script thay bằng tên dòng họ.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_SAMPLE_DATA_FIELDS.map((field) => (
+                  <label key={field}>
+                    {SAMPLE_DATA_FIELD_LABELS[field] || field}
+                    <input
+                      className="form-input"
+                      type={SAMPLE_NUMBER_FIELDS.has(field) ? "number" : "text"}
+                      min={SAMPLE_NUMBER_FIELDS.has(field) ? 1 : undefined}
+                      max={SAMPLE_NUMBER_FIELDS.has(field) ? 6 : undefined}
+                      value={siteConfigForm.sampleData?.[field] || DEFAULT_SITE_CONFIG.sampleData[field]}
+                      onChange={(event) => handleNestedSiteConfigChange("sampleData", field, event.target.value)}
+                    />
+                  </label>
+                ))}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Trang giới thiệu dòng họ</strong>
+                <span>Tắt mặc định. Khi bật sẽ xuất hiện trong navbar, menu mobile và tìm kiếm.</span>
+              </div>
+              <div className="system-config-grid">
+                {SITE_ABOUT_PAGE_FIELDS.map((field) => {
+                  if (ABOUT_BOOLEAN_FIELDS.has(field)) {
+                    return (
+                      <label className="system-toggle-field" key={field}>
+                        <input
+                          type="checkbox"
+                          checked={field === "enabled" ? Boolean(siteConfigForm.aboutPage?.[field]) : siteConfigForm.aboutPage?.[field] !== false}
+                          onChange={(event) => handleNestedSiteConfigChange("aboutPage", field, event.target.checked)}
+                        />
+                        <span>{ABOUT_PAGE_FIELD_LABELS[field] || field}</span>
+                      </label>
+                    );
+                  }
+                  if (field === "imageUrl") {
+                    return (
+                      <AssetUploadField
+                        key={field}
+                        label={ABOUT_PAGE_FIELD_LABELS[field] || field}
+                        value={siteConfigForm.aboutPage?.[field] || ""}
+                        placeholder="/about-family.jpg"
+                        scope="about-image"
+                        onChange={(nextValue) => handleNestedSiteConfigChange("aboutPage", field, nextValue)}
+                        onUpload={(file, options) => uploadSiteAsset(file, {
+                          ...options,
+                          onUploaded: (src) => handleNestedSiteConfigChange("aboutPage", field, src)
+                        })}
+                        uploading={assetUploadingScope === "about-image"}
+                        dragging={assetDraggingScope}
+                        onDragStart={setAssetDraggingScope}
+                        onDragEnd={() => setAssetDraggingScope("")}
+                      />
+                    );
+                  }
+                  return (
+                    <label key={field} className={ABOUT_LONG_FIELDS.has(field) ? "ai-config-wide" : ""}>
+                      {ABOUT_PAGE_FIELD_LABELS[field] || field}
+                      {ABOUT_LONG_FIELDS.has(field) ? (
+                        <textarea
+                          className="form-input"
+                          rows={3}
+                          value={siteConfigForm.aboutPage?.[field] || DEFAULT_SITE_CONFIG.aboutPage[field]}
+                          onChange={(event) => handleNestedSiteConfigChange("aboutPage", field, event.target.value)}
+                        />
+                      ) : (
+                        <input
+                          className="form-input"
+                          value={siteConfigForm.aboutPage?.[field] || DEFAULT_SITE_CONFIG.aboutPage[field]}
+                          onChange={(event) => handleNestedSiteConfigChange("aboutPage", field, event.target.value)}
+                        />
+                      )}
                     </label>
                   );
                 })}

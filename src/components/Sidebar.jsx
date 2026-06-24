@@ -1,6 +1,7 @@
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { canEditMemberInScope } from "../utils/editorScope";
 import { getAge, getGenderLabel } from "../utils/mockData";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
 
 export default function Sidebar({
@@ -11,11 +12,13 @@ export default function Sidebar({
   onEditPerson,
   onAddRelative,
   currentUser,
-  showSensitiveInfo
+  showSensitiveInfo,
+  siteConfig = DEFAULT_SITE_CONFIG
 }) {
   const person = members.find((m) => m.id === personId);
   if (!person) return null;
 
+  const fieldConfig = normalizeSiteConfig(siteConfig).memberFields;
   const age = getAge(person.birthDate, person.deathDate, person.isDeceased);
 
   // Retrieve relations
@@ -187,20 +190,24 @@ export default function Sidebar({
                 </span>
                 <span className="info-label">Thọ/Hưởng thọ:</span>
                 <span className="info-value">{age !== null ? `${age} tuổi` : "Chưa rõ"}</span>
-                <span className="info-label">Nơi an nghỉ:</span>
-                <span className="info-value">{person.restingPlace || "Chưa rõ"}</span>
+                {fieldConfig.restingPlace && (
+                  <>
+                    <span className="info-label">Nơi an nghỉ:</span>
+                    <span className="info-value">{person.restingPlace || "Chưa rõ"}</span>
+                  </>
+                )}
               </>
             ) : (
               <>
                 <span className="info-label">Tuổi hiện tại:</span>
                 <span className="info-value">{age !== null ? `${age} tuổi` : "Chưa rõ"}</span>
-                {person.phone && (
+                {fieldConfig.phone && person.phone && (
                   <>
                     <span className="info-label">Điện thoại:</span>
                     <span className="info-value">{person.phone}</span>
                   </>
                 )}
-                {person.address && (
+                {fieldConfig.address && person.address && (
                   <>
                     <span className="info-label">Địa chỉ:</span>
                     <span className="info-value">{person.address}</span>
@@ -212,8 +219,12 @@ export default function Sidebar({
             <span className="info-label">Nơi sinh:</span>
             <span className="info-value">{person.birthPlace || "Chưa rõ"}</span>
 
-            <span className="info-label">Nghề nghiệp:</span>
-            <span className="info-value">{person.occupation || "Chưa rõ"}</span>
+            {fieldConfig.occupation && (
+              <>
+                <span className="info-label">Nghề nghiệp:</span>
+                <span className="info-value">{person.occupation || "Chưa rõ"}</span>
+              </>
+            )}
           </div>
         </div>
 

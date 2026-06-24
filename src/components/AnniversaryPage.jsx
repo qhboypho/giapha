@@ -1,5 +1,6 @@
-import { CalendarDays, Clock3, MapPin, Moon, Search } from "lucide-react";
-import { buildUpcomingAnniversaries, getCurrentLunarDateLabel } from "../utils/anniversaryUtils";
+import { CalendarDays, Clock3, MapPin, Moon, Search, Sun } from "lucide-react";
+import { buildUpcomingAnniversaries, buildUpcomingSolarAnniversaries, getCurrentLunarDateLabel } from "../utils/anniversaryUtils";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
 const formatNextSolarDate = (date) => {
   if (!date) return "";
@@ -29,27 +30,30 @@ function AnniversarySkeleton() {
   );
 }
 
-export default function AnniversaryPage({ members = [], isLoading = false, onOpenPerson }) {
-  const anniversaries = buildUpcomingAnniversaries(members);
-  const withinThirtyDays = anniversaries.filter((item) => item.daysUntil <= 30).length;
+export default function AnniversaryPage({ members = [], isLoading = false, onOpenPerson, siteConfig = DEFAULT_SITE_CONFIG }) {
+  const config = normalizeSiteConfig(siteConfig);
+  const anniversaryConfig = config.anniversary;
+  const isSolarMode = anniversaryConfig.calendarMode === "solar";
+  const anniversaries = isSolarMode
+    ? buildUpcomingSolarAnniversaries(members)
+    : buildUpcomingAnniversaries(members);
+  const withinWindow = anniversaries.filter((item) => item.daysUntil <= anniversaryConfig.upcomingWindowDays).length;
 
   return (
     <section className="directory-page anniversary-directory-page">
       <div className="directory-hero anniversary-hero">
         <div>
           <span className="directory-kicker">
-            <Moon strokeWidth={1.8} />
-            {getCurrentLunarDateLabel()}
+            {isSolarMode ? <Sun strokeWidth={1.8} /> : <Moon strokeWidth={1.8} />}
+            {isSolarMode ? "Tính theo dương lịch" : getCurrentLunarDateLabel()}
           </span>
-          <h1>Lịch giỗ</h1>
-          <p>
-            Lịch giỗ các thành viên trong dòng họ tính theo lịch âm.
-          </p>
+          <h1>{anniversaryConfig.pageTitle}</h1>
+          <p>{anniversaryConfig.pageDescription}</p>
         </div>
         <div className="directory-summary anniversary-summary">
           <strong>{anniversaries.length}</strong>
-          <span>ngày giỗ có dữ liệu</span>
-          <small>{withinThirtyDays} ngày giỗ trong 30 ngày tới</small>
+          <span>{anniversaryConfig.summaryLabel}</span>
+          <small>{withinWindow} ngày giỗ trong {anniversaryConfig.upcomingWindowDays} ngày tới</small>
         </div>
       </div>
 
@@ -73,7 +77,9 @@ export default function AnniversaryPage({ members = [], isLoading = false, onOpe
                 <span className="anniv-date-inline">
                   <strong>{item.day}</strong>
                   <em>{item.month}</em>
-                  <small>DL {formatNextSolarDate(item.nextSolarDate)}</small>
+                  {anniversaryConfig.showSolarDate && (
+                    <small>DL {formatNextSolarDate(item.nextSolarDate)}</small>
+                  )}
                 </span>
               </span>
               <span className="anniv-timeline-card">
@@ -98,8 +104,8 @@ export default function AnniversaryPage({ members = [], isLoading = false, onOpe
       ) : (
         <div className="directory-empty-state">
           <Search strokeWidth={1.8} />
-          <h2>Chưa có ngày giỗ</h2>
-          <p>Chỉ những người đã nhập ngày mất mới xuất hiện trong lịch giỗ.</p>
+          <h2>{anniversaryConfig.emptyTitle}</h2>
+          <p>{anniversaryConfig.emptyDescription}</p>
         </div>
       )}
     </section>

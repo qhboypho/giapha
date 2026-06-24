@@ -111,6 +111,52 @@ export const DEFAULT_SITE_CONFIG = {
     maskAddress: true,
     maskBirthPlace: true,
     maskRestingPlace: true
+  },
+  navigation: {
+    treeLabel: "Cây gia phả",
+    generationsLabel: "Các đời",
+    anniversaryLabel: "Lịch giỗ",
+    membersLabel: "Thành viên",
+    featuredLabel: "Người tiêu biểu",
+    historyLabel: "Lịch sử dòng họ",
+    aboutLabel: "Giới thiệu"
+  },
+  anniversary: {
+    calendarMode: "lunar",
+    pageTitle: "Lịch giỗ",
+    pageDescription: "Lịch giỗ các thành viên trong dòng họ tính theo lịch âm.",
+    summaryLabel: "ngày giỗ có dữ liệu",
+    upcomingWindowDays: 30,
+    showSolarDate: true,
+    emptyTitle: "Chưa có ngày giỗ",
+    emptyDescription: "Chỉ những người đã nhập ngày mất mới xuất hiện trong lịch giỗ."
+  },
+  memberFields: {
+    phone: true,
+    address: true,
+    occupation: true,
+    restingPlace: true
+  },
+  sampleData: {
+    generationCount: 3,
+    rootMaleName: "Cụ ông {familyName} An",
+    rootFemaleName: "Cụ bà {familyName} Bình",
+    secondGenerationName: "{familyName} Chính",
+    thirdGenerationName: "{familyName} Minh",
+    historyOriginTitle: "Khởi nguồn họ {familyName}",
+    historyBranchTitle: "Hình thành các nhánh",
+    historyTodayTitle: "Cập nhật dữ liệu gia phả"
+  },
+  aboutPage: {
+    enabled: false,
+    title: "Giới thiệu dòng họ",
+    subtitle: "Không gian lưu giữ lịch sử, truyền thống và câu chuyện của dòng họ.",
+    description: "Trang giới thiệu có thể dùng để trình bày quê gốc, thủy tổ, nhà thờ họ, truyền thống, quy ước và thông tin liên hệ khi triển khai CMS cho từng dòng họ.",
+    origin: "",
+    tradition: "",
+    representativeText: "",
+    imageUrl: "",
+    showContact: true
   }
 };
 
@@ -140,6 +186,11 @@ export const SITE_CONTACT_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.contact);
 export const SITE_HOMEPAGE_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.homepage);
 export const SITE_NOTIFICATION_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.notifications);
 export const SITE_PRIVACY_DISPLAY_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.privacyDisplay);
+export const SITE_NAVIGATION_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.navigation);
+export const SITE_ANNIVERSARY_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.anniversary);
+export const SITE_MEMBER_FIELD_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.memberFields);
+export const SITE_SAMPLE_DATA_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.sampleData);
+export const SITE_ABOUT_PAGE_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.aboutPage);
 export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field) => (
   ![
     "themeColors",
@@ -150,7 +201,12 @@ export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field
     "contact",
     "homepage",
     "notifications",
-    "privacyDisplay"
+    "privacyDisplay",
+    "navigation",
+    "anniversary",
+    "memberFields",
+    "sampleData",
+    "aboutPage"
   ].includes(field)
 ));
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
@@ -188,6 +244,46 @@ const CONTACT_TEXT_LIMITS = {
   youtubeUrl: 800,
   showInFooter: 10
 };
+const NAVIGATION_TEXT_LIMITS = {
+  treeLabel: 40,
+  generationsLabel: 40,
+  anniversaryLabel: 40,
+  membersLabel: 40,
+  featuredLabel: 60,
+  historyLabel: 80,
+  aboutLabel: 60
+};
+const ANNIVERSARY_TEXT_LIMITS = {
+  calendarMode: 20,
+  pageTitle: 100,
+  pageDescription: 300,
+  summaryLabel: 100,
+  upcomingWindowDays: 10,
+  showSolarDate: 10,
+  emptyTitle: 100,
+  emptyDescription: 240
+};
+const SAMPLE_DATA_TEXT_LIMITS = {
+  generationCount: 10,
+  rootMaleName: 120,
+  rootFemaleName: 120,
+  secondGenerationName: 120,
+  thirdGenerationName: 120,
+  historyOriginTitle: 140,
+  historyBranchTitle: 140,
+  historyTodayTitle: 140
+};
+const ABOUT_PAGE_TEXT_LIMITS = {
+  enabled: 10,
+  title: 120,
+  subtitle: 200,
+  description: 800,
+  origin: 800,
+  tradition: 800,
+  representativeText: 800,
+  imageUrl: 800,
+  showContact: 10
+};
 
 const normalizeString = (value, fallback = "", maxLength = 300) => {
   const text = String(value ?? "").trim();
@@ -213,6 +309,11 @@ export function normalizeSiteConfig(config = {}) {
   normalized.homepage = normalizeHomepageConfig(config.homepage);
   normalized.notifications = normalizeNotificationConfig(config.notifications);
   normalized.privacyDisplay = normalizePrivacyDisplayConfig(config.privacyDisplay);
+  normalized.navigation = normalizeNavigationConfig(config.navigation);
+  normalized.anniversary = normalizeAnniversaryConfig(config.anniversary);
+  normalized.memberFields = normalizeMemberFieldsConfig(config.memberFields);
+  normalized.sampleData = normalizeSampleDataConfig(config.sampleData);
+  normalized.aboutPage = normalizeAboutPageConfig(config.aboutPage);
   return normalized;
 }
 
@@ -334,6 +435,70 @@ export function normalizePrivacyDisplayConfig(privacy = {}) {
   }, {});
 }
 
+export function normalizeNavigationConfig(navigation = {}) {
+  const source = navigation && typeof navigation === "object" ? navigation : {};
+  return SITE_NAVIGATION_FIELDS.reduce((acc, field) => {
+    acc[field] = normalizeString(
+      source[field],
+      DEFAULT_SITE_CONFIG.navigation[field],
+      NAVIGATION_TEXT_LIMITS[field]
+    );
+    return acc;
+  }, {});
+}
+
+export function normalizeAnniversaryConfig(anniversary = {}) {
+  const source = anniversary && typeof anniversary === "object" ? anniversary : {};
+  const mode = normalizeString(source.calendarMode, DEFAULT_SITE_CONFIG.anniversary.calendarMode, 20);
+  return {
+    calendarMode: ["lunar", "solar"].includes(mode) ? mode : DEFAULT_SITE_CONFIG.anniversary.calendarMode,
+    pageTitle: normalizeString(source.pageTitle, DEFAULT_SITE_CONFIG.anniversary.pageTitle, ANNIVERSARY_TEXT_LIMITS.pageTitle),
+    pageDescription: normalizeString(source.pageDescription, DEFAULT_SITE_CONFIG.anniversary.pageDescription, ANNIVERSARY_TEXT_LIMITS.pageDescription),
+    summaryLabel: normalizeString(source.summaryLabel, DEFAULT_SITE_CONFIG.anniversary.summaryLabel, ANNIVERSARY_TEXT_LIMITS.summaryLabel),
+    upcomingWindowDays: clampNumber(source.upcomingWindowDays, DEFAULT_SITE_CONFIG.anniversary.upcomingWindowDays, 1, 365),
+    showSolarDate: source.showSolarDate !== false,
+    emptyTitle: normalizeString(source.emptyTitle, DEFAULT_SITE_CONFIG.anniversary.emptyTitle, ANNIVERSARY_TEXT_LIMITS.emptyTitle),
+    emptyDescription: normalizeString(source.emptyDescription, DEFAULT_SITE_CONFIG.anniversary.emptyDescription, ANNIVERSARY_TEXT_LIMITS.emptyDescription)
+  };
+}
+
+export function normalizeMemberFieldsConfig(fields = {}) {
+  const source = fields && typeof fields === "object" ? fields : {};
+  return SITE_MEMBER_FIELD_FIELDS.reduce((acc, field) => {
+    acc[field] = source[field] !== false;
+    return acc;
+  }, {});
+}
+
+export function normalizeSampleDataConfig(sampleData = {}) {
+  const source = sampleData && typeof sampleData === "object" ? sampleData : {};
+  return {
+    generationCount: clampNumber(source.generationCount, DEFAULT_SITE_CONFIG.sampleData.generationCount, 1, 6),
+    rootMaleName: normalizeString(source.rootMaleName, DEFAULT_SITE_CONFIG.sampleData.rootMaleName, SAMPLE_DATA_TEXT_LIMITS.rootMaleName),
+    rootFemaleName: normalizeString(source.rootFemaleName, DEFAULT_SITE_CONFIG.sampleData.rootFemaleName, SAMPLE_DATA_TEXT_LIMITS.rootFemaleName),
+    secondGenerationName: normalizeString(source.secondGenerationName, DEFAULT_SITE_CONFIG.sampleData.secondGenerationName, SAMPLE_DATA_TEXT_LIMITS.secondGenerationName),
+    thirdGenerationName: normalizeString(source.thirdGenerationName, DEFAULT_SITE_CONFIG.sampleData.thirdGenerationName, SAMPLE_DATA_TEXT_LIMITS.thirdGenerationName),
+    historyOriginTitle: normalizeString(source.historyOriginTitle, DEFAULT_SITE_CONFIG.sampleData.historyOriginTitle, SAMPLE_DATA_TEXT_LIMITS.historyOriginTitle),
+    historyBranchTitle: normalizeString(source.historyBranchTitle, DEFAULT_SITE_CONFIG.sampleData.historyBranchTitle, SAMPLE_DATA_TEXT_LIMITS.historyBranchTitle),
+    historyTodayTitle: normalizeString(source.historyTodayTitle, DEFAULT_SITE_CONFIG.sampleData.historyTodayTitle, SAMPLE_DATA_TEXT_LIMITS.historyTodayTitle)
+  };
+}
+
+export function normalizeAboutPageConfig(aboutPage = {}) {
+  const source = aboutPage && typeof aboutPage === "object" ? aboutPage : {};
+  return {
+    enabled: Boolean(source.enabled),
+    title: normalizeString(source.title, DEFAULT_SITE_CONFIG.aboutPage.title, ABOUT_PAGE_TEXT_LIMITS.title),
+    subtitle: normalizeString(source.subtitle, DEFAULT_SITE_CONFIG.aboutPage.subtitle, ABOUT_PAGE_TEXT_LIMITS.subtitle),
+    description: normalizeString(source.description, DEFAULT_SITE_CONFIG.aboutPage.description, ABOUT_PAGE_TEXT_LIMITS.description),
+    origin: normalizeString(source.origin, DEFAULT_SITE_CONFIG.aboutPage.origin, ABOUT_PAGE_TEXT_LIMITS.origin),
+    tradition: normalizeString(source.tradition, DEFAULT_SITE_CONFIG.aboutPage.tradition, ABOUT_PAGE_TEXT_LIMITS.tradition),
+    representativeText: normalizeString(source.representativeText, DEFAULT_SITE_CONFIG.aboutPage.representativeText, ABOUT_PAGE_TEXT_LIMITS.representativeText),
+    imageUrl: normalizeSeoUrl(source.imageUrl, DEFAULT_SITE_CONFIG.aboutPage.imageUrl),
+    showContact: source.showContact !== false
+  };
+}
+
 export function normalizeBackgroundUrl(value, fallback = "") {
   const url = String(value ?? "").trim().slice(0, BACKGROUND_URL_LIMIT);
   if (!url) return fallback || "";
@@ -431,6 +596,12 @@ export function validateSiteConfigInput(config = {}) {
     if (rawUrl && String(rawUrl).trim() && !normalizedUrl) {
       throw new Error("Link liên hệ phải là URL http/https đầy đủ.");
     }
+  }
+
+  const rawAboutImage = config.aboutPage?.imageUrl;
+  const normalizedAboutImage = normalized.aboutPage.imageUrl;
+  if (rawAboutImage && String(rawAboutImage).trim() && !normalizedAboutImage) {
+    throw new Error("Ảnh trang giới thiệu phải là đường dẫn nội bộ, URL http/https hoặc data image.");
   }
 
   return normalized;

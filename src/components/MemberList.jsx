@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getAge, getGenderLabel } from "../utils/mockData";
+import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
 function MemberListAvatar({ member, className }) {
   if (member.avatar) {
@@ -18,10 +19,11 @@ function MemberListAvatar({ member, className }) {
   );
 }
 
-export default function MemberList({ members, onSelectPerson, searchQuery }) {
+export default function MemberList({ members, onSelectPerson, searchQuery, siteConfig = DEFAULT_SITE_CONFIG }) {
   const [filterGen, setFilterGen] = useState("");
   const [filterGender, setFilterGender] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const fieldConfig = normalizeSiteConfig(siteConfig).memberFields;
 
   // Get unique generations list for filter
   const generations = Array.from(new Set(members.map((m) => m.generation))).sort(
@@ -135,7 +137,7 @@ export default function MemberList({ members, onSelectPerson, searchQuery }) {
                   <th>Tuổi/Thọ</th>
                   <th>Trạng thái</th>
                   <th>Nơi sinh</th>
-                  <th>Nghề nghiệp</th>
+                  {fieldConfig.occupation && <th>Nghề nghiệp</th>}
                 </tr>
               </thead>
               <tbody>
@@ -158,7 +160,7 @@ export default function MemberList({ members, onSelectPerson, searchQuery }) {
                         )}
                       </td>
                       <td>{member.birthPlace || "Chưa rõ"}</td>
-                      <td>{member.occupation || "Chưa rõ"}</td>
+                      {fieldConfig.occupation && <td>{member.occupation || "Chưa rõ"}</td>}
                     </tr>
                   );
                 })}
@@ -192,7 +194,7 @@ export default function MemberList({ members, onSelectPerson, searchQuery }) {
                         {member.isDeceased ? "🕯️ Đã mất" : "🟢 Còn sống"}
                       </span>
                     </div>
-                    {member.occupation && <div className="mobile-meta-desc">💼 {member.occupation}</div>}
+                    {fieldConfig.occupation && member.occupation && <div className="mobile-meta-desc">💼 {member.occupation}</div>}
                     {member.birthPlace && <div className="mobile-meta-desc">📍 {member.birthPlace}</div>}
                   </div>
                 </div>

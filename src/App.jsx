@@ -6,6 +6,7 @@ import MemberList from "./components/MemberList";
 import FeaturedMembersPage from "./components/FeaturedMembersPage";
 import AnniversaryPage from "./components/AnniversaryPage";
 import GenerationsPage from "./components/GenerationsPage";
+import AboutPage from "./components/AboutPage";
 import AccountAdminPage from "./components/AccountAdminPage";
 import { ENABLE_SETUP_WIZARD } from "./config/cmsRuntime";
 import HistoryAdminPage from "./components/HistoryAdminPage";
@@ -48,6 +49,7 @@ const VALID_APP_VIEWS = new Set([
   "featured",
   "anniversary",
   "history",
+  "about",
   "accounts",
   "history-admin",
   "list"
@@ -901,12 +903,15 @@ export default function App() {
                   members={members}
                   isLoading={loading}
                   onOpenPerson={handleSelectPerson}
+                  siteConfig={siteConfig}
                 />
               ) : activeView === "history" ? (
                 <FamilyHistoryPage
                   events={historyEvents}
                   isLoading={loading}
                 />
+              ) : activeView === "about" && normalizeSiteConfig(siteConfig).aboutPage.enabled ? (
+                <AboutPage siteConfig={siteConfig} />
               ) : activeView === "accounts" ? (
                 <AccountAdminPage
                   currentUser={currentUser}
@@ -934,6 +939,7 @@ export default function App() {
                   members={members}
                   onSelectPerson={handleSelectPerson}
                   searchQuery={searchQuery}
+                  siteConfig={siteConfig}
                 />
               )}
             </div>
@@ -951,6 +957,7 @@ export default function App() {
                   onAddRelative={handleAddRelative}
                   currentUser={currentUser}
                   showSensitiveInfo={showSensitiveInfo}
+                  siteConfig={siteConfig}
                 />
               </>
             )}
@@ -976,6 +983,7 @@ export default function App() {
           addRelativeOf={addRelativeOf}
           members={members}
           currentUser={currentUser}
+          siteConfig={siteConfig}
         />
       )}
 

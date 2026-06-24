@@ -39,38 +39,52 @@ const normalizeSearchText = (value = "") => (
     .replace(/đ/g, "d")
 );
 
-const pageSearchItems = [
+const buildPageSearchItems = (config) => {
+  const labels = config.navigation;
+  const items = [
   {
     id: "tree",
-    label: "Cây gia phả",
+    label: labels.treeLabel,
     description: "Xem sơ đồ gia phả và mở hồ sơ thành viên",
     keywords: "cay gia pha so do tree pha he"
   },
   {
     id: "generations",
-    label: "Các đời",
+    label: labels.generationsLabel,
     description: "Xem thành viên theo từng đời",
     keywords: "cac doi doi the he generation"
   },
   {
     id: "anniversary",
-    label: "Lịch giỗ",
-    description: "Xem toàn bộ ngày giỗ theo lịch âm",
+    label: labels.anniversaryLabel,
+    description: "Xem toàn bộ ngày giỗ",
     keywords: "lich gio ngay gio su kien am lich"
   },
   {
     id: "history",
-    label: "Lịch sử dòng họ",
+    label: labels.historyLabel,
     description: "Xem toàn bộ cột mốc và ảnh tư liệu",
     keywords: "lich su dong ho cot moc su kien anh tu lieu nha tho"
   },
   {
     id: "list",
-    label: "Thành viên",
+    label: labels.membersLabel,
     description: "Danh sách đầy đủ thành viên gia phả",
     keywords: "thanh vien danh sach nguoi member"
   }
-];
+  ];
+
+  if (config.aboutPage.enabled) {
+    items.push({
+      id: "about",
+      label: labels.aboutLabel,
+      description: "Xem trang giới thiệu và thông tin dòng họ",
+      keywords: "gioi thieu dong ho que goc nha tho truyen thong"
+    });
+  }
+
+  return items;
+};
 
 export default function Navbar({
   siteConfig = DEFAULT_SITE_CONFIG,
@@ -120,6 +134,8 @@ export default function Navbar({
   const isUserMenuOpen = userMenuOpenView === activeView;
   const readNotificationSet = useMemo(() => new Set(readNotificationIds), [readNotificationIds]);
   const hasNotifications = notifications.length > 0;
+  const navigationLabels = config.navigation;
+  const pageSearchItems = useMemo(() => buildPageSearchItems(config), [config]);
 
   useEffect(() => {
     if (!isUserMenuOpen) return undefined;
@@ -223,7 +239,7 @@ export default function Navbar({
     ));
 
     return { members: memberResults, pages: pageResults };
-  }, [memberById, members, normalizedQuery]);
+  }, [memberById, members, normalizedQuery, pageSearchItems]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);
@@ -479,6 +495,7 @@ export default function Navbar({
                   {item.id === "anniversary" ? <CalendarDays size={17} strokeWidth={2.2} /> : null}
                   {item.id === "history" ? <ScrollText size={17} strokeWidth={2.2} /> : null}
                   {item.id === "list" ? <Users size={17} strokeWidth={2.2} /> : null}
+                  {item.id === "about" ? <BookOpenText size={17} strokeWidth={2.2} /> : null}
                 </span>
                 <span className="global-search-copy">
                   <strong>{item.label}</strong>
@@ -524,29 +541,38 @@ export default function Navbar({
             onClick={() => setActiveView("tree")}
           >
             <Network className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
-            Cây gia phả
+            {navigationLabels.treeLabel}
           </button>
           <button
             className={`btn-tab ${activeView === "generations" ? "active" : ""}`}
             onClick={() => setActiveView("generations")}
           >
             <BookOpenText className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
-            Các đời
+            {navigationLabels.generationsLabel}
           </button>
           <button
             className={`btn-tab ${activeView === "anniversary" ? "active" : ""}`}
             onClick={() => setActiveView("anniversary")}
           >
             <CalendarDays className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
-            Lịch giỗ
+            {navigationLabels.anniversaryLabel}
           </button>
           <button
             className={`btn-tab ${activeView === "list" ? "active" : ""}`}
             onClick={() => setActiveView("list")}
           >
             <Users className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
-            Thành viên
+            {navigationLabels.membersLabel}
           </button>
+          {config.aboutPage.enabled && (
+            <button
+              className={`btn-tab ${activeView === "about" ? "active" : ""}`}
+              onClick={() => setActiveView("about")}
+            >
+              <BookOpenText className="nav-tab-icon" aria-hidden="true" strokeWidth={2.2} />
+              {navigationLabels.aboutLabel}
+            </button>
+          )}
         </div>
 
         {/* Search bar */}
@@ -741,14 +767,14 @@ export default function Navbar({
             onClick={() => setActiveView("tree")}
             style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
           >
-            Cây
+            {navigationLabels.treeLabel.split(" ")[0] || "Cây"}
           </button>
           <button
             className={`btn-tab ${activeView === "list" ? "active" : ""}`}
             onClick={() => setActiveView("list")}
             style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
           >
-            Bảng
+            {navigationLabels.membersLabel.split(" ")[0] || "Bảng"}
           </button>
         </div>
 
@@ -855,7 +881,7 @@ export default function Navbar({
                 style={{ width: "100%", justifyContent: "center", gap: "8px" }}
               >
                 <BookOpenText size={16} strokeWidth={2.2} />
-                Các đời
+                {navigationLabels.generationsLabel}
               </button>
 
               <button
@@ -867,8 +893,22 @@ export default function Navbar({
                 style={{ width: "100%", justifyContent: "center", gap: "8px" }}
               >
                 <CalendarDays size={16} strokeWidth={2.2} />
-                Lịch giỗ
+                {navigationLabels.anniversaryLabel}
               </button>
+
+              {config.aboutPage.enabled && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setActiveView("about");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+                >
+                  <BookOpenText size={16} strokeWidth={2.2} />
+                  {navigationLabels.aboutLabel}
+                </button>
+              )}
 
               {canAddTopLevelMember && (
                 <button

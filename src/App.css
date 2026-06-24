@@ -1216,6 +1216,7 @@
 
 .directory-hero,
 .directory-grid,
+.about-content-grid,
 .anniversary-timeline,
 .directory-empty-state {
   position: relative;
@@ -1229,6 +1230,59 @@
   gap: clamp(1rem, 2vw, 1.5rem);
   margin: 0 auto clamp(1rem, 2vw, 1.5rem);
   max-width: 1320px;
+}
+
+.about-hero {
+  align-items: stretch;
+}
+
+.about-hero-image {
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.about-hero-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.about-content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.about-content-panel {
+  padding: 18px;
+  border-radius: 8px;
+}
+
+.about-content-panel h2 {
+  margin: 0 0 10px;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+}
+
+.about-content-panel p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.about-contact-panel p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .directory-kicker {
@@ -3289,6 +3343,14 @@
 
   .directory-hero {
     grid-template-columns: 1fr;
+  }
+
+  .about-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-hero-image {
+    min-height: 160px;
   }
 
   .directory-summary {

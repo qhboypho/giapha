@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildSeoMetadata } from "../src/utils/siteConfigUtils.js";
+import { buildSeoMetadata, normalizeSiteConfig } from "../src/utils/siteConfigUtils.js";
 
 const DEFAULT_PASSWORDS = {
   admin: "pbkdf2:831d51423ca7c9f63e35ffadc5e6a778:31bc8b0f51a53df1f077ae3b274d3b101dfcc690899791882ba4930b1e66d34f",
@@ -26,7 +26,7 @@ function initialsFromFamilyName(familyName) {
 }
 
 function buildSiteConfig(familyName) {
-  return {
+  return normalizeSiteConfig({
     familyName,
     familyLabel: "Gia Phả Họ",
     siteTitle: `Gia phả họ ${familyName}`,
@@ -75,8 +75,22 @@ function buildSiteConfig(familyName) {
       spouseConnector: "#D6A85A",
       selectedRing: "#B64235",
       searchHighlight: "#D6A85A"
+    },
+    sampleData: {
+      generationCount: 3,
+      rootMaleName: "Cụ ông {familyName} An",
+      rootFemaleName: "Cụ bà {familyName} Bình",
+      secondGenerationName: "{familyName} Chính",
+      thirdGenerationName: "{familyName} Minh",
+      historyOriginTitle: "Khởi nguồn họ {familyName}",
+      historyBranchTitle: "Hình thành các nhánh",
+      historyTodayTitle: "Cập nhật dữ liệu gia phả"
     }
-  };
+  });
+}
+
+function applyFamilyTemplate(template, familyName) {
+  return String(template || "").replaceAll("{familyName}", familyName);
 }
 
 function buildCustomerSeo(familyName, slug) {
@@ -134,14 +148,15 @@ function sanitizeManifest(root, familyName) {
 }
 
 function buildSampleMembers(familyName) {
+  const sampleData = buildSiteConfig(familyName).sampleData;
   return [
-    ["sample_g1_1", `Cụ ông ${familyName} An`, "nam", 1, 1, null, null, "Quê gốc", "", "Làm nông", "Nhân vật mẫu đời thứ nhất.", "", "", "[\"sample_g1_2\"]", null, null],
-    ["sample_g1_2", `Cụ bà ${familyName} Bình`, "nu", 1, 1, null, null, "Quê gốc", "", "Làm nông", "Phu nhân mẫu đời thứ nhất.", "", "", "[\"sample_g1_1\"]", null, null],
-    ["sample_g2_1", `${familyName} Chính`, "nam", 2, 0, null, null, "Quê gốc", "", "", "Người con mẫu thuộc đời thứ hai.", "", "", "[\"sample_g2_2\"]", "sample_g1_1", "sample_g1_2"],
-    ["sample_g2_2", `Phu nhân ${familyName} Chính`, "nu", 2, 0, null, null, "", "", "", "Nhân thân mẫu để minh họa quan hệ vợ chồng.", "", "", "[\"sample_g2_1\"]", null, null],
+    ["sample_g1_1", applyFamilyTemplate(sampleData.rootMaleName, familyName), "nam", 1, 1, null, null, "Quê gốc", "", "Làm nông", "Nhân vật mẫu đời thứ nhất.", "", "", "[\"sample_g1_2\"]", null, null],
+    ["sample_g1_2", applyFamilyTemplate(sampleData.rootFemaleName, familyName), "nu", 1, 1, null, null, "Quê gốc", "", "Làm nông", "Phu nhân mẫu đời thứ nhất.", "", "", "[\"sample_g1_1\"]", null, null],
+    ["sample_g2_1", applyFamilyTemplate(sampleData.secondGenerationName, familyName), "nam", 2, 0, null, null, "Quê gốc", "", "", "Người con mẫu thuộc đời thứ hai.", "", "", "[\"sample_g2_2\"]", "sample_g1_1", "sample_g1_2"],
+    ["sample_g2_2", `Phu nhân ${applyFamilyTemplate(sampleData.secondGenerationName, familyName)}`, "nu", 2, 0, null, null, "", "", "", "Nhân thân mẫu để minh họa quan hệ vợ chồng.", "", "", "[\"sample_g2_1\"]", null, null],
     ["sample_g2_3", `${familyName} Dung`, "nu", 2, 0, null, null, "Quê gốc", "", "", "Người con gái mẫu thuộc đời thứ hai.", "", "", "[]", "sample_g1_1", "sample_g1_2"],
-    ["sample_g3_1", `${familyName} Minh`, "nam", 3, 0, null, null, "", "", "", "Cháu mẫu thuộc đời thứ ba.", "", "", "[]", "sample_g2_1", "sample_g2_2"]
-  ];
+    ["sample_g3_1", applyFamilyTemplate(sampleData.thirdGenerationName, familyName), "nam", 3, 0, null, null, "", "", "", "Cháu mẫu thuộc đời thứ ba.", "", "", "[]", "sample_g2_1", "sample_g2_2"]
+  ].filter((rowData) => Number(rowData[3]) <= sampleData.generationCount);
 }
 
 function row(values) {
@@ -184,10 +199,11 @@ WHERE id IN ('sample_g1_1', 'sample_g1_2', 'sample_g2_1');
 }
 
 function buildHistorySql(familyName) {
+  const sampleData = buildSiteConfig(familyName).sampleData;
   const values = [
-    ["history_sample_origin", "Đời 1", `Khởi nguồn họ ${familyName}`, "Mốc lịch sử mẫu để ghi lại quê gốc, thủy tổ và câu chuyện mở đầu dòng họ.", "", "[\"sample_g1_1\",\"sample_g1_2\"]", 1, 10],
-    ["history_sample_branch", "Đời 2", "Hình thành các nhánh", "Mốc mẫu cho giai đoạn con cháu phát triển thành các chi nhánh trong gia phả.", "", "[\"sample_g2_1\",\"sample_g2_3\"]", 1, 20],
-    ["history_sample_today", "Hiện nay", "Cập nhật dữ liệu gia phả", "Quản trị viên thay nội dung mẫu này bằng lịch sử thật của dòng họ.", "", "[]", 1, 30]
+    ["history_sample_origin", "Đời 1", applyFamilyTemplate(sampleData.historyOriginTitle, familyName), "Mốc lịch sử mẫu để ghi lại quê gốc, thủy tổ và câu chuyện mở đầu dòng họ.", "", "[\"sample_g1_1\",\"sample_g1_2\"]", 1, 10],
+    ["history_sample_branch", "Đời 2", applyFamilyTemplate(sampleData.historyBranchTitle, familyName), "Mốc mẫu cho giai đoạn con cháu phát triển thành các chi nhánh trong gia phả.", "", "[\"sample_g2_1\",\"sample_g2_3\"]", 1, 20],
+    ["history_sample_today", "Hiện nay", applyFamilyTemplate(sampleData.historyTodayTitle, familyName), "Quản trị viên thay nội dung mẫu này bằng lịch sử thật của dòng họ.", "", "[]", 1, 30]
   ];
 
   return `-- Migration 0005: Editable family history milestones

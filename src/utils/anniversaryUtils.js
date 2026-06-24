@@ -99,3 +99,45 @@ export const buildUpcomingAnniversaries = (members, now = new Date()) => {
       a.member.name.localeCompare(b.member.name, "vi")
     ));
 };
+
+export const buildUpcomingSolarAnniversaries = (members, now = new Date()) => {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  return members
+    .filter((member) => member.isDeceased && member.deathDate)
+    .map((member) => {
+      const deathSolar = parseSolarDate(member.deathDate);
+      if (!deathSolar) return null;
+
+      const candidates = [today.getFullYear(), today.getFullYear() + 1]
+        .map((year) => new Date(year, deathSolar.month - 1, deathSolar.day))
+        .filter((date) => date.getMonth() === deathSolar.month - 1)
+        .map((date) => ({
+          date,
+          daysUntil: Math.round((date - today) / (1000 * 60 * 60 * 24))
+        }))
+        .filter((candidate) => candidate.daysUntil >= 0)
+        .sort((a, b) => a.daysUntil - b.daysUntil);
+
+      if (candidates.length === 0) return null;
+      const next = candidates[0];
+
+      return {
+        member,
+        day: formatDayMonth(deathSolar.day),
+        month: `Tháng ${deathSolar.month}`,
+        title: buildAnniversaryTitle(member),
+        date: `Dương lịch ngày ${formatDayMonth(deathSolar.day)}/${formatDayMonth(deathSolar.month)}`,
+        note: `Tạ thế ngày ${formatSolarDate(member.deathDate)}`,
+        nextSolarDate: next.date,
+        daysUntil: next.daysUntil,
+        solarDateLabel: formatSolarDate(member.deathDate)
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (
+      a.daysUntil - b.daysUntil ||
+      a.member.generation - b.member.generation ||
+      a.member.name.localeCompare(b.member.name, "vi")
+    ));
+};
