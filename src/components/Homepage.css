@@ -136,6 +136,13 @@
   opacity: 0.68;
 }
 
+.hero-divider.has-image {
+  width: min(430px, 72%);
+  height: clamp(24px, 3.3vw, 42px);
+  background: var(--hero-separator-image) center / contain no-repeat;
+  opacity: 0.95;
+}
+
 .hero-description {
   color: #57412e;
   font-size: clamp(0.88rem, 0.92vw, 0.95rem);

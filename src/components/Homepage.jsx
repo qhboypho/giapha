@@ -320,7 +320,11 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
             {config.heroTitle}
             <span>{config.heroSubtitle}</span>
           </h1>
-          <span className="hero-divider" aria-hidden="true" />
+          <span
+            className={`hero-divider ${config.heroSeparatorUrl ? "has-image" : ""}`}
+            style={config.heroSeparatorUrl ? { "--hero-separator-image": `url("${config.heroSeparatorUrl}")` } : undefined}
+            aria-hidden="true"
+          />
           <p className="hero-description">
             {config.heroDescription}
           </p>

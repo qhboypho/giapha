@@ -12,11 +12,13 @@ import {
 const partialConfig = normalizeSiteConfig({
   familyName: "Nguyen Van",
   logoUrl: "/logo.png",
+  heroSeparatorUrl: "/separator.png",
   heroTitle: "Ket noi gia toc"
 });
 
 assert.equal(partialConfig.familyName, "Nguyen Van");
 assert.equal(partialConfig.logoUrl, "/logo.png");
+assert.equal(partialConfig.heroSeparatorUrl, "/separator.png");
 assert.equal(partialConfig.heroTitle, "Ket noi gia toc");
 assert.equal(partialConfig.familyLabel, DEFAULT_SITE_CONFIG.familyLabel);
 assert.equal(partialConfig.themeColors.primary, DEFAULT_SITE_CONFIG.themeColors.primary);
@@ -143,6 +145,11 @@ assert.equal(validated.siteTitle, "Gia pha ho Nguyen Van");
 assert.throws(
   () => validateSiteConfigInput({ ...DEFAULT_SITE_CONFIG, logoUrl: "javascript:alert(1)" }),
   /Logo phải là đường dẫn/
+);
+
+assert.throws(
+  () => validateSiteConfigInput({ ...DEFAULT_SITE_CONFIG, heroSeparatorUrl: "javascript:alert(1)" }),
+  /Ảnh ngăn cách hero/
 );
 
 const cssVariables = buildThemeCssVariables(themedConfig);

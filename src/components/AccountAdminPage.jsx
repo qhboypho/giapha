@@ -1416,6 +1416,21 @@ export default function AccountAdminPage({
                   onDragStart={setAssetDraggingScope}
                   onDragEnd={() => setAssetDraggingScope("")}
                 />
+                <AssetUploadField
+                  label="Ảnh ngăn cách hero"
+                  value={siteConfigForm.heroSeparatorUrl}
+                  placeholder="/tran_cong_separator_pattern_vector_transparent.png"
+                  scope="hero-separator"
+                  onChange={(value) => handleSiteConfigChange("heroSeparatorUrl", value)}
+                  onUpload={(file, options) => uploadSiteAsset(file, {
+                    ...options,
+                    onUploaded: (src) => handleSiteConfigChange("heroSeparatorUrl", src)
+                  })}
+                  uploading={assetUploadingScope === "hero-separator"}
+                  dragging={assetDraggingScope}
+                  onDragStart={setAssetDraggingScope}
+                  onDragEnd={() => setAssetDraggingScope("")}
+                />
                 <label>
                   Hero dòng 1
                   <input className="form-input" value={siteConfigForm.heroTitle} onChange={(event) => handleSiteConfigChange("heroTitle", event.target.value)} />

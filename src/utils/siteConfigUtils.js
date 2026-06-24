@@ -6,6 +6,7 @@ export const DEFAULT_SITE_CONFIG = {
   siteTitle: "Gia phả họ Trần Công",
   shortName: "TC",
   logoUrl: "/tranconglogo.png",
+  heroSeparatorUrl: "/tran_cong_separator_pattern_vector_transparent.png",
   heroTitle: "Lưu giữ cội nguồn",
   heroSubtitle: "Kết nối muôn đời con cháu",
   heroDescription: "Gia phả là sợi dây thiêng liêng kết nối quá khứ, hiện tại và tương lai. Cùng nhau gìn giữ cội nguồn, vun đắp truyền thống cho muôn đời con cháu.",
@@ -166,6 +167,7 @@ const SITE_CONFIG_TEXT_LIMITS = {
   siteTitle: 120,
   shortName: 16,
   logoUrl: 500,
+  heroSeparatorUrl: 500,
   heroTitle: 120,
   heroSubtitle: 160,
   heroDescription: 500,
@@ -300,6 +302,7 @@ export function normalizeSiteConfig(config = {}) {
     return acc;
   }, {});
 
+  normalized.heroSeparatorUrl = normalizeSeoUrl(config.heroSeparatorUrl, DEFAULT_SITE_CONFIG.heroSeparatorUrl);
   normalized.themeColors = normalizeThemeColors(config.themeColors);
   normalized.themeBackgrounds = normalizeThemeBackgrounds(config.themeBackgrounds);
   normalized.treeTheme = normalizeTreeTheme(config.treeTheme);
@@ -558,6 +561,11 @@ export function validateSiteConfigInput(config = {}) {
   const logoUrl = normalized.logoUrl;
   if (logoUrl && !/^(\/|https?:\/\/|data:image\/)/i.test(logoUrl)) {
     throw new Error("Logo phải là đường dẫn nội bộ, URL http/https hoặc data image.");
+  }
+
+  const rawHeroSeparatorUrl = String(config.heroSeparatorUrl || "").trim();
+  if (rawHeroSeparatorUrl && !/^(\/|https?:\/\/|data:image\/)/i.test(rawHeroSeparatorUrl)) {
+    throw new Error("Ảnh ngăn cách hero phải là đường dẫn nội bộ, URL http/https hoặc data image.");
   }
 
   for (const field of SITE_THEME_BACKGROUND_FIELDS) {
