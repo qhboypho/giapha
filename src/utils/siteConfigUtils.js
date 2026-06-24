@@ -7,6 +7,7 @@ export const DEFAULT_SITE_CONFIG = {
   shortName: "TC",
   logoUrl: "/tranconglogo.png",
   heroSeparatorUrl: "/tran_cong_separator_pattern_vector_transparent.png",
+  heroLotusUrl: "/pattern-sen.png",
   heroTitle: "Lưu giữ cội nguồn",
   heroSubtitle: "Kết nối muôn đời con cháu",
   heroDescription: "Gia phả là sợi dây thiêng liêng kết nối quá khứ, hiện tại và tương lai. Cùng nhau gìn giữ cội nguồn, vun đắp truyền thống cho muôn đời con cháu.",
@@ -168,6 +169,7 @@ const SITE_CONFIG_TEXT_LIMITS = {
   shortName: 16,
   logoUrl: 500,
   heroSeparatorUrl: 500,
+  heroLotusUrl: 500,
   heroTitle: 120,
   heroSubtitle: 160,
   heroDescription: 500,
@@ -303,6 +305,7 @@ export function normalizeSiteConfig(config = {}) {
   }, {});
 
   normalized.heroSeparatorUrl = normalizeSeoUrl(config.heroSeparatorUrl, DEFAULT_SITE_CONFIG.heroSeparatorUrl);
+  normalized.heroLotusUrl = normalizeSeoUrl(config.heroLotusUrl, DEFAULT_SITE_CONFIG.heroLotusUrl);
   normalized.themeColors = normalizeThemeColors(config.themeColors);
   normalized.themeBackgrounds = normalizeThemeBackgrounds(config.themeBackgrounds);
   normalized.treeTheme = normalizeTreeTheme(config.treeTheme);
@@ -566,6 +569,11 @@ export function validateSiteConfigInput(config = {}) {
   const rawHeroSeparatorUrl = String(config.heroSeparatorUrl || "").trim();
   if (rawHeroSeparatorUrl && !/^(\/|https?:\/\/|data:image\/)/i.test(rawHeroSeparatorUrl)) {
     throw new Error("Ảnh ngăn cách hero phải là đường dẫn nội bộ, URL http/https hoặc data image.");
+  }
+
+  const rawHeroLotusUrl = String(config.heroLotusUrl || "").trim();
+  if (rawHeroLotusUrl && !/^(\/|https?:\/\/|data:image\/)/i.test(rawHeroLotusUrl)) {
+    throw new Error("Ảnh bông sen hero phải là đường dẫn nội bộ, URL http/https hoặc data image.");
   }
 
   for (const field of SITE_THEME_BACKGROUND_FIELDS) {

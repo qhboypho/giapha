@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import paperBg from "../assets/homepage-design/paper-bg.png";
 import mountainBg from "../assets/homepage-design/new-mountain-bg.png";
-import lotusWatercolor from "../assets/homepage-design/lotus-watercolor-cutout.png";
 import pineWatercolor from "../assets/homepage-design/new-pine-watercolor.png";
 import goldClouds from "../assets/homepage-design/gold-clouds-cutout.png";
 import goldWavesLotus from "../assets/homepage-design/gold-waves-lotus-cutout.png";
@@ -310,7 +309,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
     >
       <section className="home-hero">
         <img
-          src={lotusWatercolor}
+          src={config.heroLotusUrl}
           alt="Hoa sen màu nước"
           className="hero-lotus-art"
         />

@@ -1431,6 +1431,21 @@ export default function AccountAdminPage({
                   onDragStart={setAssetDraggingScope}
                   onDragEnd={() => setAssetDraggingScope("")}
                 />
+                <AssetUploadField
+                  label="Ảnh bông sen hero"
+                  value={siteConfigForm.heroLotusUrl}
+                  placeholder="/pattern-sen.png"
+                  scope="hero-lotus"
+                  onChange={(value) => handleSiteConfigChange("heroLotusUrl", value)}
+                  onUpload={(file, options) => uploadSiteAsset(file, {
+                    ...options,
+                    onUploaded: (src) => handleSiteConfigChange("heroLotusUrl", src)
+                  })}
+                  uploading={assetUploadingScope === "hero-lotus"}
+                  dragging={assetDraggingScope}
+                  onDragStart={setAssetDraggingScope}
+                  onDragEnd={() => setAssetDraggingScope("")}
+                />
                 <label>
                   Hero dòng 1
                   <input className="form-input" value={siteConfigForm.heroTitle} onChange={(event) => handleSiteConfigChange("heroTitle", event.target.value)} />
