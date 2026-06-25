@@ -5,11 +5,8 @@ DELETE FROM members;
 DELETE FROM users;
 DELETE FROM settings;
 
--- 2. Insert initial users
-INSERT INTO users (username, password, role, fullName) VALUES
-('admin', 'pbkdf2:831d51423ca7c9f63e35ffadc5e6a778:31bc8b0f51a53df1f077ae3b274d3b101dfcc690899791882ba4930b1e66d34f', 'admin', 'Quản trị viên'),
-('editor', 'pbkdf2:e48d6c0711a74d434586885a3a5aaef8:7022bcc4828ef38f3911c6a6b445a69d4903a3217ac47a2b387fb64ee8312877', 'editor', 'Biên tập viên'),
-('member', 'pbkdf2:e41bf6e79f74ab31893ec1d32e9984a7:224470f350a3d28e25cc1f193d06e81a800d25a881594d8b886d72446350df13', 'member', 'Thành viên Gia tộc');
+-- 2. Users are intentionally not seeded with public passwords.
+-- Run scripts/admin-bootstrap.mjs with a private password after migrations.
 
 -- 3. Insert initial settings
 INSERT INTO settings (key, value) VALUES

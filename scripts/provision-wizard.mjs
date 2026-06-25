@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 const DEFAULT_COMPATIBILITY_DATE = "2026-06-01";
 const DEFAULT_OUTPUT_ROOT = ".provision";
 const D1_ID_PLACEHOLDER = "PASTE_D1_DATABASE_ID_HERE";
+const PREVIEW_D1_ID_PLACEHOLDER = "PASTE_PREVIEW_D1_DATABASE_ID_HERE";
 
 function parseArgs(argv) {
   const args = {
@@ -17,6 +18,8 @@ function parseArgs(argv) {
     projectName: "",
     d1Name: "",
     d1Id: "",
+    previewD1Name: "",
+    previewD1Id: "",
     r2Name: "",
     previewR2Name: "",
     cmsPackagePath: "",
@@ -49,6 +52,12 @@ function parseArgs(argv) {
       if (!inlineValue) i += 1;
     } else if (flagName === "--d1-id") {
       args.d1Id = value;
+      if (!inlineValue) i += 1;
+    } else if (flagName === "--preview-d1-name") {
+      args.previewD1Name = value;
+      if (!inlineValue) i += 1;
+    } else if (flagName === "--preview-d1-id") {
+      args.previewD1Id = value;
       if (!inlineValue) i += 1;
     } else if (flagName === "--r2-name") {
       args.r2Name = value;
@@ -96,6 +105,8 @@ Options:
   --project-name <name>      Cloudflare Pages project
   --d1-name <name>           Cloudflare D1 database name
   --d1-id <id>               Cloudflare D1 database id nếu đã tạo
+  --preview-d1-name <name>   Cloudflare preview D1 database name
+  --preview-d1-id <id>       Preview D1 database id nếu đã tạo
   --r2-name <name>           Cloudflare R2 bucket name
   --preview-r2-name <name>   Preview R2 bucket name
   --cms-package <path>       Đường dẫn CMS package nếu có
@@ -136,6 +147,7 @@ function defaultPlanFromSlug(slug) {
   return {
     projectName: `giapha-${slug}`,
     d1Name: `giapha-${slug}-db`,
+    previewD1Name: `giapha-${slug}-preview-db`,
     r2Name: `giapha-${slug}-media`,
     previewR2Name: `giapha-${slug}-media-preview`
   };
@@ -180,6 +192,8 @@ async function collectInteractiveOptions(args) {
       projectName: await ask(rl, "Cloudflare Pages project", args.projectName || defaults.projectName),
       d1Name: await ask(rl, "D1 database name", args.d1Name || defaults.d1Name),
       d1Id: await ask(rl, "D1 database id nếu đã tạo, bỏ trống nếu chưa", args.d1Id),
+      previewD1Name: await ask(rl, "Preview D1 database name", args.previewD1Name || defaults.previewD1Name),
+      previewD1Id: await ask(rl, "Preview D1 database id nếu đã tạo, bỏ trống nếu chưa", args.previewD1Id),
       r2Name: await ask(rl, "R2 bucket production", args.r2Name || defaults.r2Name),
       previewR2Name: await ask(rl, "R2 bucket preview", args.previewR2Name || defaults.previewR2Name),
       cmsPackagePath: await ask(rl, "CMS package path nếu có, bỏ trống nếu setup trong app", args.cmsPackagePath),
@@ -204,6 +218,8 @@ export function buildProvisionPlan(options = {}) {
     projectName: ensureValue(options.projectName, defaults.projectName),
     d1Name: ensureValue(options.d1Name, defaults.d1Name),
     d1Id: ensureValue(options.d1Id, D1_ID_PLACEHOLDER),
+    previewD1Name: ensureValue(options.previewD1Name, defaults.previewD1Name),
+    previewD1Id: ensureValue(options.previewD1Id, PREVIEW_D1_ID_PLACEHOLDER),
     r2Name: ensureValue(options.r2Name, defaults.r2Name),
     previewR2Name: ensureValue(options.previewR2Name, defaults.previewR2Name),
     cmsPackagePath: normalizePathForDocs(options.cmsPackagePath || ""),
@@ -226,7 +242,7 @@ export function buildWranglerConfig(plan) {
         binding: "DB",
         database_name: plan.d1Name,
         database_id: plan.d1Id,
-        preview_database_id: plan.d1Id
+        preview_database_id: plan.previewD1Id
       }
     ],
     r2_buckets: [
@@ -248,6 +264,9 @@ export function buildProvisionGuide(plan) {
   const d1IdNote = plan.d1Id === D1_ID_PLACEHOLDER
     ? "- D1 id đang là placeholder. Sau khi chạy lệnh tạo D1, copy id vào `wrangler.generated.jsonc` hoặc root `wrangler.jsonc`."
     : "- D1 id đã được điền trong config sinh ra.";
+  const previewD1IdNote = plan.previewD1Id === PREVIEW_D1_ID_PLACEHOLDER
+    ? "- Preview D1 id đang là placeholder. Tạo D1 preview riêng rồi copy id vào `preview_database_id`."
+    : "- Preview D1 id đã được điền riêng, không dùng chung production DB.";
   const setupSection = plan.customerProject && !plan.setupWizard
     ? `Nếu chưa có CMS package, project khách đã có sẵn dữ liệu mẫu vài người. Đăng nhập admin, kiểm tra cây mẫu, rồi sửa/xóa/thêm thành viên thật trực tiếp trong app.
 
@@ -298,7 +317,7 @@ Trước khi chạy \`git:publish-customer\`, cần hoàn tất 4 bước:
 1. Tạo project local cho khách bằng \`create-customer\`.
 2. Vào đúng folder project khách.
 3. Tạo repo GitHub mới riêng, ví dụ \`qhboypho/${plan.projectName}\`.
-4. Tạo D1/R2 trên Cloudflare và sửa \`wrangler.jsonc\`, thay cả \`database_id\` và \`preview_database_id\` bằng UUID D1 thật.
+4. Tạo D1/R2 trên Cloudflare và sửa \`wrangler.jsonc\`, dùng D1 production và preview riêng.
 
 ## 1. Đăng nhập Cloudflare
 
@@ -310,11 +329,13 @@ npx wrangler login
 
 \`\`\`powershell
 npx wrangler d1 create ${plan.d1Name}
+npx wrangler d1 create ${plan.previewD1Name}
 npx wrangler r2 bucket create ${plan.r2Name}
 npx wrangler r2 bucket create ${plan.previewR2Name}
 \`\`\`
 
 ${d1IdNote}
+${previewD1IdNote}
 
 Nếu cần xem lại UUID:
 
@@ -338,14 +359,14 @@ Trong \`wrangler.jsonc\`, thay cả 2 dòng:
 
 \`\`\`json
 "database_id": "PASTE_D1_DATABASE_ID_HERE",
-"preview_database_id": "PASTE_D1_DATABASE_ID_HERE"
+"preview_database_id": "PASTE_PREVIEW_D1_DATABASE_ID_HERE"
 \`\`\`
 
 Ví dụ:
 
 \`\`\`json
 "database_id": "${plan.d1Id}",
-"preview_database_id": "${plan.d1Id}"
+"preview_database_id": "${plan.previewD1Id}"
 \`\`\`
 
 ## 4. Commit và push GitHub nếu có repo riêng
@@ -382,12 +403,14 @@ Local:
 
 \`\`\`powershell
 npx wrangler d1 migrations apply ${plan.d1Name} --local
+npx wrangler d1 migrations apply ${plan.previewD1Name} --local
 \`\`\`
 
 Production:
 
 \`\`\`powershell
 npx wrangler d1 migrations apply ${plan.d1Name} --remote
+npx wrangler d1 migrations apply ${plan.previewD1Name} --remote
 \`\`\`
 
 ## 6. Tạo tài khoản admin trước khi chạy/deploy
@@ -397,6 +420,7 @@ Local:
 \`\`\`powershell
 $env:ADMIN_BOOTSTRAP_PASSWORD="doi-mat-khau-local"
 node scripts/admin-bootstrap.mjs --db=${plan.d1Name} --local --migrate --yes
+node scripts/admin-bootstrap.mjs --db=${plan.previewD1Name} --local --migrate --yes
 \`\`\`
 
 Production:
@@ -404,6 +428,7 @@ Production:
 \`\`\`powershell
 $env:ADMIN_BOOTSTRAP_PASSWORD="doi-mat-khau-prod"
 node scripts/admin-bootstrap.mjs --db=${plan.d1Name} --remote --migrate --yes
+node scripts/admin-bootstrap.mjs --db=${plan.previewD1Name} --remote --migrate --yes
 Remove-Item Env:ADMIN_BOOTSTRAP_PASSWORD
 \`\`\`
 
@@ -490,6 +515,8 @@ export function buildProvisionSummary(plan) {
     projectName: plan.projectName,
     d1Name: plan.d1Name,
     d1Id: plan.d1Id,
+    previewD1Name: plan.previewD1Name,
+    previewD1Id: plan.previewD1Id,
     r2Name: plan.r2Name,
     previewR2Name: plan.previewR2Name,
     cmsPackagePath: plan.cmsPackagePath,

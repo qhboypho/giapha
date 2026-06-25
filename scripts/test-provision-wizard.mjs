@@ -21,6 +21,7 @@ const plan = buildProvisionPlan({
 assert.equal(plan.slug, "tran-cong");
 assert.equal(plan.projectName, "giapha-tran-cong");
 assert.equal(plan.d1Name, "giapha-tran-cong-db");
+assert.equal(plan.previewD1Name, "giapha-tran-cong-preview-db");
 assert.equal(plan.r2Name, "giapha-tran-cong-media");
 assert.equal(plan.previewR2Name, "giapha-tran-cong-media-preview");
 assert.equal(plan.d1Id, "abc-123");
@@ -28,6 +29,7 @@ assert.equal(plan.d1Id, "abc-123");
 const wrangler = buildWranglerConfig(plan);
 assert.equal(wrangler.name, "giapha-tran-cong");
 assert.equal(wrangler.d1_databases[0].database_id, "abc-123");
+assert.equal(wrangler.d1_databases[0].preview_database_id, "PASTE_PREVIEW_D1_DATABASE_ID_HERE");
 assert.equal(wrangler.r2_buckets[0].binding, "MEDIA_BUCKET");
 
 const guide = buildProvisionGuide(plan);
@@ -37,7 +39,8 @@ assert.match(guide, /npm run create-customer -- --family-name="Trần Công" --s
 assert.match(guide, /Deploy lần đầu để Cloudflare tạo Pages project/);
 assert.match(guide, /git push -u origin customer\/tran-cong/);
 assert.match(guide, /npm run git:publish-customer -- --remote-url=https:\/\/github.com\/qhboypho\/giapha-tran-cong.git/);
-assert.match(guide, /"preview_database_id": "PASTE_D1_DATABASE_ID_HERE"/);
+assert.match(guide, /npx wrangler d1 create giapha-tran-cong-preview-db/);
+assert.match(guide, /"preview_database_id": "PASTE_PREVIEW_D1_DATABASE_ID_HERE"/);
 assert.match(guide, /Setup Wizard/);
 
 const customerPlan = buildProvisionPlan({
@@ -61,6 +64,7 @@ assert.equal(buildProvisionSummary(handoffCustomerPlan).setupWizard, false);
 
 const summary = buildProvisionSummary(plan);
 assert.equal(summary.familyName, "Trần Công");
+assert.equal(summary.previewD1Name, "giapha-tran-cong-preview-db");
 assert.equal(summary.aiSecretPreview, "secret...secret");
 
 console.log("provision wizard tests passed");

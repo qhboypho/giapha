@@ -2,12 +2,6 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildSeoMetadata, normalizeSiteConfig } from "../src/utils/siteConfigUtils.js";
 
-const DEFAULT_PASSWORDS = {
-  admin: "pbkdf2:831d51423ca7c9f63e35ffadc5e6a778:31bc8b0f51a53df1f077ae3b274d3b101dfcc690899791882ba4930b1e66d34f",
-  editor: "pbkdf2:e48d6c0711a74d434586885a3a5aaef8:7022bcc4828ef38f3911c6a6b445a69d4903a3217ac47a2b387fb64ee8312877",
-  member: "pbkdf2:e41bf6e79f74ab31893ec1d32e9984a7:224470f350a3d28e25cc1f193d06e81a800d25a881594d8b886d72446350df13"
-};
-
 function sqlString(value) {
   return `'${String(value ?? "").replaceAll("'", "''")}'`;
 }
@@ -173,10 +167,8 @@ DELETE FROM members;
 DELETE FROM users;
 DELETE FROM settings;
 
-INSERT INTO users (username, password, role, fullName) VALUES
-('admin', '${DEFAULT_PASSWORDS.admin}', 'admin', 'Quản trị viên'),
-('editor', '${DEFAULT_PASSWORDS.editor}', 'editor', 'Biên tập viên'),
-('member', '${DEFAULT_PASSWORDS.member}', 'member', 'Thành viên Gia tộc');
+-- Users are intentionally not seeded with public passwords.
+-- Run scripts/admin-bootstrap.mjs after migrations to create the admin account.
 
 INSERT INTO settings (key, value) VALUES
 ('private_mode', 'true'),

@@ -72,7 +72,7 @@ Truoc khi chay `git:publish-customer`, can hoan tat 4 buoc nay:
 1. Tao project local cho khach bang `create-customer`.
 2. Vao dung folder project khach.
 3. Tao repo GitHub moi rieng, vi du `qhboypho/giapha-tran-xuan`.
-4. Tao D1/R2 tren Cloudflare va sua `wrangler.jsonc`, thay ca `database_id` va `preview_database_id` bang UUID D1 that.
+4. Tao D1 production, D1 preview va R2 tren Cloudflare, sau do sua `wrangler.jsonc` bang 2 UUID D1 rieng.
 
 Chay tu repo base:
 
@@ -90,6 +90,7 @@ Tao D1/R2:
 
 ```powershell
 npx wrangler d1 create giapha-tran-xuan-db
+npx wrangler d1 create giapha-tran-xuan-preview-db
 npx wrangler r2 bucket create giapha-tran-xuan-media
 npx wrangler r2 bucket create giapha-tran-xuan-media-preview
 ```
@@ -100,18 +101,18 @@ Tao repo GitHub moi rieng tren GitHub, vi du:
 https://github.com/qhboypho/giapha-tran-xuan.git
 ```
 
-Copy `database_id` cua `giapha-tran-xuan-db` vao `wrangler.jsonc` o ca 2 dong:
+Copy UUID cua `giapha-tran-xuan-db` vao `database_id`, va UUID cua `giapha-tran-xuan-preview-db` vao `preview_database_id`:
 
 ```json
 "database_id": "PASTE_D1_DATABASE_ID_HERE",
-"preview_database_id": "PASTE_D1_DATABASE_ID_HERE"
+"preview_database_id": "PASTE_PREVIEW_D1_DATABASE_ID_HERE"
 ```
 
 Sau khi sua, vi du:
 
 ```json
 "database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1",
-"preview_database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1"
+"preview_database_id": "8f2a1111-2222-4333-8444-555555555555"
 ```
 
 Neu can xem lai UUID:
@@ -148,7 +149,9 @@ Apply migrations:
 
 ```powershell
 npx wrangler d1 migrations apply giapha-tran-xuan-db --local
+npx wrangler d1 migrations apply giapha-tran-xuan-preview-db --local
 npx wrangler d1 migrations apply giapha-tran-xuan-db --remote
+npx wrangler d1 migrations apply giapha-tran-xuan-preview-db --remote
 ```
 
 Tạo hoặc cập nhật admin trước khi chạy/deploy để truy cập trang là đăng nhập được ngay:
@@ -156,8 +159,10 @@ Tạo hoặc cập nhật admin trước khi chạy/deploy để truy cập tran
 ```powershell
 $env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-local"
 node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-db --local --migrate --yes
+node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-preview-db --local --migrate --yes
 $env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-prod"
 node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-db --remote --migrate --yes
+node scripts/admin-bootstrap.mjs --db=giapha-tran-xuan-preview-db --remote --migrate --yes
 Remove-Item Env:ADMIN_BOOTSTRAP_PASSWORD
 ```
 
@@ -222,6 +227,7 @@ Co the tao D1/R2 bang dashboard Cloudflare hoac Wrangler:
 
 ```powershell
 npx wrangler d1 create giapha-khach-a-db
+npx wrangler d1 create giapha-khach-a-preview-db
 npx wrangler r2 bucket create giapha-khach-a-media
 ```
 
@@ -245,7 +251,7 @@ Sua cac gia tri trong `wrangler.jsonc` theo tai nguyen cua khach:
       "binding": "DB",
       "database_name": "giapha-khach-a-db",
       "database_id": "D1_DATABASE_ID_CUA_KHACH",
-      "preview_database_id": "D1_DATABASE_ID_CUA_KHACH"
+      "preview_database_id": "D1_PREVIEW_DATABASE_ID_CUA_KHACH"
     }
   ],
   "r2_buckets": [

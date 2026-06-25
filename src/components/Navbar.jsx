@@ -135,7 +135,7 @@ export default function Navbar({
   const readNotificationSet = useMemo(() => new Set(readNotificationIds), [readNotificationIds]);
   const hasNotifications = notifications.length > 0;
   const navigationLabels = config.navigation;
-  const pageSearchItems = useMemo(() => buildPageSearchItems(config), [config]);
+  const pageSearchItems = buildPageSearchItems(config);
 
   useEffect(() => {
     if (!isUserMenuOpen) return undefined;
@@ -192,7 +192,7 @@ export default function Navbar({
     [members]
   );
 
-  const searchResults = useMemo(() => {
+  const searchResults = (() => {
     if (normalizedQuery.length < 2) {
       return { members: [], pages: [] };
     }
@@ -239,7 +239,7 @@ export default function Navbar({
     ));
 
     return { members: memberResults, pages: pageResults };
-  }, [memberById, members, normalizedQuery, pageSearchItems]);
+  })();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen((prev) => !prev);

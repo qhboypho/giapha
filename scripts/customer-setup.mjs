@@ -246,11 +246,11 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-function updateWranglerD1Id(targetDir, d1Id) {
+function updateWranglerD1Id(targetDir, d1Id, previewD1Id) {
   const wranglerPath = resolve(targetDir, "wrangler.jsonc");
   const config = readJson(wranglerPath);
   config.d1_databases = (config.d1_databases || []).map((db, index) => index === 0
-    ? { ...db, database_id: d1Id, preview_database_id: d1Id }
+    ? { ...db, database_id: d1Id, preview_database_id: previewD1Id || d1Id }
     : db);
   writeJson(wranglerPath, config);
 }
@@ -284,9 +284,11 @@ async function main() {
   ]);
 
   runCommand("npx", ["wrangler", "d1", "create", plan.provision.d1Name], { cwd: plan.targetDir });
+  runCommand("npx", ["wrangler", "d1", "create", plan.provision.previewD1Name], { cwd: plan.targetDir });
   const d1ListJson = captureCommand("npx", ["wrangler", "d1", "list", "--json"], { cwd: plan.targetDir });
   const d1Id = extractD1IdFromListJson(d1ListJson, plan.provision.d1Name);
-  updateWranglerD1Id(plan.targetDir, d1Id);
+  const previewD1Id = extractD1IdFromListJson(d1ListJson, plan.provision.previewD1Name);
+  updateWranglerD1Id(plan.targetDir, d1Id, previewD1Id);
 
   runCommand("node", [
     "scripts/provision-wizard.mjs",
@@ -299,6 +301,8 @@ async function main() {
     ...(plan.handoffReady ? ["--handoff-ready"] : []),
     "--d1-id",
     d1Id,
+    "--preview-d1-id",
+    previewD1Id,
     "--write-wrangler"
   ], { cwd: plan.targetDir });
 
@@ -312,7 +316,21 @@ async function main() {
       CI: process.env.CI || "1"
     }
   });
+  runCommand("npx", ["wrangler", "d1", "migrations", "apply", plan.provision.previewD1Name, "--remote"], {
+    cwd: plan.targetDir,
+    env: {
+      ...process.env,
+      CI: process.env.CI || "1"
+    }
+  });
   runCommand("node", ["scripts/admin-bootstrap.mjs", "--db", plan.provision.d1Name, "--remote", "--yes"], {
+    cwd: plan.targetDir,
+    env: {
+      ...process.env,
+      ADMIN_BOOTSTRAP_PASSWORD: plan.adminPassword
+    }
+  });
+  runCommand("node", ["scripts/admin-bootstrap.mjs", "--db", plan.provision.previewD1Name, "--remote", "--yes"], {
     cwd: plan.targetDir,
     env: {
       ...process.env,
@@ -331,6 +349,7 @@ async function main() {
   console.log(`- Folder: ${plan.targetDir}`);
   console.log(`- Project: ${plan.provision.projectName}`);
   console.log(`- D1: ${plan.provision.d1Name} (${d1Id})`);
+  console.log(`- Preview D1: ${plan.provision.previewD1Name} (${previewD1Id})`);
   console.log(`- R2: ${plan.provision.r2Name}`);
   console.log(`- Admin: admin`);
   console.log(`- Password: ${plan.adminPassword}`);

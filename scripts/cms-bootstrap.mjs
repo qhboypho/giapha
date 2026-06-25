@@ -123,7 +123,6 @@ function sqlNumber(value) {
 export function buildImportSql(packageData, admin = {}) {
   const statements = [
     "PRAGMA foreign_keys = OFF;",
-    "BEGIN TRANSACTION;",
     `INSERT INTO settings (key, value, updatedAt) VALUES ('site_config', ${sqlText(serializeSiteConfig(packageData.siteConfig))}, datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updatedAt=excluded.updatedAt;`,
     "DELETE FROM members;"
   ];
@@ -165,7 +164,6 @@ ON CONFLICT(username) DO UPDATE SET
     statements.push(`DELETE FROM sessions WHERE username = ${sqlText(admin.username)};`);
   }
 
-  statements.push("COMMIT;");
   statements.push("PRAGMA foreign_keys = ON;");
   return `${statements.join("\n\n")}\n`;
 }

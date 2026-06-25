@@ -27,6 +27,7 @@ assert.equal(plan.slug, "tran-xuan");
 assert.equal(plan.targetDir, resolve("..", "giapha-tran-xuan"));
 assert.equal(plan.provision.projectName, "giapha-tran-xuan");
 assert.equal(plan.provision.d1Name, "giapha-tran-xuan-db");
+assert.equal(plan.provision.previewD1Name, "giapha-tran-xuan-preview-db");
 assert.equal(plan.provision.r2Name, "giapha-tran-xuan-media");
 assert.equal(plan.provision.customerProject, true);
 assert.equal(plan.provision.setupWizard, false);

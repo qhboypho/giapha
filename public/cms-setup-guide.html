@@ -302,27 +302,32 @@ npm run customer:setup -- --family-name="Trần Công" --slug=tran-cong --admin-
           <li>Project local khách đã tạo bằng <code>create-customer</code>.</li>
           <li>Đã vào đúng folder project khách.</li>
           <li>Repo GitHub mới riêng, ví dụ <code>qhboypho/giapha-tran-cong</code>.</li>
-          <li>D1/R2 đã tạo và <code>wrangler.jsonc</code> đã thay cả <code>database_id</code> lẫn <code>preview_database_id</code>.</li>
+          <li>D1 production, D1 preview và R2 đã tạo; <code>wrangler.jsonc</code> đã thay <code>database_id</code> và <code>preview_database_id</code> bằng 2 UUID riêng.</li>
         </ul>
         <p>Chạy từ repo base để tạo project mới, provision, cài dependencies, ghi wrangler và commit local:</p>
         <pre><code>npm run create-customer -- --family-name="Trần Công" --slug=tran-cong --git-init --write-wrangler --install --force --commit-message="chore: init Tran Cong site"</code></pre>
         <p>Vào project mới và tạo tài nguyên Cloudflare:</p>
         <pre><code>cd ..\giapha-tran-cong
 npx wrangler d1 create giapha-tran-cong-db
+npx wrangler d1 create giapha-tran-cong-preview-db
 npx wrangler r2 bucket create giapha-tran-cong-media
 npx wrangler r2 bucket create giapha-tran-cong-media-preview</code></pre>
-        <p>Copy <code>database_id</code> vào <code>wrangler.jsonc</code>, rồi apply migrations:</p>
+        <p>Copy UUID production D1 vào <code>database_id</code>, UUID preview D1 vào <code>preview_database_id</code>, rồi apply migrations:</p>
         <pre><code>"database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1",
-"preview_database_id": "370c2d40-99fe-4124-aa8f-d87e236203f1"
+"preview_database_id": "8f2a1111-2222-4333-8444-555555555555"
 
 npx wrangler d1 list
 npx wrangler d1 migrations apply giapha-tran-cong-db --local
-npx wrangler d1 migrations apply giapha-tran-cong-db --remote</code></pre>
+npx wrangler d1 migrations apply giapha-tran-cong-preview-db --local
+npx wrangler d1 migrations apply giapha-tran-cong-db --remote
+npx wrangler d1 migrations apply giapha-tran-cong-preview-db --remote</code></pre>
         <p>Tạo hoặc cập nhật admin trước khi chạy/deploy để vào trang là đăng nhập được ngay:</p>
-        <pre><code>$env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-local"
+<pre><code>$env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-local"
 node scripts/admin-bootstrap.mjs --db=giapha-tran-cong-db --local --migrate --yes
+node scripts/admin-bootstrap.mjs --db=giapha-tran-cong-preview-db --local --migrate --yes
 $env:ADMIN_BOOTSTRAP_PASSWORD="mat-khau-admin-prod"
 node scripts/admin-bootstrap.mjs --db=giapha-tran-cong-db --remote --migrate --yes
+node scripts/admin-bootstrap.mjs --db=giapha-tran-cong-preview-db --remote --migrate --yes
 Remove-Item Env:ADMIN_BOOTSTRAP_PASSWORD</code></pre>
         <p class="note">Lệnh này hash mật khẩu đúng chuẩn, ghi user <code>admin</code> vào D1 và xóa session cũ nếu có.</p>
         <p>Sau khi <code>wrangler.jsonc</code> đã đúng, dùng script để commit và push lên repo GitHub riêng nếu có:</p>
@@ -354,6 +359,7 @@ git checkout -b customer/khach-a</code></pre>
           <li>R2 bucket, ví dụ <code>giapha-khach-a-media</code>.</li>
         </ul>
         <pre><code>npx wrangler d1 create giapha-khach-a-db
+npx wrangler d1 create giapha-khach-a-preview-db
 npx wrangler r2 bucket create giapha-khach-a-media</code></pre>
         <p>Nếu dùng AI nhận diện ảnh/PDF trong app, đặt secret mã hóa một lần cho Pages project:</p>
         <pre><code>npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a</code></pre>
@@ -370,7 +376,7 @@ npx wrangler r2 bucket create giapha-khach-a-media</code></pre>
       "binding": "DB",
       "database_name": "giapha-khach-a-db",
       "database_id": "D1_DATABASE_ID_CUA_KHACH",
-      "preview_database_id": "D1_DATABASE_ID_CUA_KHACH"
+      "preview_database_id": "D1_PREVIEW_DATABASE_ID_CUA_KHACH"
     }
   ],
   "r2_buckets": [

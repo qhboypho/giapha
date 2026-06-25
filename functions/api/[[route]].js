@@ -2,7 +2,7 @@
 import { Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
-import { verifyPassword, generateSecureToken, hashPassword } from '../helpers/auth';
+import { verifyPassword, generateSecureToken, hashPassword, passwordNeedsRehash } from '../helpers/auth';
 import {
   AI_CONFIG_SETTING_KEY,
   buildKeyPreview,
@@ -54,6 +54,12 @@ const ALLOWED_HISTORY_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/w
 const SITE_ASSET_MAX_BYTES = 4 * 1024 * 1024;
 const ALLOWED_SITE_ASSET_TYPES = ALLOWED_HISTORY_IMAGE_TYPES;
 const ACTIVE_VIEWER_WINDOW_SECONDS = 90;
+const LOGIN_RATE_LIMIT_WINDOW_SECONDS = 10 * 60;
+const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 10;
+const LOGIN_FAILURE_DELAY_MS = 220;
+const VIEWER_PRESENCE_MAX_ACTIVE_PER_IP = 20;
+const MAX_AVATAR_DATA_URI_LENGTH = 200 * 1024;
+const ALLOWED_AVATAR_DATA_URI_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const AI_IMPORT_MAX_FILES = 8;
 const AI_IMPORT_MAX_FILE_BYTES = 8 * 1024 * 1024;
 const AI_IMPORT_MAX_TOTAL_BYTES = 24 * 1024 * 1024;
@@ -71,6 +77,26 @@ const ALLOWED_AI_SOURCE_TYPES = new Set([
   'image/webp',
   'image/gif'
 ]);
+
+class PublicValidationError extends Error {
+  constructor(message, status = 400) {
+    super(message);
+    this.name = 'PublicValidationError';
+    this.status = status;
+    this.publicMessage = message;
+  }
+}
+
+app.use('*', async (c, next) => {
+  c.header('X-Frame-Options', 'DENY');
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  c.header(
+    'Content-Security-Policy',
+    "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; manifest-src 'self' data:"
+  );
+  await next();
+});
 
 function isAuthenticatedViewer(user) {
   return Boolean(user && user.role !== 'guest');
@@ -280,16 +306,69 @@ function normalizeViewerId(value = '') {
   return /^[a-zA-Z0-9_-]{16,80}$/.test(id) ? id : null;
 }
 
-async function ensureViewerPresenceTable(db) {
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS viewer_presence (
-      id TEXT PRIMARY KEY,
-      userAgent TEXT,
-      lastSeenAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-  await db.prepare("CREATE INDEX IF NOT EXISTS idx_viewer_presence_last_seen ON viewer_presence(lastSeenAt)").run();
+function getClientIp(c) {
+  return String(
+    c.req.header('cf-connecting-ip')
+      || c.req.header('x-forwarded-for')?.split(',')[0]
+      || c.req.header('x-real-ip')
+      || 'unknown'
+  ).trim().slice(0, 80) || 'unknown';
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function serverError(c, label, err, extra = {}) {
+  if (err?.publicMessage) {
+    return c.json({ success: false, ...extra, error: err.publicMessage }, err.status || 400);
+  }
+  console.error(`[${label}]`, err);
+  return c.json({ success: false, ...extra, error: 'Đã xảy ra lỗi hệ thống.' }, 500);
+}
+
+function inputError(c, label, err, message = 'Dữ liệu gửi lên chưa hợp lệ.') {
+  if (err?.publicMessage) {
+    return c.json({ success: false, error: err.publicMessage }, err.status || 400);
+  }
+  console.warn(`[${label}]`, err?.message || err);
+  return c.json({ success: false, error: message }, 400);
+}
+
+async function isLoginRateLimited(db, ipAddress, username) {
+  await db.prepare("DELETE FROM login_attempts WHERE attemptedAt < datetime('now', ?)").bind(`-${LOGIN_RATE_LIMIT_WINDOW_SECONDS} seconds`).run();
+  const row = await db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM login_attempts
+    WHERE attemptedAt >= datetime('now', ?)
+      AND (ipAddress = ? OR username = ?)
+  `).bind(`-${LOGIN_RATE_LIMIT_WINDOW_SECONDS} seconds`, ipAddress, username).first();
+  return Number(row?.count || 0) >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS;
+}
+
+async function recordFailedLogin(db, ipAddress, username) {
+  await db.prepare(
+    "INSERT INTO login_attempts (id, ipAddress, username, attemptedAt) VALUES (?, ?, ?, datetime('now'))"
+  ).bind(generateSecureToken(12), ipAddress, username).run();
+}
+
+async function clearLoginAttempts(db, ipAddress, username) {
+  await db.prepare("DELETE FROM login_attempts WHERE ipAddress = ? OR username = ?").bind(ipAddress, username).run();
+}
+
+function validateAvatarPayload(value) {
+  const avatar = String(value || '').trim();
+  if (!avatar) return null;
+  if (/^https?:\/\//i.test(avatar) || avatar.startsWith('/api/media/')) return avatar.slice(0, 800);
+
+  const match = avatar.match(/^data:([^;,]+);base64,([a-z0-9+/=\s]+)$/i);
+  if (!match || !ALLOWED_AVATAR_DATA_URI_TYPES.has(match[1].toLowerCase())) {
+    throw new PublicValidationError('Ảnh đại diện phải là ảnh JPEG, PNG, WEBP hoặc GIF hợp lệ.');
+  }
+  if (avatar.length > MAX_AVATAR_DATA_URI_LENGTH) {
+    throw new PublicValidationError('Ảnh đại diện quá lớn. Vui lòng dùng ảnh nhỏ hơn 150KB.');
+  }
+  return avatar;
 }
 
 async function countActiveViewers(db) {
@@ -884,27 +963,36 @@ async function deleteHistoryImagesFromBucket(c, images = []) {
 
 function buildEditorScopeIds(members, rootId) {
   if (!rootId) return null;
-  const memberById = new Map(members.map(member => [member.id, member]));
+  const memberById = new Map(members.map((member) => [member.id, member]));
   if (!memberById.has(rootId)) return new Set();
 
+  const relatedIdsByMemberId = new Map();
+  const addRelation = (fromId, toId) => {
+    if (!fromId || !toId) return;
+    if (!relatedIdsByMemberId.has(fromId)) {
+      relatedIdsByMemberId.set(fromId, new Set());
+    }
+    relatedIdsByMemberId.get(fromId).add(toId);
+  };
+
+  for (const member of members) {
+    addRelation(member.fatherId, member.id);
+    addRelation(member.motherId, member.id);
+    for (const spouseId of member.spouseIds || []) {
+      addRelation(member.id, spouseId);
+      addRelation(spouseId, member.id);
+    }
+  }
+
   const scopeIds = new Set([rootId]);
-  let changed = true;
+  const queue = [rootId];
 
-  while (changed) {
-    changed = false;
-
-    for (const member of members) {
-      const isChildOfScope = scopeIds.has(member.fatherId) || scopeIds.has(member.motherId);
-      const isSpouseOfScope = member.spouseIds?.some(spouseId => scopeIds.has(spouseId));
-      const hasSpouseInScope = Array.from(scopeIds).some(scopeId => {
-        const scopedMember = memberById.get(scopeId);
-        return scopedMember?.spouseIds?.includes(member.id);
-      });
-
-      if ((isChildOfScope || isSpouseOfScope || hasSpouseInScope) && !scopeIds.has(member.id)) {
-        scopeIds.add(member.id);
-        changed = true;
-      }
+  for (let index = 0; index < queue.length; index += 1) {
+    const currentId = queue[index];
+    for (const relatedId of relatedIdsByMemberId.get(currentId) || []) {
+      if (scopeIds.has(relatedId) || !memberById.has(relatedId)) continue;
+      scopeIds.add(relatedId);
+      queue.push(relatedId);
     }
   }
 
@@ -962,11 +1050,17 @@ async function getAuthenticatedUser(c) {
   if (!sessionId) return null;
 
   try {
+    const requestUserAgent = String(c.req.header('user-agent') || '').slice(0, 240);
     const session = await c.env.DB.prepare(
-      "SELECT s.username, s.role, u.fullName, u.editScopeRootId FROM sessions s JOIN users u ON s.username = u.username WHERE s.id = ? AND s.expiresAt > datetime('now') LIMIT 1"
+      "SELECT s.username, s.role, s.userAgent, u.fullName, u.editScopeRootId FROM sessions s JOIN users u ON s.username = u.username WHERE s.id = ? AND s.expiresAt > datetime('now') LIMIT 1"
     ).bind(sessionId).first();
 
     if (!session) return null;
+    if (session.userAgent && session.userAgent !== requestUserAgent) {
+      await c.env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
+      return null;
+    }
+
     return {
       username: session.username,
       role: session.role,
@@ -1022,30 +1116,51 @@ app.get('/auth/me', async (c) => {
 app.post('/auth/login', async (c) => {
   try {
     const { username, password } = await c.req.json();
+    const normalizedUsername = String(username || '').trim().toLowerCase();
+    const ipAddress = getClientIp(c);
     if (!username || !password) {
       return c.json({ success: false, error: 'Vui lòng cung cấp đầy đủ tên tài khoản và mật khẩu.' }, 400);
     }
 
+    if (await isLoginRateLimited(c.env.DB, ipAddress, normalizedUsername)) {
+      await sleep(LOGIN_FAILURE_DELAY_MS);
+      return c.json({ success: false, error: 'Bạn thử đăng nhập quá nhiều lần. Vui lòng chờ ít phút rồi thử lại.' }, 429);
+    }
+
     const user = await c.env.DB.prepare(
       "SELECT username, password, role, fullName, editScopeRootId FROM users WHERE username = ? LIMIT 1"
-    ).bind(username.trim().toLowerCase()).first();
+    ).bind(normalizedUsername).first();
 
     if (!user) {
+      await recordFailedLogin(c.env.DB, ipAddress, normalizedUsername);
+      await sleep(LOGIN_FAILURE_DELAY_MS);
       return c.json({ success: false, error: 'Tên đăng nhập hoặc mật khẩu không chính xác.' }, 401);
     }
 
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
+      await recordFailedLogin(c.env.DB, ipAddress, normalizedUsername);
+      await sleep(LOGIN_FAILURE_DELAY_MS);
       return c.json({ success: false, error: 'Tên đăng nhập hoặc mật khẩu không chính xác.' }, 401);
+    }
+
+    await clearLoginAttempts(c.env.DB, ipAddress, normalizedUsername);
+
+    if (passwordNeedsRehash(user.password)) {
+      const upgradedHash = await hashPassword(password);
+      await c.env.DB.prepare("UPDATE users SET password = ? WHERE username = ?")
+        .bind(upgradedHash, user.username)
+        .run();
     }
 
     // Create session
     const sessionId = generateSecureToken();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours from now
+    const userAgent = String(c.req.header('user-agent') || '').slice(0, 240);
 
     await c.env.DB.prepare(
-      "INSERT INTO sessions (id, username, role, expiresAt) VALUES (?, ?, ?, ?)"
-    ).bind(sessionId, user.username, user.role, expiresAt).run();
+      "INSERT INTO sessions (id, username, role, expiresAt, ipAddress, userAgent) VALUES (?, ?, ?, ?, ?, ?)"
+    ).bind(sessionId, user.username, user.role, expiresAt, ipAddress, userAgent).run();
 
     // Set cookie (Secure HTTP-Only)
     setCookie(c, 'session_id', sessionId, {
@@ -1066,7 +1181,8 @@ app.post('/auth/login', async (c) => {
       }
     });
   } catch (err) {
-    return c.json({ success: false, error: 'Đã xảy ra lỗi hệ thống: ' + err.message }, 500);
+    console.error('[auth/login]', err);
+    return c.json({ success: false, error: 'Đã xảy ra lỗi hệ thống.' }, 500);
   }
 });
 
@@ -1134,7 +1250,7 @@ app.post('/auth/change-password', async (c) => {
 
     return c.json({ success: true });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1145,7 +1261,7 @@ app.get('/settings', async (c) => {
     const siteConfig = await getSiteConfig(c.env.DB);
     return c.json({ success: true, privateMode: isPrivateMode, siteConfig });
   } catch (err) {
-    return c.json({ success: false, privateMode: true, siteConfig: parseSiteConfigValue(), error: err.message });
+    return serverError(c, 'settings/get', err, { privateMode: true, siteConfig: parseSiteConfigValue() });
   }
 });
 
@@ -1171,7 +1287,11 @@ app.post('/settings', async (c) => {
     }
 
     if (hasSiteConfig) {
-      nextSiteConfig = validateSiteConfigInput(payload.siteConfig);
+      try {
+        nextSiteConfig = validateSiteConfigInput(payload.siteConfig);
+      } catch (error) {
+        throw new PublicValidationError(error.message);
+      }
       await c.env.DB.prepare(
         "INSERT INTO settings (key, value, updatedAt) VALUES (?, ?, datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updatedAt=excluded.updatedAt"
       ).bind(SITE_CONFIG_SETTING_KEY, serializeSiteConfig(nextSiteConfig)).run();
@@ -1179,52 +1299,75 @@ app.post('/settings', async (c) => {
 
     return c.json({ success: true, privateMode: nextPrivateMode, siteConfig: nextSiteConfig });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
 // 6. POST /api/viewer-presence/heartbeat - Track active family tree viewers
 app.post('/viewer-presence/heartbeat', async (c) => {
   try {
+    const user = await getAuthenticatedUser(c);
+    const isPrivateMode = await getPrivateMode(c.env.DB);
+    if (isPrivateMode && !isAuthenticatedViewer(user)) {
+      return c.json({ success: false, error: 'Bạn cần đăng nhập để ghi nhận trạng thái truy cập.' }, 401);
+    }
+
     const payload = await c.req.json().catch(() => ({}));
     const viewerId = normalizeViewerId(payload.viewerId);
     if (!viewerId) {
       return c.json({ success: false, error: 'Viewer id không hợp lệ.' }, 400);
     }
 
-    await ensureViewerPresenceTable(c.env.DB);
+    const ipAddress = getClientIp(c);
     await c.env.DB.prepare("DELETE FROM viewer_presence WHERE lastSeenAt < datetime('now', '-1 day')").run();
+    const existingViewer = await c.env.DB.prepare("SELECT id FROM viewer_presence WHERE id = ? LIMIT 1").bind(viewerId).first();
+    if (!existingViewer) {
+      const activeForIp = await c.env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM viewer_presence WHERE ipAddress = ? AND lastSeenAt >= datetime('now', ?)"
+      ).bind(ipAddress, `-${ACTIVE_VIEWER_WINDOW_SECONDS} seconds`).first();
+      if (Number(activeForIp?.count || 0) >= VIEWER_PRESENCE_MAX_ACTIVE_PER_IP) {
+        return c.json({ success: false, error: 'Quá nhiều phiên truy cập từ cùng một mạng.' }, 429);
+      }
+    }
+
     await c.env.DB.prepare(`
-      INSERT INTO viewer_presence (id, userAgent, lastSeenAt, createdAt)
-      VALUES (?, ?, datetime('now'), datetime('now'))
+      INSERT INTO viewer_presence (id, userAgent, ipAddress, lastSeenAt, createdAt)
+      VALUES (?, ?, ?, datetime('now'), datetime('now'))
       ON CONFLICT(id) DO UPDATE SET
         userAgent = excluded.userAgent,
+        ipAddress = excluded.ipAddress,
         lastSeenAt = excluded.lastSeenAt
     `).bind(
       viewerId,
-      String(c.req.header('user-agent') || '').slice(0, 240)
+      String(c.req.header('user-agent') || '').slice(0, 240),
+      ipAddress
     ).run();
 
     return c.json({ success: true, activeViewers: await countActiveViewers(c.env.DB) });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
 // 7. POST /api/viewer-presence/leave - Remove a viewer when the page closes
 app.post('/viewer-presence/leave', async (c) => {
   try {
+    const user = await getAuthenticatedUser(c);
+    const isPrivateMode = await getPrivateMode(c.env.DB);
+    if (isPrivateMode && !isAuthenticatedViewer(user)) {
+      return c.json({ success: true, activeViewers: await countActiveViewers(c.env.DB) });
+    }
+
     const payload = await c.req.json().catch(() => ({}));
     const viewerId = normalizeViewerId(payload.viewerId);
     if (!viewerId) {
       return c.json({ success: false, error: 'Viewer id không hợp lệ.' }, 400);
     }
 
-    await ensureViewerPresenceTable(c.env.DB);
     await c.env.DB.prepare("DELETE FROM viewer_presence WHERE id = ?").bind(viewerId).run();
     return c.json({ success: true, activeViewers: await countActiveViewers(c.env.DB) });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1242,7 +1385,7 @@ app.get('/users', async (c) => {
 
     return c.json({ success: true, data: results });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1286,7 +1429,7 @@ app.post('/users', async (c) => {
 
     return c.json({ success: true, user: { username, role, fullName, editScopeRootId } });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1346,7 +1489,7 @@ app.put('/users/:username', async (c) => {
 
     return c.json({ success: true, user: { username, role, fullName, editScopeRootId } });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1385,7 +1528,7 @@ app.delete('/users/:username', async (c) => {
     await c.env.DB.prepare("DELETE FROM users WHERE username = ?").bind(username).run();
     return c.json({ success: true });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1418,7 +1561,7 @@ app.get('/members', async (c) => {
       editableScopeIds
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1433,6 +1576,7 @@ app.post('/members', async (c) => {
     const data = await c.req.json();
     const id = data.id || `member_${Date.now()}`;
     const members = await fetchFormattedMembers(c.env.DB);
+    const avatar = validateAvatarPayload(data.avatar);
 
     if (!canCreateMember(user, members, data)) {
       return c.json({ success: false, error: 'Tài khoản biên tập viên này chỉ được thêm thành viên trong chi được phân quyền.' }, 403);
@@ -1458,7 +1602,7 @@ app.post('/members', async (c) => {
       data.bio || '',
       data.phone || '',
       data.address || '',
-      data.avatar || null,
+      avatar,
       data.isFeatured ? 1 : 0,
       JSON.stringify(data.spouseIds || []),
       data.fatherId || null,
@@ -1470,7 +1614,7 @@ app.post('/members', async (c) => {
 
     return c.json({ success: true, id });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1487,6 +1631,7 @@ app.put('/members/:id', async (c) => {
     const data = await c.req.json();
     const members = await fetchFormattedMembers(c.env.DB);
     const oldMember = members.find(member => member.id === memberId);
+    const avatar = validateAvatarPayload(data.avatar);
 
     if (!canEditMember(user, members, memberId)) {
       return c.json({ success: false, error: 'Tài khoản biên tập viên này chỉ được sửa thành viên trong chi được phân quyền.' }, 403);
@@ -1518,7 +1663,7 @@ app.put('/members/:id', async (c) => {
       data.bio || '',
       data.phone || '',
       data.address || '',
-      data.avatar || null,
+      avatar,
       data.isFeatured ? 1 : 0,
       JSON.stringify(data.spouseIds || []),
       data.fatherId || null,
@@ -1531,7 +1676,7 @@ app.put('/members/:id', async (c) => {
 
     return c.json({ success: true, id: memberId });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1566,7 +1711,7 @@ app.delete('/members/:id', async (c) => {
 
     return c.json({ success: true, message: 'Đã xóa thành viên thành công.' });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1584,7 +1729,7 @@ app.get('/member-sync/export', async (c) => {
     });
     return jsonDownloadResponse(payload, buildMemberSyncFilename());
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1625,7 +1770,7 @@ app.get('/ai-config', async (c) => {
       })
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1669,7 +1814,7 @@ app.post('/ai-config', async (c) => {
       })
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 400);
+    return inputError(c, 'ai-config/save', err, 'Cấu hình AI chưa hợp lệ.');
   }
 });
 
@@ -1700,7 +1845,8 @@ app.post('/ai-config/test', async (c) => {
     await testAiProviderKey(provider, apiKey);
     return c.json({ success: true, message: 'Kết nối AI hợp lệ.' });
   } catch (err) {
-    return c.json({ success: false, error: err.message || 'Không kiểm tra được API key.' }, 400);
+    console.error('[ai-config/test]', err);
+    return c.json({ success: false, error: 'Không kiểm tra được API key.' }, 400);
   }
 });
 
@@ -1762,7 +1908,7 @@ app.post('/member-sync/ai-extract', async (c) => {
     });
   } catch (err) {
     console.error('AI member extraction error:', err);
-    return c.json({ success: false, error: err.message || 'Không thể nhận diện gia phả bằng AI.' }, 500);
+    return serverError(c, 'ai/import', err);
   }
 });
 
@@ -1787,7 +1933,7 @@ app.post('/member-sync/preview', async (c) => {
       preview
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 400);
+    return inputError(c, 'member-sync/preview', err, 'File đồng bộ chưa hợp lệ.');
   }
 });
 
@@ -1828,7 +1974,7 @@ app.post('/member-sync/import', async (c) => {
       preview
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1855,7 +2001,7 @@ app.get('/cms-package/export', async (c) => {
 
     return jsonDownloadResponse(payload, buildCmsPackageFilename());
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1883,7 +2029,7 @@ app.post('/cms-package/preview', async (c) => {
       preview
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 400);
+    return inputError(c, 'cms-package/preview', err, 'Gói CMS chưa hợp lệ.');
   }
 });
 
@@ -1931,7 +2077,7 @@ app.post('/cms-package/import', async (c) => {
       preview
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -1977,7 +2123,7 @@ app.get('/media-package/export', async (c) => {
 
     return jsonDownloadResponse(payload, buildMediaPackageFilename());
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -2001,7 +2147,7 @@ app.post('/media-package/preview', async (c) => {
       preview
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 400);
+    return inputError(c, 'media-package/preview', err, 'Gói media chưa hợp lệ.');
   }
 });
 
@@ -2043,7 +2189,7 @@ app.post('/media-package/import', async (c) => {
       preview
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -2061,7 +2207,7 @@ app.get('/history-events', async (c) => {
     const events = await fetchHistoryEvents(c.env.DB, includeHidden);
     return c.json({ success: true, data: events });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -2094,7 +2240,7 @@ app.get('/media/*', async (c) => {
     headers.set('cache-control', object.httpMetadata?.cacheControl || 'public, max-age=31536000, immutable');
     return new Response(object.body, { headers });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -2148,7 +2294,7 @@ app.post('/history-images', async (c) => {
       }
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -2211,7 +2357,7 @@ app.post('/site-assets', async (c) => {
       }
     });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -2248,7 +2394,7 @@ app.post('/history-events', async (c) => {
 
     return c.json({ success: true, id });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -2297,7 +2443,7 @@ app.put('/history-events/:id', async (c) => {
 
     return c.json({ success: true, id: eventId });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 
@@ -2312,11 +2458,15 @@ app.delete('/history-events/:id', async (c) => {
 
   try {
     const existing = await c.env.DB.prepare("SELECT imageUrls FROM family_history_events WHERE id = ? LIMIT 1").bind(eventId).first();
+    if (!existing) {
+      return c.json({ success: false, error: 'Không tìm thấy cột mốc lịch sử.' }, 404);
+    }
+
     await c.env.DB.prepare("DELETE FROM family_history_events WHERE id = ?").bind(eventId).run();
-    await deleteHistoryImagesFromBucket(c, parseJsonArray(existing?.imageUrls));
+    await deleteHistoryImagesFromBucket(c, parseJsonArray(existing.imageUrls));
     return c.json({ success: true });
   } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
+    return serverError(c, 'api', err);
   }
 });
 

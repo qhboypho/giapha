@@ -43,7 +43,7 @@ const sql = buildImportSql(packagePayload, {
   passwordHash: "pbkdf2:salt:hash"
 });
 
-assert.match(sql, /BEGIN TRANSACTION/);
+assert.doesNotMatch(sql, /BEGIN TRANSACTION|COMMIT/);
 assert.match(sql, /DELETE FROM members/);
 assert.match(sql, /DELETE FROM family_history_events/);
 assert.match(sql, /INSERT INTO users/);

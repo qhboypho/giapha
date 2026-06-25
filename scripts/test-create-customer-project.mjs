@@ -112,6 +112,8 @@ assert.match(seedSql, /Gia phả họ Trần Xuân/);
 assert.match(seedSql, /Cây gia phả mẫu/);
 assert.doesNotMatch(seedSql, /Trần Công Kỳ/);
 assert.doesNotMatch(seedSql, /Trần Thị Hiến/);
+assert.doesNotMatch(seedSql, /pbkdf2:/);
+assert.doesNotMatch(seedSql, /admin123|editor123|member123/);
 
 const featuredSql = readFileSync(resolve(sandbox, "migrations", "0003_featured_members.sql"), "utf8");
 assert.match(featuredSql, /sample_g1_1/);

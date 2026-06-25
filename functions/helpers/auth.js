@@ -1,7 +1,8 @@
 // functions/helpers/auth.js
 // Utility helpers for password hashing and safe string comparisons using Web Crypto API.
 
-const PBKDF2_ITERATIONS = 50000;
+export const PBKDF2_ITERATIONS = 210000;
+const LEGACY_PBKDF2_ITERATIONS = 50000;
 const PBKDF2_HASH = 'SHA-256';
 const PBKDF2_KEY_LENGTH = 256; // bits (32 bytes)
 
@@ -27,7 +28,7 @@ function fromHex(hex) {
   return new Uint8Array(matches.map(byte => parseInt(byte, 16)));
 }
 
-async function deriveKey(password, salt) {
+async function deriveKey(password, salt, iterations = PBKDF2_ITERATIONS) {
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(password),
@@ -36,7 +37,7 @@ async function deriveKey(password, salt) {
     ['deriveBits']
   );
   const derivedBits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: PBKDF2_HASH },
+    { name: 'PBKDF2', salt: salt, iterations, hash: PBKDF2_HASH },
     keyMaterial,
     PBKDF2_KEY_LENGTH
   );
@@ -46,7 +47,7 @@ async function deriveKey(password, salt) {
 export async function hashPassword(password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const hash = await deriveKey(password, salt);
-  return `pbkdf2:${toHex(salt)}:${hash}`;
+  return `pbkdf2:${PBKDF2_ITERATIONS}:${toHex(salt)}:${hash}`;
 }
 
 export async function verifyPassword(password, stored) {
@@ -56,11 +57,35 @@ export async function verifyPassword(password, stored) {
     return false;
   }
   const parts = stored.split(':');
-  if (parts.length !== 3) return false;
-  const salt = fromHex(parts[1]);
-  const expectedHash = parts[2];
-  const hash = await deriveKey(password, salt);
+  let iterations = LEGACY_PBKDF2_ITERATIONS;
+  let saltHex;
+  let expectedHash;
+
+  if (parts.length === 3) {
+    [, saltHex, expectedHash] = parts;
+  } else if (parts.length === 4) {
+    iterations = Number.parseInt(parts[1], 10);
+    [, , saltHex, expectedHash] = parts;
+  } else {
+    return false;
+  }
+
+  if (!Number.isFinite(iterations) || iterations < LEGACY_PBKDF2_ITERATIONS) {
+    return false;
+  }
+
+  const salt = fromHex(saltHex);
+  const hash = await deriveKey(password, salt, iterations);
   return timingSafeStringEqual(hash, expectedHash);
+}
+
+export function passwordNeedsRehash(stored) {
+  if (!stored?.startsWith('pbkdf2:')) return false;
+  const parts = stored.split(':');
+  if (parts.length === 3) return true;
+  if (parts.length !== 4) return false;
+  const iterations = Number.parseInt(parts[1], 10);
+  return !Number.isFinite(iterations) || iterations < PBKDF2_ITERATIONS;
 }
 
 export function generateSecureToken(length = 48) {
