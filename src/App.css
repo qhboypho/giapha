@@ -1051,6 +1051,84 @@
   text-transform: uppercase;
 }
 
+[data-theme="light"] .tree-canvas-wrapper {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(183, 128, 46, 0.13), transparent 30%),
+    linear-gradient(180deg, rgba(255, 251, 241, 0.96), rgba(248, 239, 222, 0.94)),
+    var(--theme-tree-background-image, none),
+    var(--bg-main);
+}
+
+[data-theme="light"] .tree-connector {
+  stroke: #9A8C78;
+  stroke-width: 2.2px;
+  opacity: 0.58;
+}
+
+[data-theme="light"] .tree-connector-spouse {
+  stroke: #B47A28;
+  opacity: 0.78;
+}
+
+[data-theme="light"] .member-card {
+  color: #24170F;
+  box-shadow: 0 10px 24px rgba(68, 45, 24, 0.12), 0 2px 6px rgba(68, 45, 24, 0.1);
+}
+
+[data-theme="light"] .member-card.nam {
+  background: linear-gradient(180deg, #EFF6F5, #DCEBE8);
+  border-color: #5D9A90;
+}
+
+[data-theme="light"] .member-card.nu {
+  background: linear-gradient(180deg, #FFF1F3, #F6DDE4);
+  border-color: #C86B85;
+}
+
+[data-theme="light"] .member-card.deceased {
+  background: linear-gradient(180deg, #F4EEE5, #E7D9C8);
+  border-color: #8E7459;
+  color: #2C2118;
+}
+
+[data-theme="light"] .member-card.spouse-card {
+  opacity: 0.9;
+}
+
+[data-theme="light"] .member-card.spouse-card:hover {
+  opacity: 1;
+}
+
+[data-theme="light"] .member-card.deceased.spouse-card {
+  background: linear-gradient(180deg, #EEE5DA, #DCCDBB);
+}
+
+[data-theme="light"] .card-name {
+  color: #20140D;
+  font-weight: 850;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+[data-theme="light"] .card-meta {
+  color: #5E4E41;
+  font-weight: 650;
+}
+
+[data-theme="light"] .card-gen {
+  color: #6C5847;
+  opacity: 0.78;
+}
+
+[data-theme="light"] .card-avatar {
+  border-color: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 2px 8px rgba(55, 38, 23, 0.18);
+}
+
+[data-theme="light"] .deceased-ribbon {
+  background: #4D3A2D;
+  border-color: #FFF7EA;
+}
+
 /* Control Panel for Tree (Zoom/Pan) */
 .zoom-controls {
   position: absolute;
