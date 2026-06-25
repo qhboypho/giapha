@@ -119,23 +119,6 @@ const updateSeoHead = (siteConfig) => {
   const seo = buildSeoMetadata(siteConfig, { origin: window.location.origin });
   const config = normalizeSiteConfig(siteConfig);
   const identity = config.appIdentity;
-  const manifest = {
-    name: config.siteTitle,
-    short_name: config.shortName,
-    icons: [
-      {
-        src: identity.appIconUrl,
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "any maskable"
-      }
-    ],
-    theme_color: identity.themeColor,
-    background_color: config.themeColors.appBackground,
-    display: "standalone",
-    scope: "/",
-    start_url: "/"
-  };
   document.title = seo.title;
   setMetaContent('meta[name="description"]', { name: "description" }, seo.description);
   setMetaContent('meta[name="keywords"]', { name: "keywords" }, seo.keywords);
@@ -171,7 +154,7 @@ const updateSeoHead = (siteConfig) => {
     const element = document.createElement("link");
     element.setAttribute("rel", "manifest");
     return element;
-  }, { href: `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}` });
+  }, { href: "/site.webmanifest" });
 };
 
 export default function App() {

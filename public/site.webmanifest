@@ -1,21 +1,46 @@
 {
-  "name": "Giapha TC",
-  "short_name": "Giapha TC",
+  "id": "/",
+  "name": "Gia Phả Họ Trần Công",
+  "short_name": "Trần Công",
+  "description": "Không gian lưu giữ gia phả, ngày giỗ, thành viên và ký ức gia đình họ Trần Công.",
+  "lang": "vi-VN",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
+  "theme_color": "#7a1819",
+  "background_color": "#1f130c",
+  "categories": ["family", "productivity", "utilities"],
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
-  "theme_color": "#7a1819",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "shortcuts": [
+    {
+      "name": "Cây gia phả",
+      "short_name": "Cây",
+      "description": "Mở nhanh sơ đồ cây gia phả.",
+      "url": "/?page=tree",
+      "icons": [{ "src": "/web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Lịch giỗ",
+      "short_name": "Lịch giỗ",
+      "description": "Xem lịch giỗ và ngày kỵ.",
+      "url": "/?page=anniversary",
+      "icons": [{ "src": "/web-app-manifest-192x192.png", "sizes": "192x192" }]
+    }
+  ]
 }
