@@ -69,6 +69,7 @@ const GEMINI_GENERATE_URL = 'https://generativelanguage.googleapis.com/v1beta/mo
 const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const CLAUDE_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
 const CLAUDE_MODELS_URL = 'https://api.anthropic.com/v1/models';
+const TURNSTILE_SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const CLAUDE_API_VERSION = '2023-06-01';
 const ALLOWED_AI_SOURCE_TYPES = new Set([
   'application/pdf',
@@ -93,7 +94,7 @@ app.use('*', async (c, next) => {
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   c.header(
     'Content-Security-Policy',
-    "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; manifest-src 'self' data:; worker-src 'self'"
+    "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self' https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; manifest-src 'self' data:; worker-src 'self'"
   );
   await next();
 });
@@ -354,6 +355,49 @@ async function recordFailedLogin(db, ipAddress, username) {
 
 async function clearLoginAttempts(db, ipAddress, username) {
   await db.prepare("DELETE FROM login_attempts WHERE ipAddress = ? OR username = ?").bind(ipAddress, username).run();
+}
+
+async function verifyTurnstileIfEnabled(c, siteConfig, token, ipAddress) {
+  const security = parseSiteConfigValue(siteConfig).security;
+  if (!security.turnstileEnabled) {
+    return { ok: true };
+  }
+
+  if (!security.turnstileSiteKey) {
+    return { ok: false, status: 503, error: 'Turnstile chưa được cấu hình Site Key.' };
+  }
+
+  const secret = String(c.env.TURNSTILE_SECRET_KEY || '').trim();
+  if (!secret) {
+    return { ok: false, status: 503, error: 'Turnstile chưa được cấu hình Secret Key trên máy chủ.' };
+  }
+
+  const responseToken = String(token || '').trim();
+  if (!responseToken) {
+    return { ok: false, status: 400, error: 'Vui lòng hoàn tất xác minh bảo mật.' };
+  }
+
+  try {
+    const response = await fetch(TURNSTILE_SITEVERIFY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret,
+        response: responseToken,
+        remoteip: ipAddress,
+        idempotency_key: crypto.randomUUID()
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok && result.success) {
+      return { ok: true };
+    }
+    console.warn('[turnstile]', result['error-codes'] || result);
+    return { ok: false, status: 400, error: 'Xác minh Turnstile không hợp lệ. Vui lòng thử lại.' };
+  } catch (err) {
+    console.error('[turnstile]', err);
+    return { ok: false, status: 503, error: 'Không thể xác minh Turnstile. Vui lòng thử lại sau.' };
+  }
 }
 
 function validateAvatarPayload(value) {
@@ -1115,7 +1159,7 @@ app.get('/auth/me', async (c) => {
 // 2. POST /api/auth/login - Authenticate credentials and establish session
 app.post('/auth/login', async (c) => {
   try {
-    const { username, password } = await c.req.json();
+    const { username, password, turnstileToken } = await c.req.json();
     const normalizedUsername = String(username || '').trim().toLowerCase();
     const ipAddress = getClientIp(c);
     if (!username || !password) {
@@ -1125,6 +1169,14 @@ app.post('/auth/login', async (c) => {
     if (await isLoginRateLimited(c.env.DB, ipAddress, normalizedUsername)) {
       await sleep(LOGIN_FAILURE_DELAY_MS);
       return c.json({ success: false, error: 'Bạn thử đăng nhập quá nhiều lần. Vui lòng chờ ít phút rồi thử lại.' }, 429);
+    }
+
+    const siteConfig = await getSiteConfig(c.env.DB);
+    const turnstileResult = await verifyTurnstileIfEnabled(c, siteConfig, turnstileToken, ipAddress);
+    if (!turnstileResult.ok) {
+      await recordFailedLogin(c.env.DB, ipAddress, normalizedUsername);
+      await sleep(LOGIN_FAILURE_DELAY_MS);
+      return c.json({ success: false, error: turnstileResult.error }, turnstileResult.status);
     }
 
     const user = await c.env.DB.prepare(

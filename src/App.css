@@ -2875,6 +2875,19 @@
   color: var(--text-secondary);
 }
 
+.turnstile-login-field {
+  align-items: stretch;
+}
+
+.turnstile-widget {
+  min-height: 65px;
+  overflow: hidden;
+}
+
+.turnstile-widget iframe {
+  max-width: 100%;
+}
+
 .form-input, .form-select, .form-textarea {
   width: 100%;
   max-width: 100%;

@@ -114,6 +114,12 @@ export const DEFAULT_SITE_CONFIG = {
     maskBirthPlace: true,
     maskRestingPlace: true
   },
+  security: {
+    turnstileEnabled: false,
+    turnstileSiteKey: "",
+    turnstileTheme: "auto",
+    turnstileSize: "normal"
+  },
   navigation: {
     treeLabel: "Cây gia phả",
     generationsLabel: "Các đời",
@@ -190,6 +196,7 @@ export const SITE_CONTACT_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.contact);
 export const SITE_HOMEPAGE_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.homepage);
 export const SITE_NOTIFICATION_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.notifications);
 export const SITE_PRIVACY_DISPLAY_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.privacyDisplay);
+export const SITE_SECURITY_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.security);
 export const SITE_NAVIGATION_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.navigation);
 export const SITE_ANNIVERSARY_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.anniversary);
 export const SITE_MEMBER_FIELD_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.memberFields);
@@ -206,6 +213,7 @@ export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field
     "homepage",
     "notifications",
     "privacyDisplay",
+    "security",
     "navigation",
     "anniversary",
     "memberFields",
@@ -288,6 +296,12 @@ const ABOUT_PAGE_TEXT_LIMITS = {
   imageUrl: 800,
   showContact: 10
 };
+const SECURITY_TEXT_LIMITS = {
+  turnstileEnabled: 10,
+  turnstileSiteKey: 200,
+  turnstileTheme: 20,
+  turnstileSize: 20
+};
 
 const normalizeString = (value, fallback = "", maxLength = 300) => {
   const text = String(value ?? "").trim();
@@ -315,6 +329,7 @@ export function normalizeSiteConfig(config = {}) {
   normalized.homepage = normalizeHomepageConfig(config.homepage);
   normalized.notifications = normalizeNotificationConfig(config.notifications);
   normalized.privacyDisplay = normalizePrivacyDisplayConfig(config.privacyDisplay);
+  normalized.security = normalizeSecurityConfig(config.security);
   normalized.navigation = normalizeNavigationConfig(config.navigation);
   normalized.anniversary = normalizeAnniversaryConfig(config.anniversary);
   normalized.memberFields = normalizeMemberFieldsConfig(config.memberFields);
@@ -439,6 +454,35 @@ export function normalizePrivacyDisplayConfig(privacy = {}) {
     acc[field] = source[field] !== false;
     return acc;
   }, {});
+}
+
+export function normalizeSecurityConfig(security = {}) {
+  const source = security && typeof security === "object" ? security : {};
+  const theme = normalizeString(
+    source.turnstileTheme,
+    DEFAULT_SITE_CONFIG.security.turnstileTheme,
+    SECURITY_TEXT_LIMITS.turnstileTheme
+  );
+  const size = normalizeString(
+    source.turnstileSize,
+    DEFAULT_SITE_CONFIG.security.turnstileSize,
+    SECURITY_TEXT_LIMITS.turnstileSize
+  );
+
+  return {
+    turnstileEnabled: Boolean(source.turnstileEnabled),
+    turnstileSiteKey: normalizeString(
+      source.turnstileSiteKey,
+      DEFAULT_SITE_CONFIG.security.turnstileSiteKey,
+      SECURITY_TEXT_LIMITS.turnstileSiteKey
+    ),
+    turnstileTheme: ["auto", "light", "dark"].includes(theme)
+      ? theme
+      : DEFAULT_SITE_CONFIG.security.turnstileTheme,
+    turnstileSize: ["normal", "compact", "flexible"].includes(size)
+      ? size
+      : DEFAULT_SITE_CONFIG.security.turnstileSize
+  };
 }
 
 export function normalizeNavigationConfig(navigation = {}) {
@@ -618,6 +662,14 @@ export function validateSiteConfigInput(config = {}) {
   const normalizedAboutImage = normalized.aboutPage.imageUrl;
   if (rawAboutImage && String(rawAboutImage).trim() && !normalizedAboutImage) {
     throw new Error("Ảnh trang giới thiệu phải là đường dẫn nội bộ, URL http/https hoặc data image.");
+  }
+
+  const rawTurnstileSiteKey = String(config.security?.turnstileSiteKey || "").trim();
+  if (normalized.security.turnstileEnabled && !normalized.security.turnstileSiteKey) {
+    throw new Error("Cần nhập Turnstile Site Key khi bật bảo vệ đăng nhập.");
+  }
+  if (rawTurnstileSiteKey && !/^[0-9A-Za-z_-]{8,200}$/.test(rawTurnstileSiteKey)) {
+    throw new Error("Turnstile Site Key không hợp lệ.");
   }
 
   return normalized;

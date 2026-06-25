@@ -484,7 +484,28 @@ npx wrangler pages deploy ./dist --project-name ${plan.projectName}
 
 Sau khi deploy, admin có thể nhập API key OpenAI/Gemini/Claude trong app.
 
-## 10. Import CMS package nếu có
+## 10. Cấu hình Turnstile đăng nhập nếu muốn bật
+
+Mặc định project mới tắt Turnstile để không khóa login khi chưa có key. Khi muốn bật:
+
+1. Tạo Turnstile widget trong Cloudflare cho domain Pages/custom domain của khách.
+2. Vào Setup Wizard > Bảo mật và AI, bật Turnstile và nhập Site Key.
+3. Set Secret Key cho Pages project:
+
+\`\`\`powershell
+npx wrangler pages secret put TURNSTILE_SECRET_KEY --project-name ${plan.projectName}
+\`\`\`
+
+Sau khi set secret, deploy lại để Pages Function nhận biến mới:
+
+\`\`\`powershell
+npm run build
+npx wrangler pages deploy ./dist --project-name ${plan.projectName}
+\`\`\`
+
+Nếu bật Turnstile mà thiếu Secret Key, hệ thống sẽ chặn đăng nhập thay vì bỏ qua bảo vệ.
+
+## 11. Import CMS package nếu có
 
 Dry-run:
 
@@ -504,7 +525,7 @@ Import production:
 node scripts/cms-bootstrap.mjs --package=${cmsPackageLine} --remote --migrate --admin-password="doi-mat-khau-prod" --yes
 \`\`\`
 
-${setupSection}
+${setupSection.replaceAll("## 11.", "## 12.")}
 `;
 }
 

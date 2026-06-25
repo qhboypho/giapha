@@ -69,6 +69,12 @@ const themedConfig = normalizeSiteConfig({
     anniversaryDaysAhead: 45,
     maxVisible: 5
   },
+  security: {
+    turnstileEnabled: true,
+    turnstileSiteKey: "0x4AAAA_test_site_key",
+    turnstileTheme: "dark",
+    turnstileSize: "compact"
+  },
   navigation: {
     treeLabel: "Phả đồ",
     aboutLabel: "Về dòng họ"
@@ -115,6 +121,10 @@ assert.equal(themedConfig.homepage.anniversaryWindowDays, 45);
 assert.equal(themedConfig.notifications.enablePresence, false);
 assert.equal(themedConfig.notifications.anniversaryDaysAhead, 45);
 assert.equal(themedConfig.notifications.maxVisible, 5);
+assert.equal(themedConfig.security.turnstileEnabled, true);
+assert.equal(themedConfig.security.turnstileSiteKey, "0x4AAAA_test_site_key");
+assert.equal(themedConfig.security.turnstileTheme, "dark");
+assert.equal(themedConfig.security.turnstileSize, "compact");
 assert.equal(themedConfig.navigation.treeLabel, "Phả đồ");
 assert.equal(themedConfig.navigation.aboutLabel, "Về dòng họ");
 assert.equal(themedConfig.anniversary.calendarMode, "solar");
@@ -207,6 +217,22 @@ assert.throws(
     aboutPage: { ...DEFAULT_SITE_CONFIG.aboutPage, imageUrl: "javascript:alert(1)" }
   }),
   /Ảnh trang giới thiệu/
+);
+
+assert.throws(
+  () => validateSiteConfigInput({
+    ...DEFAULT_SITE_CONFIG,
+    security: { ...DEFAULT_SITE_CONFIG.security, turnstileEnabled: true }
+  }),
+  /Turnstile Site Key/
+);
+
+assert.throws(
+  () => validateSiteConfigInput({
+    ...DEFAULT_SITE_CONFIG,
+    security: { ...DEFAULT_SITE_CONFIG.security, turnstileSiteKey: "site key co dau cach" }
+  }),
+  /Turnstile Site Key không hợp lệ/
 );
 
 console.log("site config utils tests passed");

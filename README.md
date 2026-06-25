@@ -108,6 +108,20 @@ npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a
 
 `AI_CONFIG_SECRET` nên là chuỗi ngẫu nhiên dài ít nhất 24 ký tự. Sau khi có secret này, quản trị viên có thể vào `Cấu hình AI` trong app để chọn OpenAI/Gemini/Claude, nhập API key provider và lưu mã hóa trong D1. Nếu muốn dùng fallback cũ cho OpenAI, vẫn có thể set thêm `OPENAI_API_KEY`.
 
+### Turnstile bảo vệ đăng nhập
+
+Mặc định Turnstile tắt để project clone mới không bị khóa đăng nhập khi chưa có key. Khi muốn bật:
+
+1. Tạo Cloudflare Turnstile widget cho domain của site.
+2. Vào `Setup Wizard` > `Bảo mật và AI`, bật Turnstile và nhập `Site Key`.
+3. Set `Secret Key` bằng Pages secret:
+
+```powershell
+npx wrangler pages secret put TURNSTILE_SECRET_KEY --project-name giapha-khach-a
+```
+
+Sau đó deploy lại. Nếu bật Turnstile mà thiếu `TURNSTILE_SECRET_KEY`, backend sẽ chặn đăng nhập để tránh bypass bảo vệ.
+
 ## Provision Wizard Cho Khách Mới
 
 ### Cách nhanh nhất: One-command setup

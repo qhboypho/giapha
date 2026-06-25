@@ -24,7 +24,7 @@ export const SETUP_WIZARD_STEPS = [
   {
     id: "security",
     title: "Bảo mật và AI",
-    description: "Chế độ riêng tư và API key AI nếu muốn nhập liệu từ ảnh/PDF."
+    description: "Chế độ riêng tư, Turnstile đăng nhập và API key AI nếu muốn nhập liệu từ ảnh/PDF."
   },
   {
     id: "data",

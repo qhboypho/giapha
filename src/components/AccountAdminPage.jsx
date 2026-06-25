@@ -15,6 +15,7 @@ import {
   SITE_NAVIGATION_FIELDS,
   SITE_NOTIFICATION_FIELDS,
   SITE_SAMPLE_DATA_FIELDS,
+  SITE_SECURITY_FIELDS,
   SITE_THEME_BACKGROUND_FIELDS,
   SITE_THEME_COLOR_FIELDS,
   SITE_SEO_FIELDS,
@@ -120,6 +121,12 @@ const NOTIFICATION_FIELD_LABELS = {
   enablePresence: "Thông báo người đang xem",
   maxVisible: "Số thông báo tối đa"
 };
+const SECURITY_FIELD_LABELS = {
+  turnstileEnabled: "Bật Turnstile cho đăng nhập",
+  turnstileSiteKey: "Turnstile Site Key",
+  turnstileTheme: "Giao diện widget",
+  turnstileSize: "Kích thước widget"
+};
 const NAVIGATION_FIELD_LABELS = {
   treeLabel: "Menu cây gia phả",
   generationsLabel: "Menu các đời",
@@ -183,6 +190,7 @@ const SYSTEM_BOOLEAN_FIELDS = new Set([
   "enableFeatured",
   "enablePrivacy",
   "enablePresence",
+  "turnstileEnabled",
   ...ANNIVERSARY_BOOLEAN_FIELDS,
   ...SITE_MEMBER_FIELD_FIELDS,
   ...ABOUT_BOOLEAN_FIELDS
@@ -2088,6 +2096,83 @@ export default function AccountAdminPage({
                   </button>
                 </div>
               </div>
+
+              <form className="setup-ai-form" onSubmit={handleSiteConfigSubmit}>
+                <div className="theme-section-title">
+                  <strong>Cloudflare Turnstile</strong>
+                  <span>Bảo vệ form đăng nhập khỏi bot. Site Key lưu trong app, Secret Key phải đặt bằng Cloudflare Pages secret <code>TURNSTILE_SECRET_KEY</code>.</span>
+                </div>
+                <div className="ai-config-grid">
+                  {SITE_SECURITY_FIELDS.map((field) => {
+                    if (field === "turnstileEnabled") {
+                      return (
+                        <label className="system-toggle-field ai-config-wide" key={field}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(siteConfigForm.security?.[field])}
+                            onChange={(event) => handleNestedSiteConfigChange("security", field, event.target.checked)}
+                          />
+                          <span>{SECURITY_FIELD_LABELS[field]}</span>
+                        </label>
+                      );
+                    }
+                    if (field === "turnstileTheme") {
+                      return (
+                        <label key={field}>
+                          {SECURITY_FIELD_LABELS[field]}
+                          <select
+                            className="form-input"
+                            value={siteConfigForm.security?.[field] || DEFAULT_SITE_CONFIG.security[field]}
+                            onChange={(event) => handleNestedSiteConfigChange("security", field, event.target.value)}
+                          >
+                            <option value="auto">Tự động</option>
+                            <option value="light">Sáng</option>
+                            <option value="dark">Tối</option>
+                          </select>
+                        </label>
+                      );
+                    }
+                    if (field === "turnstileSize") {
+                      return (
+                        <label key={field}>
+                          {SECURITY_FIELD_LABELS[field]}
+                          <select
+                            className="form-input"
+                            value={siteConfigForm.security?.[field] || DEFAULT_SITE_CONFIG.security[field]}
+                            onChange={(event) => handleNestedSiteConfigChange("security", field, event.target.value)}
+                          >
+                            <option value="normal">Normal</option>
+                            <option value="compact">Compact</option>
+                            <option value="flexible">Flexible</option>
+                          </select>
+                        </label>
+                      );
+                    }
+                    return (
+                      <label className="ai-config-wide" key={field}>
+                        {SECURITY_FIELD_LABELS[field]}
+                        <input
+                          className="form-input"
+                          value={siteConfigForm.security?.[field] || ""}
+                          onChange={(event) => handleNestedSiteConfigChange("security", field, event.target.value)}
+                          placeholder="0x4AAAA..."
+                          autoComplete="off"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+                {siteConfigForm.security?.turnstileEnabled && (
+                  <div className="ai-config-warning">
+                    Sau khi lưu Site Key, cần set secret production: <strong>npx wrangler pages secret put TURNSTILE_SECRET_KEY --project-name ...</strong>. Nếu thiếu secret, hệ thống sẽ chặn đăng nhập để tránh mở lỗ bảo mật.
+                  </div>
+                )}
+                <div className="account-form-actions">
+                  <button className="btn btn-primary" type="submit" disabled={saving}>
+                    {saving ? "Đang lưu..." : "Lưu bảo vệ đăng nhập"}
+                  </button>
+                </div>
+              </form>
 
               <form className="setup-ai-form" onSubmit={handleAiConfigSubmit}>
                 {aiConfig && !aiConfig.encryptionReady && (
