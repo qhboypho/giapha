@@ -18,11 +18,7 @@
   z-index: 1200;
   position: relative;
   overflow: visible;
-  background:
-    radial-gradient(circle at 28% 110%, rgba(241, 192, 91, 0.26), transparent 17%),
-    radial-gradient(circle at 70% -20%, rgba(241, 192, 91, 0.18), transparent 15%),
-    linear-gradient(45deg, rgba(255, 225, 142, 0.045) 25%, transparent 25% 50%, rgba(255, 225, 142, 0.045) 50% 75%, transparent 75%) 0 0 / 26px 26px,
-    var(--bg-nav, linear-gradient(180deg, #9c130f, #690604)) !important;
+  background: var(--theme-navbar-background, var(--bg-nav, linear-gradient(180deg, #9c130f, #690604))) !important;
   border-bottom: 2px solid var(--color-brand-accent);
   color: #FFF8EF;
   box-shadow: 0 7px 18px rgba(68, 18, 4, 0.24);
@@ -42,7 +38,7 @@
     linear-gradient(#e9c36e, #e9c36e) right 10px top 8px / 2px 48px no-repeat,
     linear-gradient(#e9c36e, #e9c36e) left 10px bottom 8px / 42px 2px no-repeat,
     linear-gradient(#e9c36e, #e9c36e) right 10px bottom 8px / 42px 2px no-repeat;
-  opacity: 0.24;
+  opacity: var(--theme-navbar-ornament-opacity, 0.24);
   mix-blend-mode: screen;
 }
 
@@ -4187,6 +4183,39 @@
   gap: 12px;
 }
 
+.navbar-pattern-config {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.navbar-range-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 8px;
+  align-items: center;
+}
+
+.navbar-range-control input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-brand-accent);
+}
+
+.navbar-pattern-preview {
+  grid-column: 1 / -1;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(215, 169, 77, 0.34);
+  border-radius: var(--radius-md);
+  background: var(--theme-navbar-background, var(--bg-nav));
+  box-shadow: inset 0 -1px 0 rgba(255, 222, 141, 0.26);
+  color: #fff8ef;
+  font-weight: 900;
+  overflow: hidden;
+}
+
 .seo-config-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -5439,6 +5468,7 @@
   .setup-review-grid,
   .theme-color-grid,
   .theme-background-grid,
+  .navbar-pattern-config,
   .seo-config-grid,
   .system-config-grid,
   .member-sync-stats,

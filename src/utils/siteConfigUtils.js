@@ -52,6 +52,12 @@ export const DEFAULT_SITE_CONFIG = {
     selectedRing: "#B64235",
     searchHighlight: "#D6A85A"
   },
+  navbarBackground: {
+    pattern: "diagonal",
+    patternOpacity: 45,
+    glowOpacity: 22,
+    ornamentOpacity: 24
+  },
   seo: {
     title: "",
     description: "",
@@ -190,6 +196,7 @@ const SITE_CONFIG_TEXT_LIMITS = {
 export const SITE_THEME_COLOR_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeColors);
 export const SITE_THEME_BACKGROUND_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.themeBackgrounds);
 export const SITE_TREE_THEME_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.treeTheme);
+export const SITE_NAVBAR_BACKGROUND_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.navbarBackground);
 export const SITE_SEO_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.seo);
 export const SITE_APP_IDENTITY_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.appIdentity);
 export const SITE_CONTACT_FIELDS = Object.keys(DEFAULT_SITE_CONFIG.contact);
@@ -207,6 +214,7 @@ export const SITE_CONFIG_FIELDS = Object.keys(DEFAULT_SITE_CONFIG).filter((field
     "themeColors",
     "themeBackgrounds",
     "treeTheme",
+    "navbarBackground",
     "seo",
     "appIdentity",
     "contact",
@@ -296,6 +304,7 @@ const ABOUT_PAGE_TEXT_LIMITS = {
   imageUrl: 800,
   showContact: 10
 };
+const NAVBAR_BACKGROUND_PATTERNS = new Set(["none", "diagonal", "fineDiagonal", "dots", "grid", "silk"]);
 const SECURITY_TEXT_LIMITS = {
   turnstileEnabled: 10,
   turnstileSiteKey: 200,
@@ -323,6 +332,7 @@ export function normalizeSiteConfig(config = {}) {
   normalized.themeColors = normalizeThemeColors(config.themeColors);
   normalized.themeBackgrounds = normalizeThemeBackgrounds(config.themeBackgrounds);
   normalized.treeTheme = normalizeTreeTheme(config.treeTheme);
+  normalized.navbarBackground = normalizeNavbarBackgroundConfig(config.navbarBackground);
   normalized.seo = normalizeSeoConfig(config.seo);
   normalized.appIdentity = normalizeAppIdentity(config.appIdentity);
   normalized.contact = normalizeContactConfig(config.contact);
@@ -366,6 +376,17 @@ export function normalizeTreeTheme(colors = {}) {
       : DEFAULT_SITE_CONFIG.treeTheme[field];
     return acc;
   }, {});
+}
+
+export function normalizeNavbarBackgroundConfig(navbarBackground = {}) {
+  const source = navbarBackground && typeof navbarBackground === "object" ? navbarBackground : {};
+  const pattern = normalizeString(source.pattern, DEFAULT_SITE_CONFIG.navbarBackground.pattern, 40);
+  return {
+    pattern: NAVBAR_BACKGROUND_PATTERNS.has(pattern) ? pattern : DEFAULT_SITE_CONFIG.navbarBackground.pattern,
+    patternOpacity: clampNumber(source.patternOpacity, DEFAULT_SITE_CONFIG.navbarBackground.patternOpacity, 0, 100),
+    glowOpacity: clampNumber(source.glowOpacity, DEFAULT_SITE_CONFIG.navbarBackground.glowOpacity, 0, 100),
+    ornamentOpacity: clampNumber(source.ornamentOpacity, DEFAULT_SITE_CONFIG.navbarBackground.ornamentOpacity, 0, 100)
+  };
 }
 
 export function normalizeSeoConfig(seo = {}) {
@@ -579,6 +600,62 @@ function clampNumber(value, fallback, min, max) {
   return Math.min(max, Math.max(min, number));
 }
 
+function formatOpacity(value) {
+  return (clampNumber(value, 0, 0, 100) / 100).toFixed(2);
+}
+
+function rgbaFromHex(hex, opacity = 1) {
+  const normalized = HEX_COLOR_PATTERN.test(hex) ? hex.slice(1) : "ffffff";
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+}
+
+function buildNavbarBackgroundLayer(colors, navbarBackground) {
+  const base = `linear-gradient(180deg, ${colors.navbarTop}, ${colors.navbarBottom})`;
+  const patternOpacity = Number(formatOpacity(navbarBackground.patternOpacity));
+  const glowOpacity = Number(formatOpacity(navbarBackground.glowOpacity));
+  const accent = rgbaFromHex(colors.accent, patternOpacity);
+  const accentSoft = rgbaFromHex(colors.accent, Math.max(0, patternOpacity * 0.65));
+  const glow = rgbaFromHex(colors.accent, glowOpacity);
+  const glowSoft = rgbaFromHex(colors.accent, Math.max(0, glowOpacity * 0.7));
+
+  const glowLayers = glowOpacity > 0
+    ? [
+      `radial-gradient(circle at 28% 110%, ${glow}, transparent 17%)`,
+      `radial-gradient(circle at 70% -20%, ${glowSoft}, transparent 15%)`
+    ]
+    : [];
+
+  const patternLayers = {
+    none: [],
+    diagonal: [
+      `linear-gradient(45deg, ${accent} 25%, transparent 25% 50%, ${accent} 50% 75%, transparent 75%) 0 0 / 26px 26px`
+    ],
+    fineDiagonal: [
+      `repeating-linear-gradient(45deg, ${accent} 0 2px, transparent 2px 12px)`
+    ],
+    dots: [
+      `radial-gradient(circle, ${accent} 0 1.5px, transparent 2.5px) 0 0 / 22px 22px`
+    ],
+    grid: [
+      `linear-gradient(${accentSoft} 1px, transparent 1px) 0 0 / 26px 26px`,
+      `linear-gradient(90deg, ${accentSoft} 1px, transparent 1px) 0 0 / 26px 26px`
+    ],
+    silk: [
+      `linear-gradient(115deg, transparent 0 18%, ${accentSoft} 18% 19%, transparent 19% 42%, ${accent} 42% 43%, transparent 43% 100%) 0 0 / 90px 90px`,
+      `radial-gradient(ellipse at 50% -20%, ${glowSoft}, transparent 42%)`
+    ]
+  };
+
+  return [
+    ...glowLayers,
+    ...(patternLayers[navbarBackground.pattern] || patternLayers.diagonal),
+    base
+  ].join(", ");
+}
+
 export function parseSiteConfigValue(value) {
   if (!value) return DEFAULT_SITE_CONFIG;
 
@@ -680,6 +757,7 @@ export function buildThemeCssVariables(config = {}) {
   const colors = normalized.themeColors;
   const backgrounds = normalized.themeBackgrounds;
   const tree = normalized.treeTheme;
+  const navbarBackground = normalized.navbarBackground;
   const appBackgroundLayer = buildCssImageLayer(backgrounds.app);
   return {
     "--color-brand-primary": colors.primary,
@@ -701,6 +779,8 @@ export function buildThemeCssVariables(config = {}) {
     "--cms-text-muted": colors.textMuted,
     "--cms-bg-input": colors.appBackground,
     "--bg-nav": `linear-gradient(180deg, ${colors.navbarTop}, ${colors.navbarBottom})`,
+    "--theme-navbar-background": buildNavbarBackgroundLayer(colors, navbarBackground),
+    "--theme-navbar-ornament-opacity": formatOpacity(navbarBackground.ornamentOpacity),
     "--theme-navbar-top": colors.navbarTop,
     "--theme-navbar-bottom": colors.navbarBottom,
     "--theme-home-background-image": buildCssImageLayer(backgrounds.home),

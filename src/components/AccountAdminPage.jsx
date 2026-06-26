@@ -14,6 +14,7 @@ import {
   SITE_MEMBER_FIELD_FIELDS,
   SITE_NAVIGATION_FIELDS,
   SITE_NOTIFICATION_FIELDS,
+  SITE_NAVBAR_BACKGROUND_FIELDS,
   SITE_SAMPLE_DATA_FIELDS,
   SITE_SECURITY_FIELDS,
   SITE_THEME_BACKGROUND_FIELDS,
@@ -208,6 +209,20 @@ const TREE_THEME_LABELS = {
   selectedRing: "Viền đang chọn",
   searchHighlight: "Highlight tìm kiếm"
 };
+const NAVBAR_BACKGROUND_LABELS = {
+  pattern: "Kiểu họa tiết header",
+  patternOpacity: "Độ đậm họa tiết",
+  glowOpacity: "Độ sáng ánh vàng",
+  ornamentOpacity: "Độ hiện mây/viền"
+};
+const NAVBAR_PATTERN_OPTIONS = [
+  { value: "diagonal", label: "Sọc chéo truyền thống" },
+  { value: "fineDiagonal", label: "Sọc chéo mảnh" },
+  { value: "dots", label: "Chấm vàng" },
+  { value: "grid", label: "Lưới mảnh" },
+  { value: "silk", label: "Vân lụa" },
+  { value: "none", label: "Không họa tiết" }
+];
 const defaultAiConfigForm = {
   provider: "openai",
   model: AI_PROVIDERS.openai.defaultModel,
@@ -1640,6 +1655,57 @@ export default function AccountAdminPage({
                     </label>
                   );
                 })}
+              </div>
+
+              <div className="theme-section-title">
+                <strong>Nền navbar/header</strong>
+                <span>Chọn họa tiết nền thanh menu và chỉnh độ nổi của sọc, ánh vàng, mây/viền.</span>
+              </div>
+              <div className="navbar-pattern-config">
+                {SITE_NAVBAR_BACKGROUND_FIELDS.map((field) => {
+                  const value = siteConfigForm.navbarBackground?.[field] ?? DEFAULT_SITE_CONFIG.navbarBackground[field];
+                  if (field === "pattern") {
+                    return (
+                      <label className="theme-color-field" key={field}>
+                        <span>{NAVBAR_BACKGROUND_LABELS[field]}</span>
+                        <select
+                          className="form-input"
+                          value={value}
+                          onChange={(event) => handleNestedSiteConfigChange("navbarBackground", field, event.target.value)}
+                        >
+                          {NAVBAR_PATTERN_OPTIONS.map((option) => (
+                            <option value={option.value} key={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    );
+                  }
+                  return (
+                    <label className="theme-color-field" key={field}>
+                      <span>{NAVBAR_BACKGROUND_LABELS[field]}</span>
+                      <div className="navbar-range-control">
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={value}
+                          onChange={(event) => handleNestedSiteConfigChange("navbarBackground", field, event.target.value)}
+                        />
+                        <input
+                          className="form-input"
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={value}
+                          onChange={(event) => handleNestedSiteConfigChange("navbarBackground", field, event.target.value)}
+                        />
+                      </div>
+                    </label>
+                  );
+                })}
+                <div className="navbar-pattern-preview" aria-label="Xem trước nền navbar">
+                  <span>{NAVBAR_PATTERN_OPTIONS.find((option) => option.value === (siteConfigForm.navbarBackground?.pattern || DEFAULT_SITE_CONFIG.navbarBackground.pattern))?.label}</span>
+                </div>
               </div>
 
               <div className="theme-section-title">

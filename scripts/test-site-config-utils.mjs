@@ -42,6 +42,12 @@ const themedConfig = normalizeSiteConfig({
     connector: "#abcdef",
     selectedRing: "blue"
   },
+  navbarBackground: {
+    pattern: "dots",
+    patternOpacity: 60,
+    glowOpacity: 10,
+    ornamentOpacity: 40
+  },
   seo: {
     title: "Gia pha Nguyen Van custom",
     description: "Mo ta SEO rieng cho dong ho Nguyen Van.",
@@ -108,6 +114,10 @@ assert.equal(themedConfig.themeBackgrounds.generations, "/images/generations.jpg
 assert.equal(themedConfig.themeBackgrounds.tree, "");
 assert.equal(themedConfig.treeTheme.connector, "#ABCDEF");
 assert.equal(themedConfig.treeTheme.selectedRing, DEFAULT_SITE_CONFIG.treeTheme.selectedRing);
+assert.equal(themedConfig.navbarBackground.pattern, "dots");
+assert.equal(themedConfig.navbarBackground.patternOpacity, 60);
+assert.equal(themedConfig.navbarBackground.glowOpacity, 10);
+assert.equal(themedConfig.navbarBackground.ornamentOpacity, 40);
 assert.equal(themedConfig.seo.title, "Gia pha Nguyen Van custom");
 assert.equal(themedConfig.seo.canonicalUrl, "https://example.com/gia-pha-nguyen-van");
 assert.equal(themedConfig.seo.ogImage, "/api/media/site/seo/og.jpg");
@@ -177,6 +187,8 @@ assert.match(cssVariables["--theme-home-background-image"], /home\.jpg/);
 assert.equal(cssVariables["--cms-generations-background"], "#101820");
 assert.match(cssVariables["--theme-generations-background-image"], /generations\.jpg/);
 assert.equal(cssVariables["--tree-connector-color"], "#ABCDEF");
+assert.match(cssVariables["--theme-navbar-background"], /radial-gradient\(circle/);
+assert.equal(cssVariables["--theme-navbar-ornament-opacity"], "0.40");
 
 const seo = buildSeoMetadata(themedConfig, { origin: "https://giapha-nguyen-van.pages.dev/" });
 assert.equal(seo.ogTitle, "Gia pha ho Nguyen Van");
