@@ -3938,6 +3938,33 @@
   background: rgba(255, 91, 125, 0.08);
 }
 
+.ai-config-warning p {
+  margin: 8px 0 0;
+}
+
+.setup-inline-steps {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+
+.setup-inline-steps li + li {
+  margin-top: 4px;
+}
+
+.setup-command-code {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--color-brand-accent);
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 .ai-config-clear {
   display: flex;
   align-items: center;

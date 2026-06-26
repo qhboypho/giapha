@@ -2164,7 +2164,14 @@ export default function AccountAdminPage({
                 </div>
                 {siteConfigForm.security?.turnstileEnabled && (
                   <div className="ai-config-warning">
-                    Sau khi lưu Site Key, cần set secret production: <strong>npx wrangler pages secret put TURNSTILE_SECRET_KEY --project-name ...</strong>. Nếu thiếu secret, hệ thống sẽ chặn đăng nhập để tránh mở lỗ bảo mật.
+                    <strong>Các bước bật Turnstile production:</strong>
+                    <ol className="setup-inline-steps">
+                      <li>Tạo Turnstile widget trong Cloudflare cho domain Pages hoặc custom domain của site.</li>
+                      <li>Copy <strong>Site Key</strong> vào ô trên rồi bấm lưu.</li>
+                      <li>Chạy lệnh set <strong>Secret Key</strong> trong terminal:</li>
+                    </ol>
+                    <code className="setup-command-code">npx wrangler pages secret put TURNSTILE_SECRET_KEY --project-name ten-project-pages</code>
+                    <p>Cuối cùng build/deploy lại để Pages Function nhận secret mới. Nếu thiếu secret, hệ thống sẽ chặn đăng nhập để tránh mở lỗ bảo mật.</p>
                   </div>
                 )}
                 <div className="account-form-actions">

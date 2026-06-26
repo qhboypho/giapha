@@ -365,7 +365,9 @@ npx wrangler r2 bucket create giapha-khach-a-media</code></pre>
         <pre><code>npx wrangler pages secret put AI_CONFIG_SECRET --project-name giapha-khach-a</code></pre>
         <p class="note">Sau bước này, admin có thể vào Cấu hình AI để chọn OpenAI/Gemini/Claude và lưu API key provider đã mã hóa trong D1.</p>
         <p>Nếu muốn bật Turnstile chống bot đăng nhập, tạo Cloudflare Turnstile widget cho domain của khách, nhập <code>Site Key</code> trong Setup Wizard, rồi set secret:</p>
-        <pre><code>npx wrangler pages secret put TURNSTILE_SECRET_KEY --project-name giapha-khach-a</code></pre>
+        <pre><code>npx wrangler pages secret put TURNSTILE_SECRET_KEY --project-name giapha-khach-a
+npm run build
+npx wrangler pages deploy ./dist --project-name giapha-khach-a</code></pre>
         <p class="note">Project mới mặc định tắt Turnstile để không khóa đăng nhập. Khi bật mà thiếu <code>TURNSTILE_SECRET_KEY</code>, backend sẽ chặn login thay vì bỏ qua bảo vệ.</p>
       </section>
 
