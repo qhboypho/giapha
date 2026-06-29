@@ -1,8 +1,10 @@
 // functions/helpers/auth.js
 // Utility helpers for password hashing and safe string comparisons using Web Crypto API.
 
-export const PBKDF2_ITERATIONS = 210000;
+// Cloudflare Workers Web Crypto rejects PBKDF2 iteration counts above 100000.
+export const PBKDF2_ITERATIONS = 100000;
 const LEGACY_PBKDF2_ITERATIONS = 50000;
+const MAX_SUPPORTED_PBKDF2_ITERATIONS = 100000;
 const PBKDF2_HASH = 'SHA-256';
 const PBKDF2_KEY_LENGTH = 256; // bits (32 bytes)
 
@@ -70,13 +72,22 @@ export async function verifyPassword(password, stored) {
     return false;
   }
 
-  if (!Number.isFinite(iterations) || iterations < LEGACY_PBKDF2_ITERATIONS) {
+  if (
+    !Number.isFinite(iterations)
+    || iterations < LEGACY_PBKDF2_ITERATIONS
+    || iterations > MAX_SUPPORTED_PBKDF2_ITERATIONS
+  ) {
     return false;
   }
 
   const salt = fromHex(saltHex);
-  const hash = await deriveKey(password, salt, iterations);
-  return timingSafeStringEqual(hash, expectedHash);
+  try {
+    const hash = await deriveKey(password, salt, iterations);
+    return timingSafeStringEqual(hash, expectedHash);
+  } catch (err) {
+    console.error('[auth] Password verification failed', err);
+    return false;
+  }
 }
 
 export function passwordNeedsRehash(stored) {

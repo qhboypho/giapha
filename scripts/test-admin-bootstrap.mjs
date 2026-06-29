@@ -45,7 +45,7 @@ const plan = await buildAdminBootstrapPlan({
 
 assert.equal(plan.dbName, "giapha-test-db");
 assert.equal(plan.remote, false);
-assert.match(plan.admin.passwordHash, /^pbkdf2:210000:/);
+assert.match(plan.admin.passwordHash, /^pbkdf2:100000:/);
 assert.match(plan.sql, /INSERT INTO users/);
 
 process.env.ADMIN_BOOTSTRAP_PASSWORD = "from-env";
@@ -63,7 +63,7 @@ try {
 
   assert.equal(envPlan.dbName, "giapha-env-db");
   assert.equal(envPlan.remote, true);
-  assert.match(envPlan.admin.passwordHash, /^pbkdf2:210000:/);
+  assert.match(envPlan.admin.passwordHash, /^pbkdf2:100000:/);
 } finally {
   delete process.env.ADMIN_BOOTSTRAP_PASSWORD;
 }
