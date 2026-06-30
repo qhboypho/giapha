@@ -316,6 +316,17 @@ function getClientIp(c) {
   ).trim().slice(0, 80) || 'unknown';
 }
 
+function getSessionCookieOptions(c) {
+  const url = new URL(c.req.url);
+  return {
+    httpOnly: true,
+    secure: url.protocol === 'https:',
+    sameSite: 'Lax',
+    path: '/',
+    maxAge: 24 * 60 * 60
+  };
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -1214,14 +1225,7 @@ app.post('/auth/login', async (c) => {
       "INSERT INTO sessions (id, username, role, expiresAt, ipAddress, userAgent) VALUES (?, ?, ?, ?, ?, ?)"
     ).bind(sessionId, user.username, user.role, expiresAt, ipAddress, userAgent).run();
 
-    // Set cookie (Secure HTTP-Only)
-    setCookie(c, 'session_id', sessionId, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Lax',
-      path: '/',
-      maxAge: 24 * 60 * 60 // 24 hours in seconds
-    });
+    setCookie(c, 'session_id', sessionId, getSessionCookieOptions(c));
 
     return c.json({
       success: true,
