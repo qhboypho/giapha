@@ -12,6 +12,7 @@ import {
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { getYearsString } from "../utils/anniversaryUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
+import { getInLawLabel } from "../utils/relationLabels";
 
 function GenerationAvatar({ member }) {
   if (member.avatar) {
@@ -318,7 +319,7 @@ export default function GenerationsPage({ members = [], isLoading = false, onOpe
                               </span>
                               {spouses.length > 0 && (
                                 <span className="generation-member-spouse">
-                                  {member.gender === "nam" ? "Bà" : "Ông"}: {spouses.map((spouse) => spouse.name).join(", ")}
+                                  {spouses.map((spouse) => `${getInLawLabel(spouse)}: ${spouse.name}`).join(" • ")}
                                 </span>
                               )}
                               <span className="generation-member-children">

@@ -3,6 +3,7 @@ import { canEditMemberInScope } from "../utils/editorScope";
 import { getAge, getGenderLabel } from "../utils/mockData";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
+import { getInLawLabel } from "../utils/relationLabels";
 
 export default function Sidebar({
   personId,
@@ -28,8 +29,6 @@ export default function Sidebar({
   // Spouses
   const spouses = members.filter((m) => person.spouseIds?.includes(m.id));
   const memberById = new Map(members.map((member) => [member.id, member]));
-  const maxGeneration = members.length > 0 ? Math.max(...members.map((member) => member.generation || 1)) : person.generation || 1;
-  const recentGenerationCutoff = Math.max(1, maxGeneration - 1);
 
   // Children
   const parentIds = new Set([person.id, ...spouses.map((spouse) => spouse.id)]);
@@ -94,14 +93,7 @@ export default function Sidebar({
     );
   };
 
-  const getSpouseLabel = (member, spouse) => {
-    if (!spouse) return "";
-    const isRecentGeneration = member.generation >= recentGenerationCutoff;
-    if (isRecentGeneration) {
-      return spouse.gender === "nu" ? "Vợ" : "Chồng";
-    }
-    return spouse.gender === "nu" ? "Bà" : "Ông";
-  };
+  const getSpouseLabel = (spouse) => spouse ? getInLawLabel(spouse) : "";
 
   const getPrimarySpouse = (member) => (
     (member.spouseIds || [])
@@ -292,7 +284,7 @@ export default function Sidebar({
                       <div className="relation-details">
                         <span className="relation-name">{spouse.name}</span>
                         <span className="relation-role">
-                          {person.gender === "nam" ? "Vợ" : "Chồng"}
+                          {getInLawLabel(spouse)}
                         </span>
                       </div>
                     </div>
@@ -310,7 +302,7 @@ export default function Sidebar({
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   {children.map((child) => {
                     const childSpouse = getPrimarySpouse(child);
-                    const spouseLabel = getSpouseLabel(child, childSpouse);
+                    const spouseLabel = getSpouseLabel(childSpouse);
 
                     return (
                       <div

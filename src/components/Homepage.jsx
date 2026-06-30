@@ -4,6 +4,7 @@ import { buildUpcomingAnniversaries, getCurrentLunarDateLabel, getYearsString } 
 import { buildHomepageHistoryEvents, formatHistoryEventDate } from "../utils/familyHistoryUtils";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
+import { getInLawLabel } from "../utils/relationLabels";
 import "./Homepage.css";
 import {
   CalendarDays,
@@ -115,15 +116,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
   const [activeSlide, setActiveSlide] = useState(0);
   const touchStartRef = useRef(0);
   const suppressPersonClickRef = useRef(false);
-  const recentGenerationCutoff = Math.max(1, generations - 1);
   const getMobileYearsString = (member) => getYearsString(member, { hideUnknownDeceased: true });
-  const getMobileSpouseLabel = (child, spouse) => {
-    const isRecentGeneration = child.generation >= recentGenerationCutoff;
-    if (isRecentGeneration) {
-      return spouse.gender === "nu" ? "Vợ" : "Chồng";
-    }
-    return spouse.gender === "nu" ? "Bà" : "Ông";
-  };
 
   // Helper to build mobile slides dynamically
   const buildMobileSlides = () => {
@@ -613,7 +606,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                         .find(Boolean);
                       const childStatus = getYearsString(child, { hideUnknownDeceased: true });
                       const spouseLabel = childSpouse
-                        ? `${getMobileSpouseLabel(child, childSpouse)}: ${childSpouse.name}`
+                        ? `${getInLawLabel(childSpouse)}: ${childSpouse.name}`
                         : "";
 
                       return (
