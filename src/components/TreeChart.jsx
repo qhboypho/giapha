@@ -23,10 +23,11 @@ export default function TreeChart({
   useEffect(() => {
     if (containerRef.current) {
       const containerWidth = containerRef.current.clientWidth;
-      const xOffset = (containerWidth - width * zoom) / 2;
+      const defaultZoom = 0.85;
+      const xOffset = (containerWidth - width * defaultZoom) / 2;
       setPan({ x: Math.max(20, xOffset), y: 30 });
     }
-  }, [width, zoom]);
+  }, [width]);
 
   useEffect(() => {
     if (!selectedPersonId || !containerRef.current) return;
@@ -119,6 +120,30 @@ export default function TreeChart({
     setZoom((prev) => Math.min(2, Math.max(0.3, prev * factor)));
   };
 
+  const handleWheel = (e) => {
+    if (!containerRef.current) return;
+    if (window.matchMedia("(max-width: 768px)").matches) return;
+    if (e.target.closest(".zoom-controls")) return;
+
+    e.preventDefault();
+    const rect = containerRef.current.getBoundingClientRect();
+    const pointerX = e.clientX - rect.left;
+    const pointerY = e.clientY - rect.top;
+    const factor = e.deltaY < 0 ? 1.08 : 0.92;
+
+    setZoom((prevZoom) => {
+      const nextZoom = Math.min(2, Math.max(0.3, prevZoom * factor));
+      if (nextZoom === prevZoom) return prevZoom;
+
+      setPan((prevPan) => ({
+        x: pointerX - ((pointerX - prevPan.x) / prevZoom) * nextZoom,
+        y: pointerY - ((pointerY - prevPan.y) / prevZoom) * nextZoom
+      }));
+
+      return nextZoom;
+    });
+  };
+
   const handleReset = () => {
     setZoom(0.85);
     if (containerRef.current) {
@@ -145,6 +170,7 @@ export default function TreeChart({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onWheel={handleWheel}
     >
       {/* Zoom Controls */}
       <div className="zoom-controls">
