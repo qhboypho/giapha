@@ -736,9 +736,16 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                 Chưa có thành viên nào được nhập ngày mất.
               </div>
             )}
-            {visibleAnniversaries.map((event) => (
+            {visibleAnniversaries.map((event, idx) => {
+              const isNearestAnniversary = idx === 0;
+              const titlePrefix = event.title.endsWith(event.member.name)
+                ? event.title.slice(0, -event.member.name.length)
+                : "";
+              const titleName = titlePrefix ? event.member.name : event.title;
+
+              return (
               <div 
-                className="anniversary-item has-tooltip" 
+                className={`anniversary-item has-tooltip${isNearestAnniversary ? " is-nearest" : ""}`}
                 key={event.member.id}
                 data-tooltip={`${event.title} (${event.date})`}
               >
@@ -747,13 +754,18 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                   <span>{event.month}</span>
                 </div>
                 <div className="anniversary-details">
-                  <strong>{event.title}</strong>
+                  <strong>
+                    {isNearestAnniversary && <span className="anniversary-live-dot" aria-hidden="true" />}
+                    {titlePrefix}
+                    <span className={isNearestAnniversary ? "anniversary-highlight-name" : undefined}>{titleName}</span>
+                  </strong>
                   <span>{event.date}</span>
                   <small>{event.note}</small>
                 </div>
                 <button className="btn-item-action" onClick={() => handleHomepagePersonOpen(event.member.id)}>Xem chi tiết</button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </article>}
 
