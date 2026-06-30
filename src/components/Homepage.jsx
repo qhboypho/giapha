@@ -683,7 +683,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
         {homepageConfig.showFeatured && <article className="home-panel panel-notables">
           <div className="column-header-row">
             <h2 className="column-title serif">
-              <span className="header-mark" aria-hidden="true" />
+              <UserRoundCheck className="header-mark" aria-hidden="true" />
               Người tiêu biểu
             </h2>
             <button className="column-more-link" onClick={() => onNavigate("featured")}>Xem tất cả <span aria-hidden="true">→</span></button>
@@ -724,7 +724,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
         {homepageConfig.showAnniversaries && <article className="home-panel panel-events">
           <div className="column-header-row">
             <h2 className="column-title serif">
-              <span className="header-mark calendar-mark" aria-hidden="true" />
+              <CalendarDays className="header-mark" aria-hidden="true" />
               Ngày giỗ sắp tới
             </h2>
             <span className="lunar-today-pill">{currentLunarDateLabel}</span>
@@ -772,7 +772,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
         {homepageConfig.showHistory && <article className="home-panel panel-history">
           <div className="column-header-row">
             <h2 className="column-title serif">
-              <span className="header-mark record-mark" aria-hidden="true" />
+              <FileText className="header-mark" aria-hidden="true" />
               Lịch sử dòng họ
             </h2>
             <button className="column-more-link" onClick={() => onNavigate("history")}>Xem toàn bộ <span aria-hidden="true">→</span></button>

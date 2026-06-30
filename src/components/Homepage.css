@@ -84,8 +84,7 @@
 }
 
 .hero-cloud-mark,
-.panel-cloud,
-.header-mark {
+.panel-cloud {
   display: inline-block;
   background-repeat: no-repeat;
   opacity: 0.76;
@@ -100,11 +99,12 @@
 }
 
 .header-mark {
-  width: 28px;
-  height: 24px;
-  background-image: var(--home-gold-waves-lotus);
-  background-size: 690px auto;
-  background-position: 33% 83%;
+  width: 1.16em;
+  height: 1.16em;
+  flex: 0 0 auto;
+  color: var(--home-gold);
+  stroke-width: 2.25;
+  filter: drop-shadow(0 1px 0 rgba(255, 248, 232, 0.52));
 }
 
 .hero-title {
@@ -975,8 +975,6 @@
 }
 
 .header-mark {
-  width: 25px;
-  height: 21px;
   opacity: 0.95;
 }
 
