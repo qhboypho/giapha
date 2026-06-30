@@ -1470,6 +1470,49 @@
     padding: 0.85rem;
   }
 
+  .home-hero {
+    min-height: auto;
+    gap: 0.85rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .hero-lotus-art {
+    display: none;
+  }
+
+  .home-hero-copy {
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+    padding: 1rem;
+    border: 1px solid var(--home-line);
+    border-radius: var(--home-radius);
+    background: var(--home-panel);
+    box-shadow: var(--home-shadow);
+  }
+
+  .hero-cloud-mark {
+    display: none;
+  }
+
+  .hero-title {
+    width: 100%;
+    font-size: clamp(1.8rem, 8.8vw, 2.35rem);
+    line-height: 1.18;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-title span {
+    white-space: normal;
+  }
+
+  .hero-divider,
+  .hero-divider.has-image {
+    width: min(100%, 360px);
+    margin-inline: 0;
+  }
+
   .desktop-only-tree {
     display: none !important;
   }
