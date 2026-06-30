@@ -854,6 +854,19 @@ export default function Navbar({
             </div>
             <div className="mobile-drawer-body">
               {/* Admin actions */}
+              {canAddTopLevelMember && (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    onAddMember();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{ width: "100%", justifyContent: "center" }}
+                >
+                  Thêm thành viên
+                </button>
+              )}
+
               <button
                 className="btn btn-secondary"
                 onClick={() => {
@@ -889,33 +902,6 @@ export default function Navbar({
                 >
                   <BookOpenText size={16} strokeWidth={2.2} />
                   {navigationLabels.aboutLabel}
-                </button>
-              )}
-
-              {canAddTopLevelMember && (
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    onAddMember();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  style={{ width: "100%", justifyContent: "center" }}
-                >
-                  Thêm thành viên
-                </button>
-              )}
-
-              {isAdmin(currentUser) && ENABLE_SETUP_WIZARD && (
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    onOpenAccounts?.("setup");
-                    setIsMobileMenuOpen(false);
-                  }}
-                  style={{ width: "100%", justifyContent: "center", gap: "8px" }}
-                >
-                  <Wand2 size={16} strokeWidth={2.2} />
-                  Setup Wizard
                 </button>
               )}
 
@@ -984,6 +970,20 @@ export default function Navbar({
                 >
                   {showSensitiveInfo ? <Eye size={16} strokeWidth={2.2} /> : <EyeOff size={16} strokeWidth={2.2} />}
                   {showSensitiveInfo ? "Đang hiện thông tin riêng" : "Ẩn thông tin riêng"}
+                </button>
+              )}
+
+              {isAdmin(currentUser) && ENABLE_SETUP_WIZARD && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    onOpenAccounts?.("setup");
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{ width: "100%", justifyContent: "center", gap: "8px" }}
+                >
+                  <Wand2 size={16} strokeWidth={2.2} />
+                  Cài đặt
                 </button>
               )}
 
