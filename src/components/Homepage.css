@@ -1016,7 +1016,7 @@
   max-width: 100%;
   padding: 0;
   color: var(--home-gold);
-  font-size: clamp(0.62rem, 0.82vw, 0.76rem);
+  font-size: clamp(0.7rem, 0.82vw, 0.78rem);
   font-weight: 900;
   line-height: 1.15;
   text-align: center;
@@ -1160,7 +1160,7 @@
   position: relative;
   display: grid;
   grid-template-columns: 68px 1fr auto;
-  align-items: center;
+  align-items: stretch;
   gap: 0.7rem;
   padding: 0.42rem 0;
   border-top: 0;
@@ -1190,7 +1190,8 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 0 0.72rem 0 0.26rem;
+  align-self: stretch;
+  padding: 0 0.58rem 0 0.22rem;
   color: var(--home-red);
   text-align: center;
   border-right: 1px solid rgba(175, 127, 63, 0.32);
@@ -1205,6 +1206,7 @@
 .anniversary-date-box span {
   font-size: 0.78rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .anniversary-details {
@@ -1780,7 +1782,7 @@
   }
 
   .lunar-today-pill {
-    font-size: clamp(0.54rem, 2.25vw, 0.68rem);
+    font-size: clamp(0.7rem, 2.25vw, 0.78rem);
   }
 
   .panel-events .column-more-link {
@@ -1992,7 +1994,11 @@
   }
 
   .anniversary-item {
-    grid-template-columns: 58px 1fr;
+    grid-template-columns: 68px 1fr;
+  }
+
+  .anniversary-date-box {
+    grid-row: 1 / span 2;
   }
 
   .btn-item-action {
