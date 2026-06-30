@@ -1212,11 +1212,23 @@
   text-overflow: ellipsis;
 }
 
+.anniversary-item:not(.is-nearest) .anniversary-details strong,
+.anniversary-item:not(.is-nearest) .anniversary-details strong span {
+  color: var(--home-red);
+  font-size: 0.86rem;
+}
+
 .anniversary-highlight-name {
   min-width: 0;
+  font-size: 0.98rem;
+  font-weight: 900;
   color: var(--home-gold);
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.anniversary-details strong .anniversary-highlight-name {
+  color: var(--home-gold);
 }
 
 .anniversary-live-dot {
@@ -1243,7 +1255,7 @@
   }
 }
 
-.anniversary-details span,
+.anniversary-details > span,
 .anniversary-details small {
   color: var(--home-muted);
   font-size: 0.7rem;
