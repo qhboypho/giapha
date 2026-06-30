@@ -1496,6 +1496,7 @@
     align-items: center;
     text-align: center;
     padding: 0;
+    container-type: inline-size;
   }
 
   .hero-cloud-mark {
@@ -1504,14 +1505,15 @@
 
   .hero-title {
     width: 100%;
-    font-size: clamp(1.8rem, 8.8vw, 2.35rem);
+    font-size: clamp(1.34rem, 7.1cqw, 2.05rem);
     line-height: 1.18;
-    text-wrap: balance;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    text-wrap: nowrap;
+    overflow-wrap: normal;
   }
 
   .hero-title span {
-    white-space: normal;
+    white-space: nowrap;
   }
 
   .hero-divider,
