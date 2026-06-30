@@ -207,6 +207,7 @@ export default function App() {
 
   // Toast feedback
   const [toast, setToast] = useState("");
+  const toastTimeoutRef = useRef(null);
 
   // Sync theme with HTML attribute
   useEffect(() => {
@@ -341,10 +342,22 @@ export default function App() {
     initApp();
   }, [loadHistoryEvents, loadMembers, shouldRevealSensitiveByDefault]);
 
-  const showToast = (message) => {
+  const showToast = useCallback((message) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
     setToast(message);
-    setTimeout(() => setToast(""), 3000);
-  };
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast("");
+      toastTimeoutRef.current = null;
+    }, 3000);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+  }, []);
 
   const openLoginModal = useCallback(() => {
     if (!authReady || currentUser) return;
