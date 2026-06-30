@@ -1105,16 +1105,11 @@ async function getAuthenticatedUser(c) {
   if (!sessionId) return null;
 
   try {
-    const requestUserAgent = String(c.req.header('user-agent') || '').slice(0, 240);
     const session = await c.env.DB.prepare(
-      "SELECT s.username, s.role, s.userAgent, u.fullName, u.editScopeRootId FROM sessions s JOIN users u ON s.username = u.username WHERE s.id = ? AND s.expiresAt > datetime('now') LIMIT 1"
+      "SELECT s.username, s.role, u.fullName, u.editScopeRootId FROM sessions s JOIN users u ON s.username = u.username WHERE s.id = ? AND s.expiresAt > datetime('now') LIMIT 1"
     ).bind(sessionId).first();
 
     if (!session) return null;
-    if (session.userAgent && session.userAgent !== requestUserAgent) {
-      await c.env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
-      return null;
-    }
 
     return {
       username: session.username,
