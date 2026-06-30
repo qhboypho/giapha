@@ -481,6 +481,17 @@
   padding: 0.45rem 0.72rem;
 }
 
+.tree-founder[role="button"],
+.tree-child[role="button"] {
+  cursor: pointer;
+}
+
+.tree-founder[role="button"]:focus-visible,
+.tree-child[role="button"]:focus-visible {
+  outline: 2px solid var(--home-gold);
+  outline-offset: 3px;
+}
+
 .tree-founder img {
   width: 48px;
   height: 48px;
@@ -1482,13 +1493,9 @@
 
   .home-hero-copy {
     width: 100%;
-    align-items: flex-start;
-    text-align: left;
-    padding: 1rem;
-    border: 1px solid var(--home-line);
-    border-radius: var(--home-radius);
-    background: var(--home-panel);
-    box-shadow: var(--home-shadow);
+    align-items: center;
+    text-align: center;
+    padding: 0;
   }
 
   .hero-cloud-mark {
@@ -1510,7 +1517,7 @@
   .hero-divider,
   .hero-divider.has-image {
     width: min(100%, 360px);
-    margin-inline: 0;
+    margin-inline: auto;
   }
 
   .desktop-only-tree {

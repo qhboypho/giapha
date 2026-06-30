@@ -857,6 +857,7 @@ export default function App() {
                   siteConfig={siteConfig}
                   onNavigate={handleViewChange}
                   onOpenPerson={handleOpenPersonInTree}
+                  onOpenPersonModal={handleSelectPerson}
                   members={members}
                   historyEvents={historyEvents}
                   isLoading={loading}

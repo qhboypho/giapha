@@ -92,7 +92,7 @@ function HeritageIcon({ type }) {
   );
 }
 
-export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate, onOpenPerson, members = [], historyEvents = [], isLoading = false, activeViewersCount = 0 }) {
+export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate, onOpenPerson, onOpenPersonModal, members = [], historyEvents = [], isLoading = false, activeViewersCount = 0 }) {
   const config = normalizeSiteConfig(siteConfig);
   const homepageConfig = config.homepage;
   const currentLunarDateLabel = getCurrentLunarDateLabel();
@@ -114,6 +114,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
 
   const [activeSlide, setActiveSlide] = useState(0);
   const touchStartRef = useRef(0);
+  const suppressPersonClickRef = useRef(false);
   const recentGenerationCutoff = Math.max(1, generations - 1);
   const getMobileYearsString = (member) => getYearsString(member, { hideUnknownDeceased: true });
   const getMobileSpouseLabel = (child, spouse) => {
@@ -232,6 +233,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
   const handleTouchEnd = (e) => {
     const touchEnd = e.changedTouches[0].clientX;
     const diff = touchStartRef.current - touchEnd;
+    const didSwipe = Math.abs(diff) > 50;
     if (diff > 50) {
       // Swipe left -> next slide
       setActiveSlide((prev) => Math.min(prev + 1, mobileSlides.length - 1));
@@ -239,6 +241,33 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
       // Swipe right -> prev slide
       setActiveSlide((prev) => Math.max(prev - 1, 0));
     }
+    if (didSwipe) {
+      suppressPersonClickRef.current = true;
+      window.setTimeout(() => {
+        suppressPersonClickRef.current = false;
+      }, 0);
+    }
+  };
+
+  const shouldOpenPersonModalOnHomepage = () => (
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 760px)").matches
+  );
+
+  const handleHomepagePersonOpen = (id) => {
+    if (!id) return;
+    if (suppressPersonClickRef.current) return;
+    if (shouldOpenPersonModalOnHomepage() && onOpenPersonModal) {
+      onOpenPersonModal(id);
+      return;
+    }
+    onOpenPerson(id);
+  };
+
+  const handleHomepagePersonKeyDown = (event, id) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    handleHomepagePersonOpen(id);
   };
 
   // Resolve dynamic mini tree root, children and branches
@@ -447,7 +476,13 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
               >
                 {/* Root node */}
                 <div className="mini-tree-root-wrapper">
-                  <div className="tree-founder">
+                  <div
+                    className="tree-founder"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleHomepagePersonOpen(root.id)}
+                    onKeyDown={(event) => handleHomepagePersonKeyDown(event, root.id)}
+                  >
                     <MemberAvatar member={root} />
                     <div>
                       <span>{root.title || "Thủy tổ dòng họ"}</span>
@@ -481,6 +516,10 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                         <div 
                           className="tree-child has-tooltip"
                           data-tooltip={`${child.name} (${getYearsString(child)})`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleHomepagePersonOpen(child.id)}
+                          onKeyDown={(event) => handleHomepagePersonKeyDown(event, child.id)}
                         >
                           <MemberAvatar member={child} className="tree-child-landscape" />
                           <strong>{child.name}</strong>
@@ -510,6 +549,10 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                     <div 
                       className="tree-founder parent-node has-tooltip"
                       data-tooltip={`${currentSlide.parent.name}${getMobileYearsString(currentSlide.parent) ? ` (${getMobileYearsString(currentSlide.parent)})` : ""}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleHomepagePersonOpen(currentSlide.parent.id)}
+                      onKeyDown={(event) => handleHomepagePersonKeyDown(event, currentSlide.parent.id)}
                     >
                       <span className="couple-role-badge">
                         {currentSlide.parent.gender === "nam" ? "Ông" : "Bà"}
@@ -525,6 +568,10 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                       <div 
                         className="tree-founder spouse-node has-tooltip"
                         data-tooltip={`${currentSlide.spouse.name}${getMobileYearsString(currentSlide.spouse) ? ` (${getMobileYearsString(currentSlide.spouse)})` : ""}`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleHomepagePersonOpen(currentSlide.spouse.id)}
+                        onKeyDown={(event) => handleHomepagePersonKeyDown(event, currentSlide.spouse.id)}
                       >
                         <span className="couple-role-badge">
                           {currentSlide.spouse.gender === "nu" ? "Bà" : "Ông"}
@@ -560,6 +607,10 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                           <div 
                             className="tree-child has-tooltip mobile-child-family-card"
                             data-tooltip={`${child.name} (${childStatus})${childSpouse ? ` - ${spouseLabel}` : ""}`}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleHomepagePersonOpen(child.id)}
+                            onKeyDown={(event) => handleHomepagePersonKeyDown(event, child.id)}
                           >
                             <MemberAvatar member={child} className="tree-child-landscape" />
                             <strong>
@@ -652,7 +703,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
             ) : (
               visibleFeaturedMembers.length > 0 ? (
                 visibleFeaturedMembers.map((person) => (
-                  <button className="notable-card" key={person.member.id} onClick={() => onOpenPerson(person.member.id)}>
+                  <button className="notable-card" key={person.member.id} onClick={() => handleHomepagePersonOpen(person.member.id)}>
                     <MemberAvatar member={person.member} className="notable-avatar" />
                     <span className="notable-copy">
                       <strong className="notable-name">{person.name}</strong>
@@ -700,7 +751,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                   <span>{event.date}</span>
                   <small>{event.note}</small>
                 </div>
-                <button className="btn-item-action" onClick={() => onOpenPerson(event.member.id)}>Xem chi tiết</button>
+                <button className="btn-item-action" onClick={() => handleHomepagePersonOpen(event.member.id)}>Xem chi tiết</button>
               </div>
             ))}
           </div>
