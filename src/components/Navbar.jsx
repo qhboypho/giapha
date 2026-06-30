@@ -760,24 +760,6 @@ export default function Navbar({
 
       {/* Mobile Navigation Toggle (Visible on Mobile) */}
       {!isGuestLocked && <div className="mobile-nav-toggle">
-        {/* View Toggle */}
-        <div className="btn-group" style={{ padding: "2px" }}>
-          <button
-            className={`btn-tab ${activeView === "tree" ? "active" : ""}`}
-            onClick={() => setActiveView("tree")}
-            style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
-          >
-            {navigationLabels.treeLabel.split(" ")[0] || "Cây"}
-          </button>
-          <button
-            className={`btn-tab ${activeView === "list" ? "active" : ""}`}
-            onClick={() => setActiveView("list")}
-            style={{ padding: "4px 8px", fontSize: "0.7rem", borderRadius: "15px" }}
-          >
-            {navigationLabels.membersLabel.split(" ")[0] || "Bảng"}
-          </button>
-        </div>
-
         <button
           className="mobile-search-btn"
           onClick={openMobileSearch}
