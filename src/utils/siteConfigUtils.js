@@ -97,6 +97,8 @@ export const DEFAULT_SITE_CONFIG = {
     showFeatured: true,
     showAnniversaries: true,
     showHistory: true,
+    mobileTreeSlidesMode: "auto",
+    mobileTreeSlideRootIds: [],
     featuredLimit: 8,
     anniversaryLimit: 6,
     anniversaryWindowDays: 30
@@ -441,12 +443,17 @@ export function normalizeContactConfig(contact = {}) {
 
 export function normalizeHomepageConfig(homepage = {}) {
   const source = homepage && typeof homepage === "object" ? homepage : {};
+  const mobileTreeSlideRootIds = Array.isArray(source.mobileTreeSlideRootIds)
+    ? Array.from(new Set(source.mobileTreeSlideRootIds.map((id) => normalizeString(id, "", 120)).filter(Boolean))).slice(0, 24)
+    : [];
   return {
     showStats: source.showStats !== false,
     showFeatures: source.showFeatures !== false,
     showFeatured: source.showFeatured !== false,
     showAnniversaries: source.showAnniversaries !== false,
     showHistory: source.showHistory !== false,
+    mobileTreeSlidesMode: source.mobileTreeSlidesMode === "manual" ? "manual" : "auto",
+    mobileTreeSlideRootIds,
     featuredLimit: clampNumber(source.featuredLimit, DEFAULT_SITE_CONFIG.homepage.featuredLimit, 1, 24),
     anniversaryLimit: clampNumber(source.anniversaryLimit, DEFAULT_SITE_CONFIG.homepage.anniversaryLimit, 1, 24),
     anniversaryWindowDays: clampNumber(source.anniversaryWindowDays, DEFAULT_SITE_CONFIG.homepage.anniversaryWindowDays, 1, 365)

@@ -4326,6 +4326,45 @@
   color: var(--text-primary);
 }
 
+.mobile-tree-slide-picker {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: rgba(18, 12, 8, 0.28);
+}
+
+.theme-section-title.compact {
+  margin-top: 0;
+}
+
+.mobile-tree-slide-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.mobile-tree-slide-option {
+  align-items: flex-start;
+}
+
+.mobile-tree-slide-option span {
+  display: grid;
+  gap: 4px;
+}
+
+.mobile-tree-slide-option small,
+.setup-empty-note {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.setup-empty-note {
+  margin: 0;
+}
+
 .seo-config-wide {
   grid-column: 1 / -1;
 }

@@ -219,6 +219,20 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
     });
 
     slides.sort((a, b) => compareMembersForSlideOrder(a.parent, b.parent));
+    if (homepageConfig.mobileTreeSlidesMode === "manual") {
+      const selectedRootIds = homepageConfig.mobileTreeSlideRootIds || [];
+      const selectedIdSet = new Set(selectedRootIds);
+      const selectedSlides = slides
+        .filter((slide) => selectedIdSet.has(slide.parent.id) || (slide.spouse && selectedIdSet.has(slide.spouse.id)))
+        .sort((a, b) => {
+          const aIndex = selectedRootIds.findIndex((id) => id === a.parent.id || id === a.spouse?.id);
+          const bIndex = selectedRootIds.findIndex((id) => id === b.parent.id || id === b.spouse?.id);
+          return aIndex - bIndex;
+        });
+
+      return selectedSlides.length > 0 ? selectedSlides : slides.slice(0, 1);
+    }
+
     return slides;
   };
 

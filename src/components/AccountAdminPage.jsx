@@ -106,9 +106,15 @@ const HOMEPAGE_FIELD_LABELS = {
   showFeatured: "Hiển thị người tiêu biểu",
   showAnniversaries: "Hiển thị ngày giỗ sắp tới",
   showHistory: "Hiển thị lịch sử dòng họ",
+  mobileTreeSlidesMode: "Slider cây mobile",
+  mobileTreeSlideRootIds: "Cặp hiện trên slider mobile",
   featuredLimit: "Số người tiêu biểu",
   anniversaryLimit: "Số ngày giỗ hiển thị",
   anniversaryWindowDays: "Khoảng ngày giỗ sắp tới"
+};
+const MOBILE_TREE_SLIDE_MODE_LABELS = {
+  auto: "Tự động hiện mọi cặp có con",
+  manual: "Chọn thủ công cặp được hiện"
 };
 const NOTIFICATION_FIELD_LABELS = {
   enableAnniversary: "Thông báo ngày giỗ",
@@ -374,6 +380,40 @@ export default function AccountAdminPage({
     () => getSetupProgress({ siteConfig: siteConfigForm, aiConfig, members }),
     [aiConfig, members, siteConfigForm]
   );
+  const mobileTreeSlideOptions = useMemo(() => {
+    const memberById = new Map(members.map((member) => [member.id, member]));
+    const seenUnits = new Set();
+
+    return members
+      .filter((member) => members.some((child) => child.fatherId === member.id || child.motherId === member.id))
+      .map((member) => {
+        const spouse = (member.spouseIds || [])
+          .map((spouseId) => memberById.get(spouseId))
+          .find(Boolean) || null;
+        const parent = spouse?.gender === "nam" && member.gender !== "nam" ? spouse : member;
+        const partner = parent.id === member.id ? spouse : member;
+        const unitIds = partner ? [parent.id, partner.id].sort() : [parent.id];
+        const unitKey = unitIds.join("|");
+        if (seenUnits.has(unitKey)) return null;
+        seenUnits.add(unitKey);
+
+        const parentIds = partner ? [parent.id, partner.id] : [parent.id];
+        const childCount = members.filter((child) => (
+          child.generation > parent.generation
+          && ((child.fatherId && parentIds.includes(child.fatherId)) || (child.motherId && parentIds.includes(child.motherId)))
+        )).length;
+        if (childCount === 0) return null;
+
+        return {
+          parentId: parent.id,
+          spouseId: partner?.id || "",
+          label: `Đời ${parent.generation || "?"}: ${parent.name}${partner ? ` - ${partner.name}` : ""}`,
+          note: `${childCount} người con`
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.label.localeCompare(b.label, "vi"));
+  }, [members]);
   const wizardStepIndex = Math.max(0, SETUP_WIZARD_STEPS.findIndex((step) => step.id === wizardStep));
   const currentWizardStep = SETUP_WIZARD_STEPS[wizardStepIndex] || SETUP_WIZARD_STEPS[0];
   const selectedScopeLabel = form.editScopeRootId ? scopeLabelById.get(form.editScopeRootId) : "";
@@ -610,6 +650,28 @@ export default function AccountAdminPage({
         [section]: {
           ...base[section],
           [field]: value
+        }
+      };
+    });
+  };
+
+  const handleMobileTreeSlideToggle = (option, checked) => {
+    setSiteConfigDraft((prev) => {
+      const base = prev || normalizedSiteConfig;
+      const currentIds = Array.isArray(base.homepage?.mobileTreeSlideRootIds)
+        ? base.homepage.mobileTreeSlideRootIds
+        : [];
+      const optionIds = [option.parentId, option.spouseId].filter(Boolean);
+      const nextIds = currentIds.filter((id) => !optionIds.includes(id));
+      if (checked) {
+        nextIds.push(option.parentId);
+      }
+
+      return {
+        ...base,
+        homepage: {
+          ...base.homepage,
+          mobileTreeSlideRootIds: nextIds
         }
       };
     });
@@ -1895,6 +1957,25 @@ export default function AccountAdminPage({
               </div>
               <div className="system-config-grid">
                 {SITE_HOMEPAGE_FIELDS.map((field) => {
+                  if (field === "mobileTreeSlideRootIds") {
+                    return null;
+                  }
+                  if (field === "mobileTreeSlidesMode") {
+                    return (
+                      <label key={field}>
+                        {HOMEPAGE_FIELD_LABELS[field] || field}
+                        <select
+                          className="form-input"
+                          value={siteConfigForm.homepage?.mobileTreeSlidesMode || DEFAULT_SITE_CONFIG.homepage.mobileTreeSlidesMode}
+                          onChange={(event) => handleNestedSiteConfigChange("homepage", field, event.target.value)}
+                        >
+                          {Object.entries(MOBILE_TREE_SLIDE_MODE_LABELS).map(([value, label]) => (
+                            <option value={value} key={value}>{label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    );
+                  }
                   if (SYSTEM_BOOLEAN_FIELDS.has(field)) {
                     return (
                       <label className="system-toggle-field" key={field}>
@@ -1922,6 +2003,35 @@ export default function AccountAdminPage({
                   );
                 })}
               </div>
+              {siteConfigForm.homepage?.mobileTreeSlidesMode === "manual" && (
+                <div className="mobile-tree-slide-picker">
+                  <div className="theme-section-title compact">
+                    <strong>Cặp hiện trên slider cây mobile</strong>
+                    <span>Chọn những cặp quan trọng muốn đưa ra trang chủ. Nếu chưa chọn cặp nào, hệ thống tự giữ slide đầu tiên để không trống giao diện.</span>
+                  </div>
+                  <div className="mobile-tree-slide-options">
+                    {mobileTreeSlideOptions.length > 0 ? mobileTreeSlideOptions.map((option) => {
+                      const selectedIds = siteConfigForm.homepage?.mobileTreeSlideRootIds || [];
+                      const checked = selectedIds.includes(option.parentId) || (option.spouseId && selectedIds.includes(option.spouseId));
+                      return (
+                        <label className="system-toggle-field mobile-tree-slide-option" key={`${option.parentId}-${option.spouseId}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(event) => handleMobileTreeSlideToggle(option, event.target.checked)}
+                          />
+                          <span>
+                            <strong>{option.label}</strong>
+                            <small>{option.note}</small>
+                          </span>
+                        </label>
+                      );
+                    }) : (
+                      <p className="setup-empty-note">Chưa có cặp/người nào có dữ liệu con cái để chọn.</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="theme-section-title">
                 <strong>Thông báo</strong>
