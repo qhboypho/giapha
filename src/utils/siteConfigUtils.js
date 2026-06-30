@@ -11,7 +11,7 @@ export const DEFAULT_SITE_CONFIG = {
   heroTitle: "Lưu giữ cội nguồn",
   heroSubtitle: "Kết nối muôn đời con cháu",
   heroDescription: "Gia phả là sợi dây thiêng liêng kết nối quá khứ, hiện tại và tương lai. Cùng nhau gìn giữ cội nguồn, vun đắp truyền thống cho muôn đời con cháu.",
-  primaryCtaLabel: "Khám phá gia phả",
+  primaryCtaLabel: "Xem gia phả",
   secondaryCtaLabel: "Tìm người thân",
   mainTreeTitle: "Cây gia phả dòng chính",
   loginDescription: "Hệ thống yêu cầu mật khẩu để xem thông tin chi tiết gia phả dòng họ.",

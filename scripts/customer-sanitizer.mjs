@@ -29,7 +29,7 @@ function buildSiteConfig(familyName) {
     heroTitle: "Lưu giữ cội nguồn",
     heroSubtitle: "Kết nối muôn đời con cháu",
     heroDescription: "Đây là dữ liệu mẫu để bắt đầu dựng cây gia phả. Quản trị viên có thể sửa nội dung, đổi logo và nhập dữ liệu thật trong phần quản trị.",
-    primaryCtaLabel: "Khám phá gia phả",
+    primaryCtaLabel: "Xem gia phả",
     secondaryCtaLabel: "Tìm người thân",
     mainTreeTitle: "Cây gia phả mẫu",
     loginDescription: "Hệ thống yêu cầu đăng nhập để xem thông tin chi tiết gia phả.",
