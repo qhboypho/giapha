@@ -197,12 +197,16 @@ export const buildLayout = (members) => {
     if (unit.children.length > 0) {
       const parentBottomY = unit.y + CARD_HEIGHT;
       const verticalDropY = unit.y + CARD_HEIGHT + (GENERATION_GAP - CARD_HEIGHT) / 2;
+      const sourceIds = [unit.person.id, unit.spouse?.id].filter(Boolean);
+      const childIds = unit.children.map(child => child.person.id);
 
       // 1. Draw drop line from parent/couple center to the split level
       links.push({
         type: "parent-drop",
         path: `M ${parentConnectorX} ${parentBottomY} L ${parentConnectorX} ${verticalDropY}`,
-        id: `drop-${unit.id}`
+        id: `drop-${unit.id}`,
+        sourceIds,
+        childIds
       });
 
       // 2. Draw horizontal split bar stretching across children
@@ -212,7 +216,9 @@ export const buildLayout = (members) => {
       links.push({
         type: "split-bar",
         path: `M ${firstChildX} ${verticalDropY} L ${lastChildX} ${verticalDropY}`,
-        id: `bar-${unit.id}`
+        id: `bar-${unit.id}`,
+        sourceIds,
+        childIds
       });
 
       // 3. Draw vertical drop line to each child node
@@ -221,7 +227,9 @@ export const buildLayout = (members) => {
         links.push({
           type: "child-entry",
           path: `M ${childTopX} ${verticalDropY} L ${childTopX} ${child.y}`,
-          id: `child-line-${child.id}`
+          id: `child-line-${child.id}`,
+          sourceIds,
+          childId: child.person.id
         });
 
         // Recurse children

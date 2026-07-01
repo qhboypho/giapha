@@ -18,6 +18,45 @@ export default function TreeChart({
 
   // Compute the family tree layout
   const { nodes, links, width } = useMemo(() => buildLayout(members), [members]);
+  const activeBranch = useMemo(() => {
+    if (!selectedPersonId) {
+      return { sourceIds: new Set(), descendantIds: new Set() };
+    }
+
+    const selected = members.find((member) => member.id === selectedPersonId);
+    if (!selected) {
+      return { sourceIds: new Set(), descendantIds: new Set() };
+    }
+
+    const sourceIds = new Set([selected.id]);
+    (selected.spouseIds || []).forEach((spouseId) => sourceIds.add(spouseId));
+
+    const descendantIds = new Set();
+    const walk = (parentIds) => {
+      const children = members.filter((member) => (
+        (member.fatherId && parentIds.has(member.fatherId))
+        || (member.motherId && parentIds.has(member.motherId))
+      ));
+
+      children.forEach((child) => {
+        if (descendantIds.has(child.id)) return;
+        descendantIds.add(child.id);
+        const childFamilyIds = new Set([child.id]);
+        (child.spouseIds || []).forEach((spouseId) => childFamilyIds.add(spouseId));
+        walk(childFamilyIds);
+      });
+    };
+
+    walk(sourceIds);
+    return { sourceIds, descendantIds };
+  }, [members, selectedPersonId]);
+
+  const isActiveBranchLink = (link) => {
+    if (!selectedPersonId || activeBranch.descendantIds.size === 0 || link.type === "spouse") return false;
+    if (!link.sourceIds?.some((id) => activeBranch.sourceIds.has(id) || activeBranch.descendantIds.has(id))) return false;
+    if (link.childId) return activeBranch.descendantIds.has(link.childId);
+    return link.childIds?.some((id) => activeBranch.descendantIds.has(id)) || false;
+  };
 
   // Center the layout on load
   useEffect(() => {
@@ -191,7 +230,9 @@ export default function TreeChart({
             <path
               key={link.id}
               d={link.path}
-              className={`tree-connector ${link.type === "spouse" ? "tree-connector-spouse" : ""}`}
+              className={`tree-connector ${link.type === "spouse" ? "tree-connector-spouse" : ""} ${
+                isActiveBranchLink(link) ? "tree-connector-active-branch" : ""
+              }`}
             />
           ))}
         </g>
