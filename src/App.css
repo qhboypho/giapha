@@ -54,6 +54,14 @@
   opacity: 0.62;
 }
 
+.navbar.guest-locked {
+  background: var(--bg-nav, linear-gradient(180deg, #9c130f, #690604)) !important;
+}
+
+.navbar.guest-locked::before {
+  display: none;
+}
+
 .nav-brand {
   display: flex;
   align-items: center;

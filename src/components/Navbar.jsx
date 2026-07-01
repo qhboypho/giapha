@@ -516,7 +516,7 @@ export default function Navbar({
   };
 
   return (
-    <nav className="navbar glass">
+    <nav className={`navbar glass ${isGuestLocked ? "guest-locked" : ""}`}>
       <button
         type="button"
         className="nav-brand"
