@@ -1183,6 +1183,7 @@
 }
 
 .anniversary-date-box {
+  position: relative;
   min-height: 49px;
   display: flex;
   flex-direction: column;
@@ -1193,6 +1194,23 @@
   color: var(--home-red);
   text-align: center;
   border-right: 1px solid rgba(175, 127, 63, 0.32);
+}
+
+.anniversary-item.is-nearest .anniversary-date-box::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: -4px;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #2fd66f;
+  box-shadow: 0 0 0 3px var(--bg-card), 0 0 14px rgba(47, 214, 111, 0.55);
+  transform: translateY(-50%) scale(0.7);
+  opacity: 0;
+  animation: anniversaryLiveFade 5.2s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .anniversary-date-box strong {
@@ -1244,30 +1262,15 @@
   color: var(--home-gold);
 }
 
-.anniversary-live-dot {
-  position: absolute;
-  z-index: 2;
-  top: 50%;
-  left: 68px;
-  width: 0.46rem;
-  height: 0.46rem;
-  border-radius: 999px;
-  background: #2fd66f;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-card) 78%, transparent), 0 0 12px rgba(47, 214, 111, 0.38);
-  transform: translate(-50%, -50%) scale(0.88);
-  animation: anniversaryLivePulse 5.8s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes anniversaryLivePulse {
-  0%, 24%, 100% {
+@keyframes anniversaryLiveFade {
+  0%, 22%, 100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.68);
+    transform: translateY(-50%) scale(0.62);
   }
 
-  42%, 72% {
+  42%, 76% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(-50%) scale(1);
   }
 }
 
@@ -2068,8 +2071,7 @@
   .feature-card,
   .notable-card,
   .panel-link,
-  .btn-item-action,
-  .anniversary-live-dot {
+  .btn-item-action {
     transition: none;
     animation: none;
   }

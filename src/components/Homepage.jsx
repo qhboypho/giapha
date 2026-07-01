@@ -760,7 +760,6 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                   <strong>{event.day}</strong>
                   <span>{event.month}</span>
                 </div>
-                {isNearestAnniversary && <span className="anniversary-live-dot" aria-hidden="true" />}
                 <div className="anniversary-details">
                   <strong>
                     {titlePrefix}
