@@ -909,28 +909,10 @@
   stroke-width: 4px;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 12 10;
   opacity: 1;
   filter:
     drop-shadow(0 0 4px color-mix(in srgb, var(--tree-search-highlight, var(--color-brand-accent)) 90%, transparent))
     drop-shadow(0 0 10px color-mix(in srgb, var(--color-brand-primary) 55%, transparent));
-  animation: tree-electric-flow 1.15s linear infinite;
-}
-
-@keyframes tree-electric-flow {
-  from {
-    stroke-dashoffset: 44;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tree-connector-active-branch {
-    animation: none;
-    stroke-dasharray: none;
-  }
 }
 
 /* Tree Nodes */
