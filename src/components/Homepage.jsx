@@ -156,8 +156,10 @@ function IncenseOfferingModal({ event, onClose }) {
           <div className="incense-avatar-ring">
             <MemberAvatar member={member} className={`incense-avatar ${member.isDeceased ? "deceased" : ""}`} />
           </div>
+          <span className="incense-ritual-label">
+            {event.title.endsWith(member.name) ? event.title.slice(0, -member.name.length).trim() : event.title}
+          </span>
           <h3>{member.name}</h3>
-          <p>{event.title}</p>
           <span>{event.date}</span>
         </div>
 

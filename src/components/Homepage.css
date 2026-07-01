@@ -1421,23 +1421,30 @@
 }
 
 .incense-altar h3 {
-  margin: 0.52rem 0 0;
+  margin: 0;
   color: var(--color-brand-primary);
   font-family: var(--font-display);
   font-size: clamp(1.45rem, 4vw, 1.86rem);
   line-height: 1.08;
 }
 
-.incense-altar p,
-.incense-altar span {
+.incense-ritual-label {
+  margin: 0;
+  color: var(--color-brand-primary);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.incense-altar > span:not(.incense-ritual-label) {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .incense-flame-stage {
   margin: 0 1.5rem;
-  padding: 1.12rem 0 0.88rem;
+  padding: 1.85rem 0 1.05rem;
   display: grid;
   place-items: center;
   border-top: 1px solid var(--border-card);
@@ -1469,19 +1476,31 @@
 .incense-smoke {
   position: absolute;
   left: 50%;
-  top: -38px;
-  width: 34px;
-  height: 44px;
-  border-left: 2px solid rgba(139, 82, 38, 0.18);
+  top: -70px;
+  width: 66px;
+  height: 82px;
+  border-left: 4px solid color-mix(in srgb, var(--color-brand-accent) 34%, transparent);
   border-radius: 50%;
   transform: translateX(-50%);
-  animation: incenseSmoke 5.4s ease-in-out infinite;
+  filter: blur(0.2px);
+  animation: incenseSmoke 5.8s ease-in-out infinite;
 }
 
 .incense-smoke-two {
-  animation-delay: 1.8s;
-  opacity: 0.6;
-  transform: translateX(-35%) scale(0.86);
+  animation-delay: 1.55s;
+  opacity: 0.68;
+  transform: translateX(-36%) scale(0.92);
+}
+
+.incense-smoke-one::after,
+.incense-smoke-two::after {
+  content: "";
+  position: absolute;
+  inset: 16px auto auto 18px;
+  width: 54px;
+  height: 74px;
+  border-right: 3px solid color-mix(in srgb, var(--text-muted) 42%, transparent);
+  border-radius: 50%;
 }
 
 @keyframes incenseFlame {
@@ -1499,16 +1518,16 @@
 @keyframes incenseSmoke {
   0% {
     opacity: 0;
-    transform: translate(-50%, 12px) scale(0.72);
+    transform: translate(-50%, 18px) scale(0.62);
   }
 
   32% {
-    opacity: 0.72;
+    opacity: 0.88;
   }
 
   100% {
     opacity: 0;
-    transform: translate(-72%, -18px) scale(1.2);
+    transform: translate(-78%, -42px) scale(1.34);
   }
 }
 
