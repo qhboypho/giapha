@@ -1559,22 +1559,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.incense-counter-track {
-  width: min(320px, 100%);
-  height: 6px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--bg-secondary);
-}
-
-.incense-counter-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-brand-accent), #ffe69a);
-  transition: width 320ms ease;
-}
-
 .incense-gift-section {
   margin: 0 1.5rem 0.9rem;
   display: grid;

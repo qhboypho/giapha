@@ -7,16 +7,25 @@ import { sortMembersByBirthOrder } from "../utils/sortUtils";
 import { getInLawLabel } from "../utils/relationLabels";
 import "./Homepage.css";
 import {
+  Apple,
+  BottleWine,
+  CakeSlice,
   CalendarDays,
   Check,
   ChevronDown,
+  Coffee,
+  Droplet,
   Flame,
   FileText,
+  Flower,
   Gift,
   HandHeart,
   Images,
   Landmark,
+  Leaf,
   Network,
+  ScrollText,
+  Soup,
   TreeDeciduous,
   X,
   UserRoundCheck,
@@ -59,17 +68,17 @@ const buildIncenseAnniversaryKey = (event) => (
 );
 
 const INCENSE_GIFT_OPTIONS = [
-  { id: "incense", label: "Nhang" },
-  { id: "candle", label: "Nến" },
-  { id: "flowers", label: "Hoa" },
-  { id: "fruit", label: "Trái cây" },
-  { id: "tea", label: "Trà" },
-  { id: "wine", label: "Rượu" },
-  { id: "rice", label: "Cơm" },
-  { id: "betel", label: "Trầu cau" },
-  { id: "sweets", label: "Bánh kẹo" },
-  { id: "paper-gold", label: "Vàng mã" },
-  { id: "water", label: "Nước" }
+  { id: "incense", label: "Nhang", Icon: Flame },
+  { id: "candle", label: "Nến", Icon: Flame },
+  { id: "flowers", label: "Hoa", Icon: Flower },
+  { id: "fruit", label: "Trái cây", Icon: Apple },
+  { id: "tea", label: "Trà", Icon: Coffee },
+  { id: "wine", label: "Rượu", Icon: BottleWine },
+  { id: "rice", label: "Cơm", Icon: Soup },
+  { id: "betel", label: "Trầu cau", Icon: Leaf },
+  { id: "sweets", label: "Bánh kẹo", Icon: CakeSlice },
+  { id: "paper-gold", label: "Vàng mã", Icon: ScrollText },
+  { id: "water", label: "Nước", Icon: Droplet }
 ];
 
 function MemberAvatar({ member, className = "" }) {
@@ -211,9 +220,6 @@ function IncenseOfferingModal({ event, onClose }) {
             Số người đã thắp hương
           </span>
           <strong className="incense-counter-number">{isLoadingCount ? "..." : count.toLocaleString("vi-VN")}</strong>
-          <div className="incense-counter-track">
-            <span style={{ width: `${Math.min(100, Math.max(8, count * 9))}%` }} />
-          </div>
         </div>
 
         <div className="incense-gift-section">
@@ -232,12 +238,15 @@ function IncenseOfferingModal({ event, onClose }) {
           </button>
           {selectedGifts.length > 0 ? (
             <div className="incense-selected-gifts" aria-label="Lễ vật đã chọn">
-              {selectedGifts.map((gift) => (
-                <span key={gift.id}>
-                  <Check size={13} strokeWidth={2.5} />
-                  {gift.label}
-                </span>
-              ))}
+              {selectedGifts.map((gift) => {
+                const GiftIcon = gift.Icon;
+                return (
+                  <span key={gift.id}>
+                    <GiftIcon size={13} strokeWidth={2.4} />
+                    {gift.label}
+                  </span>
+                );
+              })}
             </div>
           ) : (
             <p className="incense-gift-hint">Chọn ít nhất một lễ vật trước khi thắp hương.</p>
@@ -271,6 +280,7 @@ function IncenseOfferingModal({ event, onClose }) {
               <div className="incense-gift-list">
                 {INCENSE_GIFT_OPTIONS.map((gift) => {
                   const selected = selectedGiftIds.includes(gift.id);
+                  const GiftIcon = gift.Icon;
                   return (
                     <button
                       type="button"
@@ -279,7 +289,7 @@ function IncenseOfferingModal({ event, onClose }) {
                       onClick={() => toggleGift(gift.id)}
                     >
                       <span className="incense-gift-option-icon">
-                        <Gift size={15} strokeWidth={2.1} />
+                        <GiftIcon size={15} strokeWidth={2.1} />
                       </span>
                       <span>{gift.label}</span>
                       {selected ? <Check size={17} strokeWidth={2.6} /> : <span className="incense-gift-option-empty" />}
