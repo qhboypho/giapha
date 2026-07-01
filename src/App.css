@@ -2225,6 +2225,13 @@
   display: block;
 }
 
+.anniversary-timeline-item.is-nearest .anniv-timeline-node,
+.anniversary-timeline-item.is-nearest .anniv-date-inline strong,
+.anniversary-timeline-item.is-nearest .anniv-date-inline em,
+.anniversary-timeline-item.is-nearest .anniv-date-inline small {
+  color: var(--color-brand-accent);
+}
+
 .anniv-date-inline {
   position: relative;
   z-index: 2;

@@ -65,7 +65,7 @@ export default function AnniversaryPage({ members = [], isLoading = false, onOpe
         <div className="anniversary-timeline" aria-label="Timeline ngày giỗ">
           {anniversaries.map((item, index) => (
             <button
-              className="anniversary-timeline-item"
+              className={`anniversary-timeline-item${index === 0 ? " is-nearest" : ""}`}
               key={item.member.id}
               onClick={() => onOpenPerson(item.member.id)}
               style={{ "--item-index": index }}
