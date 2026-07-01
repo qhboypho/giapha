@@ -1255,17 +1255,17 @@
   background: #2fd66f;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--bg-card) 78%, transparent), 0 0 12px rgba(47, 214, 111, 0.38);
   transform: translate(-50%, -50%) scale(0.88);
-  animation: anniversaryLivePulse 4.8s ease-in-out infinite;
+  animation: anniversaryLivePulse 5.8s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes anniversaryLivePulse {
-  0%, 100% {
-    opacity: 0.28;
-    transform: translate(-50%, -50%) scale(0.78);
+  0%, 24%, 100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.68);
   }
 
-  50% {
+  42%, 72% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
