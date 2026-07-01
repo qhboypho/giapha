@@ -31,13 +31,7 @@
   pointer-events: none;
   background:
     url('./assets/homepage-design/gold-clouds-cutout.png') left 34% top -188px / 410px auto no-repeat,
-    url('./assets/homepage-design/gold-clouds-cutout.png') right 18% top -180px / 370px auto no-repeat,
-    linear-gradient(#e9c36e, #e9c36e) left 10px top 8px / 52px 2px no-repeat,
-    linear-gradient(#e9c36e, #e9c36e) left 10px top 8px / 2px 48px no-repeat,
-    linear-gradient(#e9c36e, #e9c36e) right 10px top 8px / 52px 2px no-repeat,
-    linear-gradient(#e9c36e, #e9c36e) right 10px top 8px / 2px 48px no-repeat,
-    linear-gradient(#e9c36e, #e9c36e) left 10px bottom 8px / 42px 2px no-repeat,
-    linear-gradient(#e9c36e, #e9c36e) right 10px bottom 8px / 42px 2px no-repeat;
+    url('./assets/homepage-design/gold-clouds-cutout.png') right 18% top -180px / 370px auto no-repeat;
   opacity: var(--theme-navbar-ornament-opacity, 0.24);
   mix-blend-mode: screen;
 }
