@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { buildUpcomingAnniversaries, getCurrentLunarDateLabel, getYearsString } from "../utils/anniversaryUtils";
 import { buildHomepageHistoryEvents, formatHistoryEventDate } from "../utils/familyHistoryUtils";
@@ -8,11 +8,14 @@ import { getInLawLabel } from "../utils/relationLabels";
 import "./Homepage.css";
 import {
   CalendarDays,
+  Flame,
   FileText,
+  HandHeart,
   Images,
   Landmark,
   Network,
   TreeDeciduous,
+  X,
   UserRoundCheck,
   Users
 } from "lucide-react";
@@ -25,6 +28,32 @@ import goldBorders from "../assets/homepage-design/gold-borders-cutout.png";
 import dongsonDrum from "../assets/homepage-design/dongson-drum.jpg";
 
 // Static fallback removed
+const INCENSE_VIEWER_ID_STORAGE_KEY = "giapha_tc_viewer_id";
+const INCENSE_VIEWER_ID_PATTERN = /^[a-zA-Z0-9_-]{16,80}$/;
+
+const getOrCreateIncenseViewerId = () => {
+  const existing = localStorage.getItem(INCENSE_VIEWER_ID_STORAGE_KEY);
+  if (existing && INCENSE_VIEWER_ID_PATTERN.test(existing)) return existing;
+
+  const nextId = crypto.randomUUID?.() || `viewer_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  localStorage.setItem(INCENSE_VIEWER_ID_STORAGE_KEY, nextId);
+  return nextId;
+};
+
+const slugifyIncensePart = (value) => (
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/gi, "d")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48) || "anniversary"
+);
+
+const buildIncenseAnniversaryKey = (event) => (
+  `${slugifyIncensePart(event?.day)}_${slugifyIncensePart(event?.month)}`
+);
 
 function MemberAvatar({ member, className = "" }) {
   if (member?.avatar) {
@@ -39,6 +68,127 @@ function MemberAvatar({ member, className = "" }) {
     >
       {getAvatarInitials(member?.name)}
     </span>
+  );
+}
+
+function IncenseOfferingModal({ event, onClose }) {
+  const member = event?.member;
+  const anniversaryKey = buildIncenseAnniversaryKey(event);
+  const [count, setCount] = useState(0);
+  const [isLoadingCount, setIsLoadingCount] = useState(true);
+  const [isOffering, setIsOffering] = useState(false);
+  const [hasOffered, setHasOffered] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!member?.id) return undefined;
+    let cancelled = false;
+
+    const loadCount = async () => {
+      setIsLoadingCount(true);
+      setError("");
+      try {
+        const res = await fetch(`/api/incense-offerings/${encodeURIComponent(member.id)}?anniversaryKey=${encodeURIComponent(anniversaryKey)}`);
+        const data = await res.json();
+        if (!cancelled) {
+          if (data.success) {
+            setCount(Number(data.count || 0));
+          } else {
+            setError(data.error || "Chưa tải được số lượt thắp hương.");
+          }
+        }
+      } catch {
+        if (!cancelled) setError("Không thể kết nối để tải số lượt thắp hương.");
+      } finally {
+        if (!cancelled) setIsLoadingCount(false);
+      }
+    };
+
+    loadCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [anniversaryKey, member?.id]);
+
+  if (!event || !member) return null;
+
+  const handleOfferIncense = async () => {
+    if (isOffering) return;
+    setIsOffering(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/incense-offerings/${encodeURIComponent(member.id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          viewerId: getOrCreateIncenseViewerId(),
+          anniversaryKey
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCount(Number(data.count || 0));
+        setHasOffered(true);
+      } else {
+        setError(data.error || "Chưa thắp hương được, vui lòng thử lại.");
+      }
+    } catch {
+      setError("Không thể kết nối để thắp hương.");
+    } finally {
+      setIsOffering(false);
+    }
+  };
+
+  return (
+    <div className="incense-modal-overlay" role="dialog" aria-modal="true" aria-label={`Thắp hương cho ${member.name}`} onClick={onClose}>
+      <div className="incense-modal" onClick={(eventClick) => eventClick.stopPropagation()}>
+        <header className="incense-modal-header">
+          <span className="incense-modal-title">
+            <Flame size={18} strokeWidth={2.2} />
+            Thắp hương online
+          </span>
+          <button type="button" className="incense-modal-close" onClick={onClose} aria-label="Đóng">
+            <X size={22} strokeWidth={2.4} />
+          </button>
+        </header>
+
+        <div className="incense-altar">
+          <div className="incense-avatar-ring">
+            <MemberAvatar member={member} className={`incense-avatar ${member.isDeceased ? "deceased" : ""}`} />
+          </div>
+          <h3>{member.name}</h3>
+          <p>{event.title}</p>
+          <span>{event.date}</span>
+        </div>
+
+        <div className="incense-flame-stage" aria-hidden="true">
+          <span className="incense-stick">
+            <span className="incense-stick-flame" />
+            <span className="incense-smoke incense-smoke-one" />
+            <span className="incense-smoke incense-smoke-two" />
+          </span>
+        </div>
+
+        <div className="incense-counter-panel">
+          <span className="incense-counter-label">
+            <HandHeart size={16} strokeWidth={2.1} />
+            Số người đã thắp hương
+          </span>
+          <strong className="incense-counter-number">{isLoadingCount ? "..." : count.toLocaleString("vi-VN")}</strong>
+          <div className="incense-counter-track">
+            <span style={{ width: `${Math.min(100, Math.max(8, count * 9))}%` }} />
+          </div>
+        </div>
+
+        {error && <p className="incense-error">{error}</p>}
+        {hasOffered && <p className="incense-success">Nén hương của bạn đã được ghi nhận.</p>}
+
+        <button type="button" className="incense-submit-btn" onClick={handleOfferIncense} disabled={isOffering}>
+          <Flame size={17} strokeWidth={2.2} />
+          {isOffering ? "Đang thắp..." : hasOffered ? "Thắp thêm lời tưởng nhớ" : "Thắp hương"}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -116,6 +266,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
   const [activeSlide, setActiveSlide] = useState(0);
   const touchStartRef = useRef(0);
   const suppressPersonClickRef = useRef(false);
+  const [incenseEvent, setIncenseEvent] = useState(null);
   const getMobileYearsString = (member) => getYearsString(member, { hideUnknownDeceased: true });
 
   // Helper to build mobile slides dynamically
@@ -275,6 +426,14 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     handleHomepagePersonOpen(id);
+  };
+
+  const handleAnniversaryAction = (event, isNearestAnniversary) => {
+    if (isNearestAnniversary) {
+      setIncenseEvent(event);
+      return;
+    }
+    handleHomepagePersonOpen(event.member.id);
   };
 
   // Resolve dynamic mini tree root, children and branches
@@ -768,7 +927,12 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                   <span>{event.date}</span>
                   <small>{event.note}</small>
                 </div>
-                <button className="btn-item-action" onClick={() => handleHomepagePersonOpen(event.member.id)}>Xem chi tiết</button>
+                <button
+                  className={`btn-item-action${isNearestAnniversary ? " incense-action" : ""}`}
+                  onClick={() => handleAnniversaryAction(event, isNearestAnniversary)}
+                >
+                  {isNearestAnniversary ? "Thắp hương" : "Xem chi tiết"}
+                </button>
               </div>
               );
             })}
@@ -811,6 +975,12 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
           </div>
         )}
       </footer>
+      {incenseEvent && (
+        <IncenseOfferingModal
+          event={incenseEvent}
+          onClose={() => setIncenseEvent(null)}
+        />
+      )}
     </main>
   );
 }

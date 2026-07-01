@@ -307,6 +307,11 @@ function normalizeViewerId(value = '') {
   return /^[a-zA-Z0-9_-]{16,80}$/.test(id) ? id : null;
 }
 
+function normalizeIncenseKey(value = '') {
+  const key = String(value || '').trim();
+  return /^[a-zA-Z0-9:_-]{2,80}$/.test(key) ? key : null;
+}
+
 function getClientIp(c) {
   return String(
     c.req.header('cf-connecting-ip')
@@ -430,6 +435,13 @@ async function countActiveViewers(db) {
   const row = await db.prepare(
     "SELECT COUNT(*) AS count FROM viewer_presence WHERE lastSeenAt >= datetime('now', ?)"
   ).bind(`-${ACTIVE_VIEWER_WINDOW_SECONDS} seconds`).first();
+  return Number(row?.count || 0);
+}
+
+async function countIncenseOfferings(db, memberId, anniversaryKey) {
+  const row = await db.prepare(
+    "SELECT COUNT(*) AS count FROM incense_offerings WHERE memberId = ? AND anniversaryKey = ?"
+  ).bind(memberId, anniversaryKey).first();
   return Number(row?.count || 0);
 }
 
@@ -1613,6 +1625,69 @@ app.get('/members', async (c) => {
     });
   } catch (err) {
     return serverError(c, 'api', err);
+  }
+});
+
+// 11. GET /api/incense-offerings/:memberId - Count online incense offerings for a memorial
+app.get('/incense-offerings/:memberId', async (c) => {
+  try {
+    const memberId = String(c.req.param('memberId') || '').trim();
+    const anniversaryKey = normalizeIncenseKey(c.req.query('anniversaryKey'));
+    if (!memberId || !anniversaryKey) {
+      return c.json({ success: false, error: 'Thông tin ngày giỗ chưa hợp lệ.' }, 400);
+    }
+
+    const member = await c.env.DB.prepare("SELECT id FROM members WHERE id = ? LIMIT 1").bind(memberId).first();
+    if (!member) {
+      return c.json({ success: false, error: 'Không tìm thấy thành viên.' }, 404);
+    }
+
+    return c.json({
+      success: true,
+      count: await countIncenseOfferings(c.env.DB, memberId, anniversaryKey)
+    });
+  } catch (err) {
+    return serverError(c, 'incense/count', err);
+  }
+});
+
+// 12. POST /api/incense-offerings/:memberId - Offer incense anonymously or as a signed-in viewer
+app.post('/incense-offerings/:memberId', async (c) => {
+  try {
+    const memberId = String(c.req.param('memberId') || '').trim();
+    const payload = await c.req.json().catch(() => ({}));
+    const viewerId = normalizeViewerId(payload.viewerId);
+    const anniversaryKey = normalizeIncenseKey(payload.anniversaryKey);
+    if (!memberId || !viewerId || !anniversaryKey) {
+      return c.json({ success: false, error: 'Thông tin thắp hương chưa hợp lệ.' }, 400);
+    }
+
+    const member = await c.env.DB.prepare("SELECT id FROM members WHERE id = ? LIMIT 1").bind(memberId).first();
+    if (!member) {
+      return c.json({ success: false, error: 'Không tìm thấy thành viên.' }, 404);
+    }
+
+    const id = generateSecureToken(18);
+    const result = await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO incense_offerings (
+        id, memberId, viewerId, anniversaryKey, ipAddress, userAgent, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      id,
+      memberId,
+      viewerId,
+      anniversaryKey,
+      getClientIp(c),
+      String(c.req.header('user-agent') || '').slice(0, 240)
+    ).run();
+
+    return c.json({
+      success: true,
+      offered: Number(result.meta?.changes || 0) > 0,
+      count: await countIncenseOfferings(c.env.DB, memberId, anniversaryKey)
+    });
+  } catch (err) {
+    return serverError(c, 'incense/create', err);
   }
 });
 
