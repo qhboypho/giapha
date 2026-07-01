@@ -15,7 +15,21 @@ export default function TreeChart({
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const clickStartCoord = useRef({ x: 0, y: 0 });
+  const pinchStart = useRef(null);
   const containerRef = useRef(null);
+
+  const clampZoom = (value) => Math.min(2, Math.max(0.3, value));
+
+  const getTouchDistance = (touches) => {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  };
+
+  const getTouchCenter = (touches, rect) => ({
+    x: (touches[0].clientX + touches[1].clientX) / 2 - rect.left,
+    y: (touches[0].clientY + touches[1].clientY) / 2 - rect.top
+  });
 
   // Compute the family tree layout
   const { nodes, links, width } = useMemo(() => buildLayout(members), [members]);
@@ -85,6 +99,31 @@ export default function TreeChart({
     });
   }, [focusPersonId, nodes, zoom]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return undefined;
+
+    const preventNativePageZoom = (event) => {
+      if (event.touches?.length > 1) {
+        event.preventDefault();
+      }
+    };
+
+    const preventGestureZoom = (event) => {
+      event.preventDefault();
+    };
+
+    container.addEventListener("touchmove", preventNativePageZoom, { passive: false });
+    container.addEventListener("gesturestart", preventGestureZoom);
+    container.addEventListener("gesturechange", preventGestureZoom);
+
+    return () => {
+      container.removeEventListener("touchmove", preventNativePageZoom);
+      container.removeEventListener("gesturestart", preventGestureZoom);
+      container.removeEventListener("gesturechange", preventGestureZoom);
+    };
+  }, []);
+
   // Handle Dragging / Panning
   const handleMouseDown = (e) => {
     // Only drag if clicking on the canvas, not on cards or buttons
@@ -117,7 +156,23 @@ export default function TreeChart({
 
   // Touch Support for Mobile
   const handleTouchStart = (e) => {
-    if (e.target.closest(".member-card") || e.target.closest(".zoom-controls")) return;
+    if (e.target.closest(".zoom-controls")) return;
+
+    if (e.touches.length >= 2 && containerRef.current) {
+      e.preventDefault();
+      const rect = containerRef.current.getBoundingClientRect();
+      const center = getTouchCenter(e.touches, rect);
+      pinchStart.current = {
+        distance: getTouchDistance(e.touches),
+        zoom,
+        pan,
+        center
+      };
+      setIsDragging(false);
+      return;
+    }
+
+    if (e.target.closest(".member-card")) return;
     const touch = e.touches[0];
     setIsDragging(true);
     dragStart.current = { x: touch.clientX - pan.x, y: touch.clientY - pan.y };
@@ -125,7 +180,24 @@ export default function TreeChart({
   };
 
   const handleTouchMove = (e) => {
+    if (e.touches.length >= 2 && pinchStart.current && containerRef.current) {
+      e.preventDefault();
+      const rect = containerRef.current.getBoundingClientRect();
+      const center = getTouchCenter(e.touches, rect);
+      const nextZoom = clampZoom(pinchStart.current.zoom * (getTouchDistance(e.touches) / pinchStart.current.distance));
+      const treeX = (pinchStart.current.center.x - pinchStart.current.pan.x) / pinchStart.current.zoom;
+      const treeY = (pinchStart.current.center.y - pinchStart.current.pan.y) / pinchStart.current.zoom;
+
+      setZoom(nextZoom);
+      setPan({
+        x: center.x - treeX * nextZoom,
+        y: center.y - treeY * nextZoom
+      });
+      return;
+    }
+
     if (!isDragging) return;
+    e.preventDefault();
     const touch = e.touches[0];
     setPan({
       x: touch.clientX - dragStart.current.x,
@@ -134,6 +206,12 @@ export default function TreeChart({
   };
 
   const handleTouchEnd = (e) => {
+    if (pinchStart.current) {
+      pinchStart.current = null;
+      setIsDragging(false);
+      return;
+    }
+
     setIsDragging(false);
     const touch = e.changedTouches[0];
     if (touch) {
@@ -148,7 +226,7 @@ export default function TreeChart({
   };
 
   const handleZoom = (factor) => {
-    setZoom((prev) => Math.min(2, Math.max(0.3, prev * factor)));
+    setZoom((prev) => clampZoom(prev * factor));
   };
 
   const handleWheel = (e) => {
@@ -163,7 +241,7 @@ export default function TreeChart({
     const factor = e.deltaY < 0 ? 1.08 : 0.92;
 
     setZoom((prevZoom) => {
-      const nextZoom = Math.min(2, Math.max(0.3, prevZoom * factor));
+      const nextZoom = clampZoom(prevZoom * factor);
       if (nextZoom === prevZoom) return prevZoom;
 
       setPan((prevPan) => ({
@@ -201,6 +279,7 @@ export default function TreeChart({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       onWheel={handleWheel}
     >
       {/* Zoom Controls */}

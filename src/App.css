@@ -871,6 +871,8 @@
   cursor: grab;
   position: relative;
   user-select: none;
+  touch-action: none;
+  overscroll-behavior: contain;
   background:
     radial-gradient(circle at 16% 10%, rgba(191, 161, 95, 0.12), transparent 28%),
     var(--theme-tree-background-image, none),
