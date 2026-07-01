@@ -186,6 +186,7 @@ export default function App() {
   const [accountPageMode, setAccountPageMode] = useState(initialBrowserView.accountMode);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState(null);
+  const [focusedPersonId, setFocusedPersonId] = useState(null);
   const [activeViewersCount, setActiveViewersCount] = useState(0);
   const [readNotificationIds, setReadNotificationIds] = useState(() => {
     try {
@@ -259,6 +260,7 @@ export default function App() {
 
   const closeTransientOverlays = useCallback(() => {
     setSelectedPersonId(null);
+    setFocusedPersonId(null);
     setIsLoginModalOpen(false);
     setIsMemberModalOpen(false);
     setEditPerson(null);
@@ -461,6 +463,7 @@ export default function App() {
       setHistoryEvents([]);
       setShowSensitiveInfo(false);
       setSelectedPersonId(null);
+      setFocusedPersonId(null);
       showToast("Đã đăng xuất khỏi hệ thống.");
     } catch {
       showToast("Lỗi kết nối máy chủ khi đăng xuất.");
@@ -494,6 +497,7 @@ export default function App() {
           setMembers([]);
           setHistoryEvents([]);
           setSelectedPersonId(null);
+          setFocusedPersonId(null);
         }
       } else {
         showToast(data.error || "Không thể cập nhật cấu hình bảo mật.");
@@ -541,6 +545,7 @@ export default function App() {
       setMembers([]);
       setHistoryEvents([]);
       setSelectedPersonId(null);
+      setFocusedPersonId(null);
       return;
     }
 
@@ -550,6 +555,7 @@ export default function App() {
 
   const handleSelectPerson = (id) => {
     setSelectedPersonId(id);
+    setFocusedPersonId(null);
   };
 
   const handleToggleSensitiveInfo = async (newVal) => {
@@ -570,6 +576,7 @@ export default function App() {
   const handleOpenPersonInTree = (id) => {
     handleViewChange("tree");
     setSelectedPersonId(id);
+    setFocusedPersonId(id);
   };
 
   const handleCloseSidebar = () => {
@@ -880,6 +887,7 @@ export default function App() {
                 <TreeChart
                   members={members}
                   selectedPersonId={selectedPersonId}
+                  focusPersonId={focusedPersonId}
                   onSelectPerson={handleSelectPerson}
                   searchQuery={searchQuery}
                 />

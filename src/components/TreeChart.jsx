@@ -6,6 +6,7 @@ import { getAge } from "../utils/mockData";
 export default function TreeChart({
   members,
   selectedPersonId,
+  focusPersonId,
   onSelectPerson,
   searchQuery
 }) {
@@ -60,9 +61,9 @@ export default function TreeChart({
   }, [width]);
 
   useEffect(() => {
-    if (!selectedPersonId || !containerRef.current) return;
+    if (!focusPersonId || !containerRef.current) return;
 
-    const selectedNode = nodes.find((node) => node.id === selectedPersonId);
+    const selectedNode = nodes.find((node) => node.id === focusPersonId);
     if (!selectedNode) return;
 
     const container = containerRef.current;
@@ -82,7 +83,7 @@ export default function TreeChart({
         y: targetViewportY - nodeCenterY * zoom
       });
     });
-  }, [nodes, selectedPersonId, zoom]);
+  }, [focusPersonId, nodes, zoom]);
 
   // Handle Dragging / Panning
   const handleMouseDown = (e) => {
