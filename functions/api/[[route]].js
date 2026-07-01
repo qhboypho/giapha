@@ -312,6 +312,15 @@ function normalizeIncenseKey(value = '') {
   return /^[a-zA-Z0-9:_-]{2,80}$/.test(key) ? key : null;
 }
 
+function normalizeIncenseGiftItems(value = []) {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(
+    value
+      .map((item) => String(item || '').trim())
+      .filter((item) => /^[a-zA-Z0-9_-]{2,40}$/.test(item))
+  )).slice(0, 12);
+}
+
 function getClientIp(c) {
   return String(
     c.req.header('cf-connecting-ip')
@@ -445,6 +454,7 @@ async function ensureIncenseOfferingsSchema(db) {
       memberId TEXT NOT NULL,
       viewerId TEXT NOT NULL,
       anniversaryKey TEXT NOT NULL,
+      giftItems TEXT,
       ipAddress TEXT,
       userAgent TEXT,
       createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -460,6 +470,12 @@ async function ensureIncenseOfferingsSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_incense_offerings_created_at
     ON incense_offerings(createdAt)
   `).run();
+
+  const info = await db.prepare("PRAGMA table_info(incense_offerings)").all();
+  const hasGiftItems = (info.results || []).some((column) => column.name === 'giftItems');
+  if (!hasGiftItems) {
+    await db.prepare("ALTER TABLE incense_offerings ADD COLUMN giftItems TEXT").run();
+  }
 }
 
 async function countIncenseOfferings(db, memberId, anniversaryKey) {
@@ -1684,8 +1700,12 @@ app.post('/incense-offerings/:memberId', async (c) => {
     const payload = await c.req.json().catch(() => ({}));
     const viewerId = normalizeViewerId(payload.viewerId);
     const anniversaryKey = normalizeIncenseKey(payload.anniversaryKey);
+    const giftItems = normalizeIncenseGiftItems(payload.giftItems);
     if (!memberId || !viewerId || !anniversaryKey) {
       return c.json({ success: false, error: 'Thông tin thắp hương chưa hợp lệ.' }, 400);
+    }
+    if (giftItems.length === 0) {
+      return c.json({ success: false, error: 'Vui lòng chọn ít nhất một lễ vật.' }, 400);
     }
 
     const member = await c.env.DB.prepare("SELECT id FROM members WHERE id = ? LIMIT 1").bind(memberId).first();
@@ -1696,13 +1716,14 @@ app.post('/incense-offerings/:memberId', async (c) => {
     const id = generateSecureToken(18);
     const result = await c.env.DB.prepare(`
       INSERT OR IGNORE INTO incense_offerings (
-        id, memberId, viewerId, anniversaryKey, ipAddress, userAgent, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        id, memberId, viewerId, anniversaryKey, giftItems, ipAddress, userAgent, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `).bind(
       id,
       memberId,
       viewerId,
       anniversaryKey,
+      JSON.stringify(giftItems),
       getClientIp(c),
       String(c.req.header('user-agent') || '').slice(0, 240)
     ).run();

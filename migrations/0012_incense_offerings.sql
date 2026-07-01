@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS incense_offerings (
   memberId TEXT NOT NULL,
   viewerId TEXT NOT NULL,
   anniversaryKey TEXT NOT NULL,
+  giftItems TEXT,
   ipAddress TEXT,
   userAgent TEXT,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

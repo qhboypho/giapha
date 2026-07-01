@@ -8,8 +8,11 @@ import { getInLawLabel } from "../utils/relationLabels";
 import "./Homepage.css";
 import {
   CalendarDays,
+  Check,
+  ChevronDown,
   Flame,
   FileText,
+  Gift,
   HandHeart,
   Images,
   Landmark,
@@ -55,6 +58,20 @@ const buildIncenseAnniversaryKey = (event) => (
   `${slugifyIncensePart(event?.day)}_${slugifyIncensePart(event?.month)}`
 );
 
+const INCENSE_GIFT_OPTIONS = [
+  { id: "incense", label: "Nhang" },
+  { id: "candle", label: "Nến" },
+  { id: "flowers", label: "Hoa" },
+  { id: "fruit", label: "Trái cây" },
+  { id: "tea", label: "Trà" },
+  { id: "wine", label: "Rượu" },
+  { id: "rice", label: "Cơm" },
+  { id: "betel", label: "Trầu cau" },
+  { id: "sweets", label: "Bánh kẹo" },
+  { id: "paper-gold", label: "Vàng mã" },
+  { id: "water", label: "Nước" }
+];
+
 function MemberAvatar({ member, className = "" }) {
   if (member?.avatar) {
     return <img src={member.avatar} alt={member.name} className={className} />;
@@ -79,6 +96,9 @@ function IncenseOfferingModal({ event, onClose }) {
   const [isOffering, setIsOffering] = useState(false);
   const [hasOffered, setHasOffered] = useState(false);
   const [error, setError] = useState("");
+  const [selectedGiftIds, setSelectedGiftIds] = useState([]);
+  const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
+  const selectedGifts = INCENSE_GIFT_OPTIONS.filter((item) => selectedGiftIds.includes(item.id));
 
   useEffect(() => {
     if (!member?.id) return undefined;
@@ -114,6 +134,10 @@ function IncenseOfferingModal({ event, onClose }) {
 
   const handleOfferIncense = async () => {
     if (isOffering) return;
+    if (selectedGiftIds.length === 0) {
+      setError("Vui lòng chọn ít nhất một lễ vật.");
+      return;
+    }
     setIsOffering(true);
     setError("");
     try {
@@ -122,7 +146,8 @@ function IncenseOfferingModal({ event, onClose }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           viewerId: getOrCreateIncenseViewerId(),
-          anniversaryKey
+          anniversaryKey,
+          giftItems: selectedGiftIds
         })
       });
       const data = await res.json();
@@ -137,6 +162,15 @@ function IncenseOfferingModal({ event, onClose }) {
     } finally {
       setIsOffering(false);
     }
+  };
+
+  const toggleGift = (giftId) => {
+    if (hasOffered) return;
+    setSelectedGiftIds((current) => (
+      current.includes(giftId)
+        ? current.filter((id) => id !== giftId)
+        : [...current, giftId]
+    ));
   };
 
   return (
@@ -182,13 +216,83 @@ function IncenseOfferingModal({ event, onClose }) {
           </div>
         </div>
 
+        <div className="incense-gift-section">
+          <button
+            type="button"
+            className="incense-gift-toggle"
+            onClick={() => setIsGiftPickerOpen(true)}
+            disabled={hasOffered}
+          >
+            <span>
+              <Gift size={16} strokeWidth={2.1} />
+              Chọn lễ vật
+            </span>
+            <strong>{selectedGifts.length}</strong>
+            <ChevronDown size={16} strokeWidth={2.2} />
+          </button>
+          {selectedGifts.length > 0 ? (
+            <div className="incense-selected-gifts" aria-label="Lễ vật đã chọn">
+              {selectedGifts.map((gift) => (
+                <span key={gift.id}>
+                  <Check size={13} strokeWidth={2.5} />
+                  {gift.label}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="incense-gift-hint">Chọn ít nhất một lễ vật trước khi thắp hương.</p>
+          )}
+        </div>
+
         {error && <p className="incense-error">{error}</p>}
         {hasOffered && <p className="incense-success">Nén hương của bạn đã được ghi nhận.</p>}
 
-        <button type="button" className="incense-submit-btn" onClick={handleOfferIncense} disabled={isOffering}>
+        <button
+          type="button"
+          className="incense-submit-btn"
+          onClick={handleOfferIncense}
+          disabled={isOffering || selectedGiftIds.length === 0 || hasOffered}
+        >
           <Flame size={17} strokeWidth={2.2} />
-          {isOffering ? "Đang thắp..." : hasOffered ? "Thắp thêm lời tưởng nhớ" : "Thắp hương"}
+          {isOffering ? "Đang thắp..." : hasOffered ? "Đã thắp hương" : "Thắp hương"}
         </button>
+        {isGiftPickerOpen && (
+          <div className="incense-gift-picker-backdrop" role="dialog" aria-modal="true" aria-label="Chọn lễ vật" onClick={() => setIsGiftPickerOpen(false)}>
+            <div className="incense-gift-picker" onClick={(eventClick) => eventClick.stopPropagation()}>
+              <div className="incense-gift-picker-head">
+                <span>
+                  <Gift size={17} strokeWidth={2.1} />
+                  Lễ vật
+                </span>
+                <button type="button" onClick={() => setIsGiftPickerOpen(false)} aria-label="Đóng chọn lễ vật">
+                  <X size={20} strokeWidth={2.4} />
+                </button>
+              </div>
+              <div className="incense-gift-list">
+                {INCENSE_GIFT_OPTIONS.map((gift) => {
+                  const selected = selectedGiftIds.includes(gift.id);
+                  return (
+                    <button
+                      type="button"
+                      key={gift.id}
+                      className={`incense-gift-option${selected ? " selected" : ""}`}
+                      onClick={() => toggleGift(gift.id)}
+                    >
+                      <span className="incense-gift-option-icon">
+                        <Gift size={15} strokeWidth={2.1} />
+                      </span>
+                      <span>{gift.label}</span>
+                      {selected ? <Check size={17} strokeWidth={2.6} /> : <span className="incense-gift-option-empty" />}
+                    </button>
+                  );
+                })}
+              </div>
+              <button type="button" className="incense-gift-done" onClick={() => setIsGiftPickerOpen(false)}>
+                Xong
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
