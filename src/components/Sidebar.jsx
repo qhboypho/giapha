@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { canEditMemberInScope } from "../utils/editorScope";
 import { getAge, getGenderLabel } from "../utils/mockData";
@@ -16,6 +17,8 @@ export default function Sidebar({
   showSensitiveInfo,
   siteConfig = DEFAULT_SITE_CONFIG
 }) {
+  const bodyRef = useRef(null);
+  const pullStartRef = useRef(null);
   const person = members.find((m) => m.id === personId);
   if (!person) return null;
 
@@ -101,8 +104,35 @@ export default function Sidebar({
       .find(Boolean) || null
   );
 
+  const handleTouchStart = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    pullStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      scrollTop: bodyRef.current?.scrollTop || 0
+    };
+  };
+
+  const handleTouchEnd = (event) => {
+    const start = pullStartRef.current;
+    pullStartRef.current = null;
+    const touch = event.changedTouches?.[0];
+    if (!start || !touch) return;
+
+    const deltaY = touch.clientY - start.y;
+    const deltaX = Math.abs(touch.clientX - start.x);
+    const isPullDown = deltaY > 72 && deltaY > deltaX * 1.4;
+    const startedAtTop = start.scrollTop <= 2;
+    const endedAtTop = (bodyRef.current?.scrollTop || 0) <= 2;
+
+    if (startedAtTop && endedAtTop && isPullDown) {
+      onClose();
+    }
+  };
+
   return (
-    <aside className="sidebar glass">
+    <aside className="sidebar glass" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <div className="sidebar-handle-bar"></div>
       <div className="sidebar-header">
         <h3>Hồ sơ Thành viên</h3>
@@ -111,7 +141,7 @@ export default function Sidebar({
         </button>
       </div>
 
-      <div className="sidebar-body">
+      <div className="sidebar-body" ref={bodyRef}>
         {/* Profile Card Hero */}
         <div className="profile-hero animate-scale-up">
           <div
