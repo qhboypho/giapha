@@ -438,6 +438,30 @@ async function countActiveViewers(db) {
   return Number(row?.count || 0);
 }
 
+async function ensureIncenseOfferingsSchema(db) {
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS incense_offerings (
+      id TEXT PRIMARY KEY,
+      memberId TEXT NOT NULL,
+      viewerId TEXT NOT NULL,
+      anniversaryKey TEXT NOT NULL,
+      ipAddress TEXT,
+      userAgent TEXT,
+      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(memberId, viewerId, anniversaryKey),
+      FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
+    )
+  `).run();
+  await db.prepare(`
+    CREATE INDEX IF NOT EXISTS idx_incense_offerings_member_key
+    ON incense_offerings(memberId, anniversaryKey)
+  `).run();
+  await db.prepare(`
+    CREATE INDEX IF NOT EXISTS idx_incense_offerings_created_at
+    ON incense_offerings(createdAt)
+  `).run();
+}
+
 async function countIncenseOfferings(db, memberId, anniversaryKey) {
   const row = await db.prepare(
     "SELECT COUNT(*) AS count FROM incense_offerings WHERE memberId = ? AND anniversaryKey = ?"
@@ -1631,6 +1655,7 @@ app.get('/members', async (c) => {
 // 11. GET /api/incense-offerings/:memberId - Count online incense offerings for a memorial
 app.get('/incense-offerings/:memberId', async (c) => {
   try {
+    await ensureIncenseOfferingsSchema(c.env.DB);
     const memberId = String(c.req.param('memberId') || '').trim();
     const anniversaryKey = normalizeIncenseKey(c.req.query('anniversaryKey'));
     if (!memberId || !anniversaryKey) {
@@ -1654,6 +1679,7 @@ app.get('/incense-offerings/:memberId', async (c) => {
 // 12. POST /api/incense-offerings/:memberId - Offer incense anonymously or as a signed-in viewer
 app.post('/incense-offerings/:memberId', async (c) => {
   try {
+    await ensureIncenseOfferingsSchema(c.env.DB);
     const memberId = String(c.req.param('memberId') || '').trim();
     const payload = await c.req.json().catch(() => ({}));
     const viewerId = normalizeViewerId(payload.viewerId);
