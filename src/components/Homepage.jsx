@@ -104,6 +104,7 @@ function IncenseOfferingModal({ event, onClose }) {
   const [isLoadingCount, setIsLoadingCount] = useState(true);
   const [isOffering, setIsOffering] = useState(false);
   const [hasOffered, setHasOffered] = useState(false);
+  const [offerMessage, setOfferMessage] = useState("");
   const [error, setError] = useState("");
   const [selectedGiftIds, setSelectedGiftIds] = useState([]);
   const [isGiftPickerOpen, setIsGiftPickerOpen] = useState(false);
@@ -163,6 +164,10 @@ function IncenseOfferingModal({ event, onClose }) {
       if (data.success) {
         setCount(Number(data.count || 0));
         setHasOffered(true);
+        setOfferMessage(data.offered
+          ? "Nén hương của bạn đã được ghi nhận."
+          : "Bạn đã thắp hương cho kỳ giỗ này rồi."
+        );
       } else {
         setError(data.error || "Chưa thắp hương được, vui lòng thử lại.");
       }
@@ -254,7 +259,7 @@ function IncenseOfferingModal({ event, onClose }) {
         </div>
 
         {error && <p className="incense-error">{error}</p>}
-        {hasOffered && <p className="incense-success">Nén hương của bạn đã được ghi nhận.</p>}
+        {hasOffered && offerMessage && <p className="incense-success">{offerMessage}</p>}
 
         <button
           type="button"
