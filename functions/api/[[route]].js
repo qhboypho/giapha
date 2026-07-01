@@ -485,6 +485,32 @@ async function countIncenseOfferings(db, memberId, anniversaryKey) {
   return Number(row?.count || 0);
 }
 
+function parseIncenseGiftItems(value = '') {
+  try {
+    const parsed = JSON.parse(String(value || '[]'));
+    return Array.isArray(parsed) ? parsed.map((item) => String(item || '').trim()).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function getIncenseOfferingStats(db, memberId, anniversaryKey) {
+  const { results } = await db.prepare(
+    "SELECT giftItems FROM incense_offerings WHERE memberId = ? AND anniversaryKey = ?"
+  ).bind(memberId, anniversaryKey).all();
+  const giftCounts = {};
+  for (const row of results || []) {
+    for (const item of parseIncenseGiftItems(row.giftItems)) {
+      giftCounts[item] = (giftCounts[item] || 0) + 1;
+    }
+  }
+
+  return {
+    count: (results || []).length,
+    giftCounts
+  };
+}
+
 function buildMediaUrl(key = '') {
   return `/api/media/${String(key || '')
     .split('/')
@@ -1683,9 +1709,11 @@ app.get('/incense-offerings/:memberId', async (c) => {
       return c.json({ success: false, error: 'Không tìm thấy thành viên.' }, 404);
     }
 
+    const stats = await getIncenseOfferingStats(c.env.DB, memberId, anniversaryKey);
     return c.json({
       success: true,
-      count: await countIncenseOfferings(c.env.DB, memberId, anniversaryKey)
+      count: stats.count,
+      giftCounts: stats.giftCounts
     });
   } catch (err) {
     return serverError(c, 'incense/count', err);

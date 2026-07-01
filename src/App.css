@@ -2331,6 +2331,46 @@
   font-weight: 650;
 }
 
+.anniv-incense-summary {
+  display: grid;
+  gap: 0.34rem;
+  padding-top: 0.24rem;
+}
+
+.anniv-incense-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  color: var(--color-brand-accent) !important;
+  font-size: 0.76rem !important;
+  font-weight: 900;
+}
+
+.anniv-incense-count svg {
+  width: 15px;
+  height: 15px;
+}
+
+.anniv-incense-gifts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+}
+
+.anniv-incense-gifts em {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 0.48rem;
+  border: 1px solid color-mix(in srgb, var(--color-brand-accent) 38%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand-accent) 10%, transparent);
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
 /* Family history detail page */
 .family-history-page::before {
   opacity: 0.14;

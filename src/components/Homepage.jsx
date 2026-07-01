@@ -5,6 +5,7 @@ import { buildHomepageHistoryEvents, formatHistoryEventDate } from "../utils/fam
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
 import { getInLawLabel } from "../utils/relationLabels";
+import { buildIncenseAnniversaryKey } from "../utils/incenseUtils";
 import "./Homepage.css";
 import {
   Apple,
@@ -51,21 +52,6 @@ const getOrCreateIncenseViewerId = () => {
   localStorage.setItem(INCENSE_VIEWER_ID_STORAGE_KEY, nextId);
   return nextId;
 };
-
-const slugifyIncensePart = (value) => (
-  String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/gi, "d")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 48) || "anniversary"
-);
-
-const buildIncenseAnniversaryKey = (event) => (
-  `${slugifyIncensePart(event?.day)}_${slugifyIncensePart(event?.month)}`
-);
 
 const INCENSE_GIFT_OPTIONS = [
   { id: "incense", label: "Nhang", Icon: Flame },
