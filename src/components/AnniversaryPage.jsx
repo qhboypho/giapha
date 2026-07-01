@@ -4,20 +4,6 @@ import { buildUpcomingAnniversaries, buildUpcomingSolarAnniversaries, getCurrent
 import { buildIncenseAnniversaryKey } from "../utils/incenseUtils";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
-const INCENSE_GIFT_LABELS = {
-  incense: "Nhang",
-  candle: "Nến",
-  flowers: "Hoa",
-  fruit: "Trái cây",
-  tea: "Trà",
-  wine: "Rượu",
-  rice: "Cơm",
-  betel: "Trầu cau",
-  sweets: "Bánh kẹo",
-  "paper-gold": "Vàng mã",
-  water: "Nước"
-};
-
 const formatNextSolarDate = (date) => {
   if (!date) return "";
   return date.toLocaleDateString("vi-VN", {
@@ -74,9 +60,9 @@ export default function AnniversaryPage({ members = [], isLoading = false, onOpe
         try {
           const res = await fetch(`/api/incense-offerings/${encodeURIComponent(item.member.id)}?anniversaryKey=${encodeURIComponent(anniversaryKey)}`);
           const data = await res.json();
-          return [key, data.success ? { count: Number(data.count || 0), giftCounts: data.giftCounts || {} } : { count: 0, giftCounts: {} }];
+          return [key, data.success ? { count: Number(data.count || 0), giftTotal: Number(data.giftTotal || 0) } : { count: 0, giftTotal: 0 }];
         } catch {
-          return [key, { count: 0, giftCounts: {} }];
+          return [key, { count: 0, giftTotal: 0 }];
         }
       }));
       if (!cancelled) {
@@ -115,8 +101,7 @@ export default function AnniversaryPage({ members = [], isLoading = false, onOpe
       ) : anniversaries.length > 0 ? (
         <div className="anniversary-timeline" aria-label="Timeline ngày giỗ">
           {anniversaries.map((item, index) => {
-            const stats = incenseStats[`${item.member.id}:${buildIncenseAnniversaryKey(item)}`] || { count: 0, giftCounts: {} };
-            const giftEntries = Object.entries(stats.giftCounts || {}).filter(([, value]) => Number(value) > 0);
+            const stats = incenseStats[`${item.member.id}:${buildIncenseAnniversaryKey(item)}`] || { count: 0, giftTotal: 0 };
             return (
               <button
                 className={`anniversary-timeline-item${index === 0 ? " is-nearest" : ""}`}
@@ -156,11 +141,9 @@ export default function AnniversaryPage({ members = [], isLoading = false, onOpe
                         <Gift strokeWidth={1.8} />
                         {stats.count.toLocaleString("vi-VN")} người đã thắp hương
                       </span>
-                      {giftEntries.length > 0 && (
-                        <span className="anniv-incense-gifts">
-                          {giftEntries.slice(0, 4).map(([giftId, amount]) => (
-                            <em key={giftId}>{INCENSE_GIFT_LABELS[giftId] || giftId} x{amount}</em>
-                          ))}
+                      {stats.giftTotal > 0 && (
+                        <span className="anniv-incense-total">
+                          {stats.giftTotal.toLocaleString("vi-VN")} lễ vật đã dâng
                         </span>
                       )}
                     </span>

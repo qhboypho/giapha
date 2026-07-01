@@ -499,15 +499,18 @@ async function getIncenseOfferingStats(db, memberId, anniversaryKey) {
     "SELECT giftItems FROM incense_offerings WHERE memberId = ? AND anniversaryKey = ?"
   ).bind(memberId, anniversaryKey).all();
   const giftCounts = {};
+  let giftTotal = 0;
   for (const row of results || []) {
     for (const item of parseIncenseGiftItems(row.giftItems)) {
       giftCounts[item] = (giftCounts[item] || 0) + 1;
+      giftTotal += 1;
     }
   }
 
   return {
     count: (results || []).length,
-    giftCounts
+    giftCounts,
+    giftTotal
   };
 }
 
@@ -1713,7 +1716,8 @@ app.get('/incense-offerings/:memberId', async (c) => {
     return c.json({
       success: true,
       count: stats.count,
-      giftCounts: stats.giftCounts
+      giftCounts: stats.giftCounts,
+      giftTotal: stats.giftTotal
     });
   } catch (err) {
     return serverError(c, 'incense/count', err);
