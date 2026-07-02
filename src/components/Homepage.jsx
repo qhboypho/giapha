@@ -86,31 +86,29 @@ function IncenseSmokeCanvas() {
     smokeSprite.width = 96;
     smokeSprite.height = 96;
     const spriteGradient = spriteCtx.createRadialGradient(48, 48, 0, 48, 48, 48);
-    spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.96)");
-    spriteGradient.addColorStop(0.24, "rgba(252, 248, 240, 0.62)");
-    spriteGradient.addColorStop(0.58, "rgba(225, 220, 210, 0.24)");
+    spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.38)");
+    spriteGradient.addColorStop(0.24, "rgba(252, 248, 240, 0.2)");
+    spriteGradient.addColorStop(0.58, "rgba(225, 220, 210, 0.08)");
     spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
     spriteCtx.fillStyle = spriteGradient;
     spriteCtx.fillRect(0, 0, 96, 96);
 
     const spawnSmoke = (width, height, now) => {
-      if (now < lastSpawn + 58) return;
+      if (now < lastSpawn + 210) return;
       lastSpawn = now;
       const emitterY = height * 0.88;
-      for (let count = 0; count < 2; count += 1) {
-        particles.push({
-          x: width / 2 + (Math.random() - 0.5) * 5,
-          y: emitterY + Math.random() * 3,
-          vx: (Math.random() - 0.5) * 0.62,
-          vy: -0.96 - Math.random() * 0.72,
-          angle: Math.random() * Math.PI * 2,
-          spin: (Math.random() - 0.5) * 0.016,
-          start: now,
-          life: 3000 + Math.random() * 1200,
-          startSize: 8 + Math.random() * 5,
-          endSize: 42 + Math.random() * 32
-        });
-      }
+      particles.push({
+        x: width / 2 + (Math.random() - 0.5) * 4,
+        y: emitterY + Math.random() * 3,
+        vx: (Math.random() - 0.5) * 0.38,
+        vy: -0.72 - Math.random() * 0.42,
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.01,
+        start: now,
+        life: 2200 + Math.random() * 650,
+        startSize: 4 + Math.random() * 2,
+        endSize: 16 + Math.random() * 10
+      });
     };
 
     const resizeCanvas = () => {
@@ -137,7 +135,7 @@ function IncenseSmokeCanvas() {
         }
 
         const size = particle.startSize + (particle.endSize - particle.startSize) * progress;
-        const alpha = Math.sin(progress * Math.PI) * 1;
+        const alpha = Math.sin(progress * Math.PI) * 0.24;
         particle.x += particle.vx + Math.sin(time * 0.0015 + index) * 0.06;
         particle.y += particle.vy;
         particle.angle += particle.spin;

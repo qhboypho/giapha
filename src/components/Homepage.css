@@ -1545,12 +1545,12 @@
   position: absolute;
   z-index: 5;
   left: 50%;
-  top: -118%;
-  width: 128px;
-  height: 142%;
+  top: -44%;
+  width: 76px;
+  height: 62%;
   transform: translateX(-50%);
   mix-blend-mode: screen;
-  opacity: 1;
+  opacity: 0.82;
   pointer-events: none;
 }
 
