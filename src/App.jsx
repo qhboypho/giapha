@@ -654,7 +654,11 @@ export default function App() {
       const data = await res.json();
       if (data.success) {
         showToast(editPerson ? "Đã cập nhật thông tin thành viên!" : "Đã thêm thành viên mới thành công!");
-        
+
+        setIsMemberModalOpen(false);
+        setEditPerson(null);
+        setAddRelativeOf(null);
+
         // Reload members list from database
         const memData = await loadMembers(showSensitiveInfo);
         if (memData.success) {
@@ -663,9 +667,6 @@ export default function App() {
             setSelectedPersonId(data.id);
           }
         }
-        setIsMemberModalOpen(false);
-        setEditPerson(null);
-        setAddRelativeOf(null);
       } else {
         showToast(data.error || "Thao tác thất bại.");
       }
