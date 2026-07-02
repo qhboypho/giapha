@@ -248,7 +248,7 @@ function IncenseOfferingModal({ event, onClose }) {
   useEffect(() => {
     const audio = new Audio(adidaphatAudio);
     audio.loop = true;
-    audio.volume = 0.42;
+    audio.volume = 0.6;
     audioRef.current = audio;
 
     const playRequest = audio.play();
@@ -380,8 +380,6 @@ function IncenseOfferingModal({ event, onClose }) {
           <span className="incense-modal-title">
             <Flame size={18} strokeWidth={2.2} />
             Thắp hương trực tuyến
-          </span>
-          <div className="incense-modal-controls">
             <button
               type="button"
               className="incense-audio-toggle"
@@ -391,10 +389,10 @@ function IncenseOfferingModal({ event, onClose }) {
             >
               {isAudioEnabled ? <Volume2 size={21} strokeWidth={2.35} /> : <VolumeX size={21} strokeWidth={2.35} />}
             </button>
-            <button type="button" className="incense-modal-close" onClick={onClose} aria-label="Đóng">
-              <X size={22} strokeWidth={2.4} />
-            </button>
-          </div>
+          </span>
+          <button type="button" className="incense-modal-close" onClick={onClose} aria-label="Đóng">
+            <X size={22} strokeWidth={2.4} />
+          </button>
         </header>
 
         <div className="incense-altar">

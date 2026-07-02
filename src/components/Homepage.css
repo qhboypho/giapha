@@ -1400,6 +1400,9 @@ body.incense-modal-open .homepage-container {
 }
 
 .incense-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1419,26 +1422,25 @@ body.incense-modal-open .homepage-container {
 }
 
 .incense-modal-title svg {
-  color: var(--home-gold);
-}
-
-.incense-modal-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  color: #d7a94d;
 }
 
 .incense-audio-toggle {
-  width: 2.15rem;
-  height: 2.15rem;
+  width: 1.95rem;
+  height: 1.95rem;
   display: grid;
   place-items: center;
   border: 1px solid rgba(215, 169, 77, 0.48);
   border-radius: 999px;
   background: rgba(191, 161, 95, 0.1);
-  color: var(--home-gold);
+  color: #d7a94d;
   cursor: pointer;
+  margin-left: -0.12rem;
   transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.incense-modal-title .incense-audio-toggle {
+  color: #d7a94d;
 }
 
 .incense-audio-toggle:hover {
