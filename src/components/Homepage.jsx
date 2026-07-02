@@ -74,8 +74,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (!canvas || reducedMotion) return undefined;
+    if (!canvas) return undefined;
 
     const ctx = canvas.getContext("2d");
     let animationFrame = 0;
