@@ -1517,7 +1517,7 @@
   z-index: 260;
   left: 50%;
   top: -110%;
-  width: 120px;
+  width: 156px;
   height: 128%;
   transform: translateX(-50%);
   mix-blend-mode: normal;
@@ -1530,7 +1530,7 @@
   z-index: 180;
   left: 50%;
   top: -108%;
-  width: 120px;
+  width: 156px;
   height: 126%;
   transform: translateX(-50%);
   pointer-events: none;
