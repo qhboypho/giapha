@@ -103,12 +103,12 @@ function IncenseSmokeCanvas() {
         const wave = Math.sin(progress * Math.PI * 2 + index) * 14;
         const x = width * 0.5 + wave + particle.drift * progress * 34;
         const y = height * (0.9 - progress * 0.82);
-        const alpha = Math.sin(progress * Math.PI) * 0.28;
-        const radius = particle.radius + progress * 15;
+        const alpha = Math.sin(progress * Math.PI) * 0.42;
+        const radius = particle.radius + progress * 18;
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
 
-        gradient.addColorStop(0, `rgba(245, 214, 168, ${alpha})`);
-        gradient.addColorStop(0.42, `rgba(208, 197, 178, ${alpha * 0.42})`);
+        gradient.addColorStop(0, `rgba(255, 236, 199, ${alpha})`);
+        gradient.addColorStop(0.4, `rgba(232, 222, 204, ${alpha * 0.62})`);
         gradient.addColorStop(1, "rgba(208, 197, 178, 0)");
         ctx.fillStyle = gradient;
         ctx.beginPath();
