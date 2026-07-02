@@ -1512,13 +1512,13 @@
 }
 
 .incense-smoke-canvas {
-  --smoke-emitter-y: 0.872;
+  --smoke-emitter-y: 0.856;
   position: absolute;
   z-index: 260;
   left: 50%;
-  top: -110%;
+  top: -96%;
   width: 156px;
-  height: 128%;
+  height: 114%;
   transform: translateX(-50%);
   mix-blend-mode: normal;
   opacity: 1;
@@ -1529,9 +1529,9 @@
   position: absolute;
   z-index: 180;
   left: 50%;
-  top: -108%;
+  top: -94%;
   width: 156px;
-  height: 126%;
+  height: 112%;
   transform: translateX(-50%);
   pointer-events: none;
   overflow: visible;
