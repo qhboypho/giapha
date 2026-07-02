@@ -68,7 +68,7 @@ const INCENSE_GIFT_OPTIONS = [
   { id: "water", label: "Nước", Icon: Droplet }
 ];
 
-function IncenseSmokeCanvas() {
+function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -162,7 +162,7 @@ function IncenseSmokeCanvas() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="incense-smoke-canvas" aria-hidden="true" />;
+  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }
 
 function MemberAvatar({ member, className = "" }) {
@@ -1135,7 +1135,13 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                   className={`btn-item-action${isNearestAnniversary ? " incense-action" : ""}`}
                   onClick={() => handleAnniversaryAction(event, isNearestAnniversary)}
                 >
-                  {isNearestAnniversary ? "Thắp hương" : "Xem chi tiết"}
+                  <span>{isNearestAnniversary ? "Thắp hương" : "Xem chi tiết"}</span>
+                  {isNearestAnniversary && (
+                    <span className="btn-incense-mini" aria-hidden="true">
+                      <IncenseSmokeCanvas className="btn-incense-smoke-canvas" />
+                      <img src={incenseBurnerImage} alt="" />
+                    </span>
+                  )}
                 </button>
               </div>
               );
