@@ -103,28 +103,28 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     }
 
     const spawnSmoke = (width, height, now) => {
-      if (now < lastSpawn + 46) return;
+      if (now < lastSpawn + 38) return;
       lastSpawn = now;
-      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.84;
+      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.878;
       const emitterY = height * emitterYRatio;
-      const spawnCount = Math.random() > 0.3 ? 4 : 3;
+      const spawnCount = Math.random() > 0.38 ? 3 : 2;
 
       for (let i = 0; i < spawnCount; i += 1) {
         particles.push({
           x: width / 2 + (Math.random() - 0.5) * 3.4,
           y: emitterY + (Math.random() - 0.5) * 2.4,
           vx: (Math.random() - 0.5) * 0.24,
-          vy: -0.46 - Math.random() * 0.3,
+          vy: -0.42 - Math.random() * 0.28,
           wave: Math.random() * Math.PI * 2,
           waveSpeed: 0.0014 + Math.random() * 0.0013,
           waveSize: 0.2 + Math.random() * 0.34,
           angle: Math.random() * Math.PI * 2,
           spin: (Math.random() - 0.5) * 0.006,
           start: now,
-          life: 3600 + Math.random() * 1500,
-          startSize: 5.2 + Math.random() * 3.6,
-          endSize: 38 + Math.random() * 30,
-          peakAlpha: 0.72 + Math.random() * 0.24
+          life: 3900 + Math.random() * 1500,
+          startSize: 3.8 + Math.random() * 2.5,
+          endSize: 30 + Math.random() * 24,
+          peakAlpha: 0.46 + Math.random() * 0.18
         });
       }
     };
@@ -143,6 +143,21 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       ctx.clearRect(0, 0, width, height);
       ctx.globalCompositeOperation = "lighter";
       spawnSmoke(width, height, time);
+      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.878;
+      const plumeY = height * emitterYRatio - height * 0.32;
+
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      ctx.filter = "blur(12px)";
+      const plumeGradient = ctx.createRadialGradient(width / 2, plumeY, 0, width / 2, plumeY, height * 0.42);
+      plumeGradient.addColorStop(0, "rgba(255, 255, 255, 0.34)");
+      plumeGradient.addColorStop(0.42, "rgba(238, 232, 220, 0.16)");
+      plumeGradient.addColorStop(1, "rgba(220, 214, 204, 0)");
+      ctx.fillStyle = plumeGradient;
+      ctx.beginPath();
+      ctx.ellipse(width / 2, plumeY, width * 0.14, height * 0.34, Math.sin(time * 0.0008) * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
 
       for (let index = particles.length - 1; index >= 0; index -= 1) {
         const particle = particles[index];
@@ -159,13 +174,13 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
         particle.angle += particle.spin;
 
         ctx.save();
-        ctx.globalAlpha = alpha * 0.42;
+        ctx.globalAlpha = alpha * 0.56;
         ctx.translate(particle.x, particle.y + size * 0.72);
         ctx.rotate(particle.angle * 0.45);
         ctx.filter = "blur(8px)";
         const trailGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.9);
-        trailGradient.addColorStop(0, "rgba(255, 255, 255, 0.52)");
-        trailGradient.addColorStop(0.38, "rgba(240, 235, 224, 0.3)");
+        trailGradient.addColorStop(0, "rgba(255, 255, 255, 0.58)");
+        trailGradient.addColorStop(0.38, "rgba(240, 235, 224, 0.34)");
         trailGradient.addColorStop(1, "rgba(224, 218, 206, 0)");
         ctx.fillStyle = trailGradient;
         ctx.beginPath();
@@ -174,8 +189,8 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
         ctx.restore();
 
         ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.filter = "blur(1.2px)";
+        ctx.globalAlpha = alpha * 0.48;
+        ctx.filter = "blur(2px)";
         ctx.translate(particle.x, particle.y);
         ctx.rotate(particle.angle);
         ctx.drawImage(smokeSprite, -size / 2, -size / 2, size, size);

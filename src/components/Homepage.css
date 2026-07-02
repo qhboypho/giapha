@@ -1512,7 +1512,7 @@
 }
 
 .incense-smoke-canvas {
-  --smoke-emitter-y: 0.84;
+  --smoke-emitter-y: 0.878;
   position: absolute;
   z-index: 260;
   left: 50%;
@@ -1527,7 +1527,7 @@
 
 .incense-smoke-fallback {
   position: absolute;
-  z-index: 240;
+  z-index: 180;
   left: 50%;
   top: -154%;
   width: 132px;
@@ -1544,8 +1544,8 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.72) 0 18%, rgba(238, 232, 219, 0.42) 34%, transparent 72%);
-  filter: blur(4px);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.34) 0 18%, rgba(238, 232, 219, 0.18) 34%, transparent 72%);
+  filter: blur(6px);
   opacity: 0;
   transform: translate3d(-50%, 0, 0) scale(0.45);
   animation: incenseSmokeRise 5.4s ease-in-out infinite;
@@ -1576,30 +1576,15 @@
     transform: translate3d(-50%, 0, 0) scale(0.42) rotate(0deg);
   }
   16% {
-    opacity: 0.78;
+    opacity: 0.32;
   }
   58% {
-    opacity: 0.48;
+    opacity: 0.18;
     transform: translate3d(calc(-50% + 15px), -132px, 0) scale(1.45) rotate(8deg);
   }
   100% {
     opacity: 0;
     transform: translate3d(calc(-50% - 20px), -278px, 0) scale(2.22) rotate(-10deg);
-  }
-}
-
-@media (max-width: 640px) {
-  .incense-smoke-canvas {
-    --smoke-emitter-y: 0.805;
-    top: -178%;
-    width: 168px;
-    height: 214%;
-  }
-
-  .incense-smoke-fallback {
-    top: -172%;
-    width: 168px;
-    height: 198%;
   }
 }
 
