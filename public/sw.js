@@ -1,4 +1,4 @@
-const CACHE_VERSION = "giapha-tc-pwa-v1";
+const CACHE_VERSION = "giapha-tc-pwa-v2";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -33,6 +33,13 @@ const isStaticAsset = (request, url) => (
   url.pathname.endsWith(".webp") ||
   url.pathname.endsWith(".svg") ||
   url.pathname.endsWith(".ico")
+);
+
+const isFreshAsset = (request, url) => (
+  request.destination === "style" ||
+  request.destination === "script" ||
+  url.pathname.endsWith(".css") ||
+  url.pathname.endsWith(".js")
 );
 
 self.addEventListener("install", (event) => {
@@ -78,6 +85,22 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (!isStaticAsset(request, url) && url.pathname !== "/site.webmanifest") return;
+
+  if (isFreshAsset(request, url)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (!response || response.status !== 200) return response;
+          const copy = response.clone();
+          caches.open(RUNTIME_CACHE)
+            .then((cache) => cache.put(request, copy))
+            .catch(() => undefined);
+          return response;
+        })
+        .catch(() => caches.match(request) || Response.error())
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
