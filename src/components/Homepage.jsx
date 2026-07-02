@@ -92,9 +92,9 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       const y = 28 + Math.random() * 52;
       const radius = 16 + Math.random() * 18;
       const spriteGradient = spriteCtx.createRadialGradient(x, y, 0, x, y, radius);
-      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.2)");
-      spriteGradient.addColorStop(0.28, "rgba(248, 244, 236, 0.13)");
-      spriteGradient.addColorStop(0.62, "rgba(226, 220, 210, 0.06)");
+      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.46)");
+      spriteGradient.addColorStop(0.26, "rgba(248, 244, 236, 0.28)");
+      spriteGradient.addColorStop(0.6, "rgba(226, 220, 210, 0.12)");
       spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
       spriteCtx.fillStyle = spriteGradient;
       spriteCtx.beginPath();
@@ -103,7 +103,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     }
 
     const spawnSmoke = (width, height, now) => {
-      if (now < lastSpawn + 78) return;
+      if (now < lastSpawn + 64) return;
       lastSpawn = now;
       const emitterY = height * 0.872;
       const spawnCount = Math.random() > 0.38 ? 2 : 1;
@@ -123,7 +123,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
           life: 3300 + Math.random() * 1300,
           startSize: 3.6 + Math.random() * 2.6,
           endSize: 24 + Math.random() * 20,
-          peakAlpha: 0.17 + Math.random() * 0.12
+          peakAlpha: 0.34 + Math.random() * 0.16
         });
       }
     };
@@ -140,7 +140,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       ctx.clearRect(0, 0, width, height);
-      ctx.globalCompositeOperation = "source-over";
+      ctx.globalCompositeOperation = "lighter";
       spawnSmoke(width, height, time);
 
       for (let index = particles.length - 1; index >= 0; index -= 1) {
