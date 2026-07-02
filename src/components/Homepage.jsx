@@ -198,10 +198,16 @@ function IncenseOfferingModal({ event, onClose }) {
         </div>
 
         <div className="incense-flame-stage" aria-hidden="true">
-          <span className="incense-stick">
-            <span className="incense-stick-flame" />
+          <span className="incense-burner">
             <span className="incense-smoke incense-smoke-one" />
             <span className="incense-smoke incense-smoke-two" />
+            <span className="incense-smoke incense-smoke-three" />
+            <span className="incense-joss-stick">
+              <span className="incense-stick-ember" />
+            </span>
+            <span className="incense-burner-lip" />
+            <span className="incense-burner-bowl" />
+            <span className="incense-burner-foot" />
           </span>
         </div>
 
