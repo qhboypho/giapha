@@ -1135,13 +1135,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                   className={`btn-item-action${isNearestAnniversary ? " incense-action" : ""}`}
                   onClick={() => handleAnniversaryAction(event, isNearestAnniversary)}
                 >
-                  <span>{isNearestAnniversary ? "Thắp hương" : "Xem chi tiết"}</span>
-                  {isNearestAnniversary && (
-                    <span className="btn-incense-mini" aria-hidden="true">
-                      <IncenseSmokeCanvas className="btn-incense-smoke-canvas" />
-                      <img src={incenseBurnerImage} alt="" />
-                    </span>
-                  )}
+                  {isNearestAnniversary ? "Thắp hương" : "Xem chi tiết"}
                 </button>
               </div>
               );
