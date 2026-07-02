@@ -92,9 +92,9 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       const y = 28 + Math.random() * 52;
       const radius = 16 + Math.random() * 18;
       const spriteGradient = spriteCtx.createRadialGradient(x, y, 0, x, y, radius);
-      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.58)");
-      spriteGradient.addColorStop(0.26, "rgba(248, 244, 236, 0.36)");
-      spriteGradient.addColorStop(0.6, "rgba(226, 220, 210, 0.16)");
+      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.78)");
+      spriteGradient.addColorStop(0.25, "rgba(248, 244, 236, 0.52)");
+      spriteGradient.addColorStop(0.62, "rgba(226, 220, 210, 0.24)");
       spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
       spriteCtx.fillStyle = spriteGradient;
       spriteCtx.beginPath();
@@ -106,7 +106,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       if (now < lastSpawn + 46) return;
       lastSpawn = now;
       const emitterY = height * 0.84;
-      const spawnCount = Math.random() > 0.3 ? 3 : 2;
+      const spawnCount = Math.random() > 0.3 ? 4 : 3;
 
       for (let i = 0; i < spawnCount; i += 1) {
         particles.push({
@@ -121,9 +121,9 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
           spin: (Math.random() - 0.5) * 0.006,
           start: now,
           life: 3600 + Math.random() * 1500,
-          startSize: 4.2 + Math.random() * 3,
-          endSize: 30 + Math.random() * 24,
-          peakAlpha: 0.5 + Math.random() * 0.22
+          startSize: 5.2 + Math.random() * 3.6,
+          endSize: 38 + Math.random() * 30,
+          peakAlpha: 0.72 + Math.random() * 0.24
         });
       }
     };
@@ -158,17 +158,17 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
         particle.angle += particle.spin;
 
         ctx.save();
-        ctx.globalAlpha = alpha * 0.28;
+        ctx.globalAlpha = alpha * 0.42;
         ctx.translate(particle.x, particle.y + size * 0.72);
         ctx.rotate(particle.angle * 0.45);
-        ctx.filter = "blur(7px)";
+        ctx.filter = "blur(8px)";
         const trailGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.9);
-        trailGradient.addColorStop(0, "rgba(255, 255, 255, 0.34)");
-        trailGradient.addColorStop(0.38, "rgba(240, 235, 224, 0.18)");
+        trailGradient.addColorStop(0, "rgba(255, 255, 255, 0.52)");
+        trailGradient.addColorStop(0.38, "rgba(240, 235, 224, 0.3)");
         trailGradient.addColorStop(1, "rgba(224, 218, 206, 0)");
         ctx.fillStyle = trailGradient;
         ctx.beginPath();
-        ctx.ellipse(0, 0, size * 0.38, size * 1.55, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, size * 0.44, size * 1.72, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
