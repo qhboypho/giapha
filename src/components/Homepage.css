@@ -1507,8 +1507,8 @@
 .incense-image-wrap {
   position: relative;
   width: auto;
-  height: clamp(126px, 22vh, 170px);
-  aspect-ratio: 9 / 16;
+  height: clamp(160px, 26vh, 220px);
+  aspect-ratio: 781 / 1350;
   display: grid;
   place-items: end center;
   overflow: visible;
@@ -1519,7 +1519,7 @@
   position: absolute;
   z-index: 4;
   left: 50%;
-  top: 6.8%;
+  top: 1.4%;
   width: 6px;
   height: 6px;
   border-radius: 999px;
@@ -1545,9 +1545,9 @@
   position: absolute;
   z-index: 12;
   left: 50%;
-  top: -44%;
+  top: -60%;
   width: 76px;
-  height: 62%;
+  height: 70%;
   transform: translateX(-50%);
   mix-blend-mode: normal;
   opacity: 0.96;
