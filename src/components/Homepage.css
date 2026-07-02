@@ -1295,6 +1295,11 @@
 }
 
 .btn-item-action {
+  position: relative;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(175, 127, 63, 0.42);
   border-radius: 5px;
   color: #8b310d;
@@ -1304,9 +1309,10 @@
 }
 
 .btn-item-action {
-  min-height: 30px;
+  height: 30px;
   padding: 0 0.66rem;
   font-size: 0.72rem;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -1316,14 +1322,61 @@
 }
 
 .btn-item-action.incense-action {
+  gap: 0.36rem;
+  padding-right: 1.65rem;
   color: #4d2409;
   background: linear-gradient(180deg, var(--home-gold-soft), var(--home-gold));
   border-color: rgba(175, 127, 63, 0.58);
 }
 
+.btn-item-action.incense-action::before {
+  content: "";
+  position: absolute;
+  right: 0.62rem;
+  bottom: 6px;
+  width: 3px;
+  height: 13px;
+  border-radius: 999px 999px 2px 2px;
+  background: linear-gradient(180deg, #ffd38a 0 18%, #f4b16f 18% 46%, #8f3f17 46% 100%);
+  box-shadow: 0 -2px 5px rgba(255, 210, 119, 0.45);
+  pointer-events: none;
+}
+
+.btn-item-action.incense-action::after {
+  content: "";
+  position: absolute;
+  right: 0.54rem;
+  bottom: 17px;
+  width: 12px;
+  height: 15px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 45% 92%, rgba(255, 191, 68, 0.9) 0 14%, transparent 18%),
+    radial-gradient(ellipse at 48% 78%, rgba(246, 245, 231, 0.72) 0 12%, transparent 30%);
+  filter: blur(0.2px);
+  opacity: 0.42;
+  transform: translate3d(0, 0, 0) scale(0.82);
+  animation: incenseActionSmoke 3.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .btn-item-action.incense-action:hover {
   color: #3a1704;
   background: linear-gradient(180deg, #ffe7a0, var(--home-gold));
+}
+
+@keyframes incenseActionSmoke {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 3px, 0) scale(0.72);
+  }
+  28% {
+    opacity: 0.58;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-2px, -9px, 0) scale(1.18);
+  }
 }
 
 .incense-modal-overlay {
@@ -2553,6 +2606,10 @@
   .panel-link,
   .btn-item-action {
     transition: none;
+    animation: none;
+  }
+
+  .btn-item-action.incense-action::after {
     animation: none;
   }
 }
