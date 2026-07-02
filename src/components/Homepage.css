@@ -1543,14 +1543,14 @@
 
 .incense-smoke-canvas {
   position: absolute;
-  z-index: 5;
+  z-index: 12;
   left: 50%;
   top: -44%;
   width: 76px;
   height: 62%;
   transform: translateX(-50%);
-  mix-blend-mode: screen;
-  opacity: 0.82;
+  mix-blend-mode: normal;
+  opacity: 0.96;
   pointer-events: none;
 }
 

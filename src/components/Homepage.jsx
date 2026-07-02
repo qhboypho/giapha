@@ -86,9 +86,9 @@ function IncenseSmokeCanvas() {
     smokeSprite.width = 96;
     smokeSprite.height = 96;
     const spriteGradient = spriteCtx.createRadialGradient(48, 48, 0, 48, 48, 48);
-    spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.38)");
-    spriteGradient.addColorStop(0.24, "rgba(252, 248, 240, 0.2)");
-    spriteGradient.addColorStop(0.58, "rgba(225, 220, 210, 0.08)");
+    spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.5)");
+    spriteGradient.addColorStop(0.24, "rgba(252, 248, 240, 0.28)");
+    spriteGradient.addColorStop(0.58, "rgba(225, 220, 210, 0.12)");
     spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
     spriteCtx.fillStyle = spriteGradient;
     spriteCtx.fillRect(0, 0, 96, 96);
@@ -135,7 +135,7 @@ function IncenseSmokeCanvas() {
         }
 
         const size = particle.startSize + (particle.endSize - particle.startSize) * progress;
-        const alpha = Math.sin(progress * Math.PI) * 0.24;
+        const alpha = Math.sin(progress * Math.PI) * 0.34;
         particle.x += particle.vx + Math.sin(time * 0.0015 + index) * 0.06;
         particle.y += particle.vy;
         particle.angle += particle.spin;
