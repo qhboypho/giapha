@@ -32,6 +32,7 @@ import {
   UserRoundCheck,
   Users
 } from "lucide-react";
+import incenseBurnerImage from "../assets/lu-huong-1-nen-huong-transparent-2k-9x16.png";
 import paperBg from "../assets/homepage-design/paper-bg.png";
 import mountainBg from "../assets/homepage-design/new-mountain-bg.png";
 import pineWatercolor from "../assets/homepage-design/new-pine-watercolor.png";
@@ -66,6 +67,71 @@ const INCENSE_GIFT_OPTIONS = [
   { id: "paper-gold", label: "Vàng mã", Icon: ScrollText },
   { id: "water", label: "Nước", Icon: Droplet }
 ];
+
+function IncenseSmokeCanvas() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (!canvas || reducedMotion) return undefined;
+
+    const ctx = canvas.getContext("2d");
+    let animationFrame = 0;
+    const particles = Array.from({ length: 24 }, (_, index) => ({
+      seed: index / 24,
+      drift: (index % 5 - 2) * 0.24,
+      radius: 7 + (index % 6) * 1.8
+    }));
+
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(rect.width * ratio));
+      canvas.height = Math.max(1, Math.round(rect.height * ratio));
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    };
+
+    const draw = (time = 0) => {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalCompositeOperation = "lighter";
+
+      particles.forEach((particle, index) => {
+        const progress = ((time * 0.00008) + particle.seed) % 1;
+        const wave = Math.sin(progress * Math.PI * 2 + index) * 14;
+        const x = width * 0.5 + wave + particle.drift * progress * 34;
+        const y = height * (0.9 - progress * 0.82);
+        const alpha = Math.sin(progress * Math.PI) * 0.28;
+        const radius = particle.radius + progress * 15;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+
+        gradient.addColorStop(0, `rgba(245, 214, 168, ${alpha})`);
+        gradient.addColorStop(0.42, `rgba(208, 197, 178, ${alpha * 0.42})`);
+        gradient.addColorStop(1, "rgba(208, 197, 178, 0)");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.ellipse(x, y, radius * 0.65, radius * 1.12, wave * 0.018, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.globalCompositeOperation = "source-over";
+      animationFrame = window.requestAnimationFrame(draw);
+    };
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    animationFrame = window.requestAnimationFrame(draw);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("resize", resizeCanvas);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="incense-smoke-canvas" aria-hidden="true" />;
+}
 
 function MemberAvatar({ member, className = "" }) {
   if (member?.avatar) {
@@ -198,17 +264,10 @@ function IncenseOfferingModal({ event, onClose }) {
         </div>
 
         <div className="incense-flame-stage" aria-hidden="true">
-          <span className="incense-burner">
-            <span className="incense-smoke incense-smoke-one" />
-            <span className="incense-smoke incense-smoke-two" />
-            <span className="incense-smoke incense-smoke-three" />
-            <span className="incense-joss-stick">
-              <span className="incense-stick-ember" />
-            </span>
-            <span className="incense-burner-lip" />
-            <span className="incense-burner-bowl" />
-            <span className="incense-burner-foot" />
-          </span>
+          <div className="incense-image-wrap">
+            <IncenseSmokeCanvas />
+            <img src={incenseBurnerImage} alt="" className="incense-burner-image" />
+          </div>
         </div>
 
         <div className="incense-counter-panel">
