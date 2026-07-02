@@ -1236,6 +1236,12 @@ body.incense-modal-open .homepage-container {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
 .anniversary-details strong {
@@ -1280,6 +1286,17 @@ body.incense-modal-open .homepage-container {
   }
 }
 
+.anniversary-details:hover strong,
+.anniversary-details:focus-visible strong {
+  color: var(--home-gold);
+}
+
+.anniversary-details:focus-visible {
+  outline: 2px solid rgba(191, 161, 95, 0.48);
+  outline-offset: 3px;
+  border-radius: 5px;
+}
+
 .anniversary-details > span,
 .anniversary-details small {
   color: var(--home-muted);
@@ -1291,15 +1308,6 @@ body.incense-modal-open .homepage-container {
 
 .anniversary-details > span {
   font-size: 0.7rem;
-}
-
-.anniversary-actions {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.38rem;
-  min-width: 0;
 }
 
 .anniversary-empty-state {
@@ -2566,17 +2574,6 @@ body.incense-modal-open .homepage-container {
   .btn-item-action {
     grid-column: 2;
     width: max-content;
-  }
-
-  .anniversary-actions {
-    grid-column: 2;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: 0.34rem;
-  }
-
-  .anniversary-actions .btn-item-action {
-    grid-column: auto;
   }
 
   .traditional-footer {
