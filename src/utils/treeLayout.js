@@ -168,6 +168,7 @@ export const buildLayout = (members) => {
     });
 
     let parentConnectorX = unit.x + CARD_WIDTH / 2;
+    let parentConnectorStartY = unit.y + CARD_HEIGHT;
 
     // B. Add spouse node (if exists)
     if (unit.spouse) {
@@ -191,11 +192,11 @@ export const buildLayout = (members) => {
 
       // Midpoint of the couple for the children dropdown line
       parentConnectorX = unit.x + CARD_WIDTH + SPOUSE_GAP / 2;
+      parentConnectorStartY = spouseLinkY;
     }
 
     // C. Draw lines to children
     if (unit.children.length > 0) {
-      const parentBottomY = unit.y + CARD_HEIGHT;
       const verticalDropY = unit.y + CARD_HEIGHT + (GENERATION_GAP - CARD_HEIGHT) / 2;
       const sourceIds = [unit.person.id, unit.spouse?.id].filter(Boolean);
       const childIds = unit.children.map(child => child.person.id);
@@ -203,7 +204,7 @@ export const buildLayout = (members) => {
       // 1. Draw drop line from parent/couple center to the split level
       links.push({
         type: "parent-drop",
-        path: `M ${parentConnectorX} ${parentBottomY} L ${parentConnectorX} ${verticalDropY}`,
+        path: `M ${parentConnectorX} ${parentConnectorStartY} L ${parentConnectorX} ${verticalDropY}`,
         id: `drop-${unit.id}`,
         sourceIds,
         childIds
