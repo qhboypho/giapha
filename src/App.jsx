@@ -459,11 +459,33 @@ export default function App() {
       setCurrentUser(null);
       setHadSessionHint(false);
       localStorage.removeItem(HAD_SESSION_STORAGE_KEY);
-      setMembers([]);
-      setHistoryEvents([]);
       setShowSensitiveInfo(false);
       setSelectedPersonId(null);
       setFocusedPersonId(null);
+      setEditPerson(null);
+      setAddRelativeOf(null);
+
+      let nextPrivateMode = isPrivateMode;
+      try {
+        const settingsRes = await fetch("/api/settings");
+        const settingsData = await settingsRes.json();
+        if (settingsData.success) {
+          nextPrivateMode = settingsData.privateMode;
+          setIsPrivateMode(nextPrivateMode);
+          setSiteConfig(normalizeSiteConfig(settingsData.siteConfig));
+        }
+      } catch (err) {
+        console.error("Logout settings reload failed:", err);
+      }
+
+      if (nextPrivateMode) {
+        setMembers([]);
+        setHistoryEvents([]);
+      } else {
+        await loadMembers(false);
+        await loadHistoryEvents();
+      }
+
       showToast("Đã đăng xuất khỏi hệ thống.");
     } catch {
       showToast("Lỗi kết nối máy chủ khi đăng xuất.");
