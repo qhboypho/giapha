@@ -36,7 +36,7 @@ import {
   Users
 } from "lucide-react";
 import adidaphatAudio from "../assets/adidaphat1.mp3";
-import incenseBurnerImage from "../assets/lu-huong-1-nen-huong-transparent-2k-9x16.png";
+import incenseAltarImage from "../assets/incense-altar-table.png";
 import paperBg from "../assets/homepage-design/paper-bg.png";
 import mountainBg from "../assets/homepage-design/new-mountain-bg.png";
 import pineWatercolor from "../assets/homepage-design/new-pine-watercolor.png";
@@ -104,31 +104,50 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       spriteCtx.fill();
     }
 
-    const spawnSmoke = (width, height, now) => {
-      if (now < lastSpawn + 44) return;
-      lastSpawn = now;
-      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.872;
-      const emitterY = height * emitterYRatio;
-      const spawnCount = Math.random() > 0.46 ? 2 : 1;
+    const getSmokeEmitters = (width, height) => {
+      const styles = getComputedStyle(canvas);
+      const configuredEmitters = styles.getPropertyValue("--smoke-emitters").trim();
+      if (configuredEmitters) {
+        const emitters = configuredEmitters
+          .split("|")
+          .map((pair) => {
+            const [xRatio, yRatio] = pair.split(",").map((value) => Number.parseFloat(value.trim()));
+            if (!Number.isFinite(xRatio) || !Number.isFinite(yRatio)) return null;
+            return { x: width * xRatio, y: height * yRatio };
+          })
+          .filter(Boolean);
 
-      for (let i = 0; i < spawnCount; i += 1) {
-        particles.push({
-          x: width / 2 + (Math.random() - 0.5) * 5,
-          y: emitterY + (Math.random() - 0.5) * 2,
-          vx: (Math.random() - 0.5) * 0.42,
-          vy: -0.44 - Math.random() * 0.28,
-          wave: Math.random() * Math.PI * 2,
-          waveSpeed: 0.0011 + Math.random() * 0.0018,
-          waveSize: 0.08 + Math.random() * 0.22,
-          angle: Math.random() * Math.PI * 2,
-          spin: (Math.random() - 0.5) * 0.012,
-          start: now,
-          life: 3000 + Math.random() * 1900,
-          startSize: 5 + Math.random() * 3,
-          endSize: 18 + Math.random() * 18,
-          peakAlpha: 0.42 + Math.random() * 0.18
-        });
+        if (emitters.length > 0) return emitters;
       }
+
+      const emitterYRatio = Number.parseFloat(styles.getPropertyValue("--smoke-emitter-y")) || 0.872;
+      return [{ x: width / 2, y: height * emitterYRatio }];
+    };
+
+    const spawnSmoke = (width, height, now) => {
+      if (now < lastSpawn + 70) return;
+      lastSpawn = now;
+      const emitters = getSmokeEmitters(width, height);
+
+      emitters.forEach((emitter, index) => {
+        if (Math.random() < 0.1) return;
+        particles.push({
+          x: emitter.x + (Math.random() - 0.5) * 4,
+          y: emitter.y + (Math.random() - 0.5) * 2,
+          vx: (Math.random() - 0.5) * 0.34 + (index - (emitters.length - 1) / 2) * 0.04,
+          vy: -0.36 - Math.random() * 0.22,
+          wave: Math.random() * Math.PI * 2,
+          waveSpeed: 0.001 + Math.random() * 0.0015,
+          waveSize: 0.08 + Math.random() * 0.18,
+          angle: Math.random() * Math.PI * 2,
+          spin: (Math.random() - 0.5) * 0.01,
+          start: now,
+          life: 3200 + Math.random() * 1800,
+          startSize: 4 + Math.random() * 2.5,
+          endSize: 15 + Math.random() * 14,
+          peakAlpha: 0.28 + Math.random() * 0.12
+        });
+      });
     };
 
     const resizeCanvas = () => {
@@ -415,7 +434,8 @@ function IncenseOfferingModal({ event, onClose }) {
               <span />
               <span />
             </div>
-            <img src={incenseBurnerImage} alt="" className="incense-burner-image" />
+            {member?.avatar && <MemberAvatar member={member} className="incense-frame-portrait" />}
+            <img src={incenseAltarImage} alt="" className="incense-burner-image" />
           </div>
         </div>
 

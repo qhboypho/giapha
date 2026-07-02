@@ -1526,8 +1526,8 @@ body.incense-modal-open .homepage-container {
 .incense-flame-stage {
   position: relative;
   z-index: 30;
-  margin: 0 1.5rem;
-  padding: 0.2rem 0 0.58rem;
+  margin: 0 1.15rem;
+  padding: 0.25rem 0 0.58rem;
   display: grid;
   place-items: center;
   border-top: 1px solid var(--border-card);
@@ -1536,27 +1536,15 @@ body.incense-modal-open .homepage-container {
 
 .incense-image-wrap {
   position: relative;
-  width: auto;
-  height: clamp(160px, 26vh, 220px);
-  aspect-ratio: 781 / 1350;
+  width: min(100%, 330px);
+  aspect-ratio: 1672 / 941;
   display: grid;
-  place-items: end center;
+  place-items: center;
   overflow: visible;
 }
 
 .incense-image-wrap::after {
-  content: "";
-  position: absolute;
-  z-index: 4;
-  left: 50%;
-  top: 1.55%;
-  width: 3px;
-  height: 3px;
-  border-radius: 999px;
-  background: radial-gradient(circle, #fff1a8 0 18%, #ffb94a 20% 52%, #c7411c 54% 76%, transparent 78%);
-  box-shadow: 0 0 7px rgba(255, 183, 65, 0.82);
-  transform: translateX(-50%);
-  pointer-events: none;
+  display: none;
 }
 
 .incense-burner-image {
@@ -1571,15 +1559,30 @@ body.incense-modal-open .homepage-container {
   user-select: none;
 }
 
+.incense-frame-portrait {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 14%;
+  width: 12.8%;
+  height: 20.6%;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0.78;
+  filter: sepia(0.34) grayscale(0.28) contrast(0.9);
+  pointer-events: none;
+  user-select: none;
+}
+
 .incense-smoke-canvas {
-  --smoke-emitter-y: 0.856;
+  --smoke-emitters: 0.478, 0.282 | 0.494, 0.262 | 0.509, 0.282;
   position: absolute;
   z-index: 260;
-  left: 50%;
-  top: -96%;
-  width: 156px;
-  height: 114%;
-  transform: translateX(-50%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   mix-blend-mode: normal;
   opacity: 1;
   pointer-events: none;
@@ -1587,11 +1590,11 @@ body.incense-modal-open .homepage-container {
 
 .incense-smoke-fallback {
   position: absolute;
-  z-index: 180;
+  z-index: 250;
   left: 50%;
-  top: -94%;
-  width: 156px;
-  height: 112%;
+  top: 4%;
+  width: 44%;
+  height: 34%;
   transform: translateX(-50%);
   pointer-events: none;
   overflow: visible;
