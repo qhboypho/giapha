@@ -698,12 +698,12 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
     handleHomepagePersonOpen(id);
   };
 
-  const handleAnniversaryAction = (event, isNearestAnniversary) => {
-    if (isNearestAnniversary) {
-      setIncenseEvent(event);
-      return;
-    }
+  const handleAnniversaryDetailOpen = (event) => {
     handleHomepagePersonOpen(event.member.id);
+  };
+
+  const handleAnniversaryIncenseOpen = (event) => {
+    setIncenseEvent(event);
   };
 
   // Resolve dynamic mini tree root, children and branches
@@ -749,7 +749,9 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
   const upcomingAnniversariesCount = members.length > 0
     ? upcomingAnniversaries.filter((event) => event.daysUntil <= homepageConfig.anniversaryWindowDays).length
     : 0;
-  const visibleAnniversaries = upcomingAnniversaries.slice(0, homepageConfig.anniversaryLimit);
+  const visibleAnniversaries = upcomingAnniversaries
+    .filter((event) => event.daysUntil <= homepageConfig.anniversaryWindowDays)
+    .slice(0, homepageConfig.anniversaryLimit);
   const shouldShowBottomGrid = homepageConfig.showFeatured || homepageConfig.showAnniversaries || homepageConfig.showHistory;
 
   const stats = [
@@ -1197,12 +1199,22 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
                   <span>{event.date}</span>
                   <small>{event.note}</small>
                 </div>
-                <button
-                  className={`btn-item-action${isNearestAnniversary ? " incense-action" : ""}`}
-                  onClick={() => handleAnniversaryAction(event, isNearestAnniversary)}
-                >
-                  {isNearestAnniversary ? "Thắp hương" : "Xem chi tiết"}
-                </button>
+                <div className="anniversary-actions">
+                  <button
+                    type="button"
+                    className="btn-item-action detail-action"
+                    onClick={() => handleAnniversaryDetailOpen(event)}
+                  >
+                    Xem chi tiết
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn-item-action incense-action${isNearestAnniversary ? " is-priority" : ""}`}
+                    onClick={() => handleAnniversaryIncenseOpen(event)}
+                  >
+                    Thắp hương
+                  </button>
+                </div>
               </div>
               );
             })}

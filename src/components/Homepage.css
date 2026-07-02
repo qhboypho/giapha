@@ -1163,7 +1163,7 @@ body.incense-modal-open .homepage-container {
 .anniversary-item {
   position: relative;
   display: grid;
-  grid-template-columns: 68px 1fr auto;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
   align-items: stretch;
   gap: 0.7rem;
   padding: 0.42rem 0;
@@ -1293,6 +1293,15 @@ body.incense-modal-open .homepage-container {
   font-size: 0.7rem;
 }
 
+.anniversary-actions {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.38rem;
+  min-width: 0;
+}
+
 .anniversary-empty-state {
   padding: 0.9rem 0.2rem 0.35rem;
   color: var(--home-muted);
@@ -1329,14 +1338,20 @@ body.incense-modal-open .homepage-container {
 
 .btn-item-action.incense-action {
   gap: 0.36rem;
-  color: #4d2409;
-  background: linear-gradient(180deg, var(--home-gold-soft), var(--home-gold));
+  color: #7a2d09;
+  background: rgba(255, 247, 230, 0.72);
   border-color: rgba(175, 127, 63, 0.58);
 }
 
 .btn-item-action.incense-action:hover {
   color: #3a1704;
   background: linear-gradient(180deg, #ffe7a0, var(--home-gold));
+}
+
+.anniversary-item.is-nearest .btn-item-action.incense-action,
+.btn-item-action.incense-action.is-priority {
+  color: #4d2409;
+  background: linear-gradient(180deg, var(--home-gold-soft), var(--home-gold));
 }
 
 .incense-modal-overlay {
@@ -2551,6 +2566,17 @@ body.incense-modal-open .homepage-container {
   .btn-item-action {
     grid-column: 2;
     width: max-content;
+  }
+
+  .anniversary-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.34rem;
+  }
+
+  .anniversary-actions .btn-item-action {
+    grid-column: auto;
   }
 
   .traditional-footer {
