@@ -213,14 +213,30 @@ function IncenseOfferingModal({ event, onClose }) {
   const selectedGifts = INCENSE_GIFT_OPTIONS.filter((item) => selectedGiftIds.includes(item.id));
 
   useEffect(() => {
+    const homepageContainer = document.querySelector(".homepage-container");
     const previousBodyOverflow = document.body.style.overflow;
     const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousHomepageOverflowY = homepageContainer?.style.overflowY;
+    const previousBodyTouchAction = document.body.style.touchAction;
+    const previousHtmlTouchAction = document.documentElement.style.touchAction;
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    document.documentElement.style.touchAction = "none";
+    document.body.classList.add("incense-modal-open");
+    if (homepageContainer) {
+      homepageContainer.style.overflowY = "hidden";
+    }
 
     return () => {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.touchAction = previousBodyTouchAction;
+      document.documentElement.style.touchAction = previousHtmlTouchAction;
+      document.body.classList.remove("incense-modal-open");
+      if (homepageContainer) {
+        homepageContainer.style.overflowY = previousHomepageOverflowY || "";
+      }
     };
   }, []);
 
@@ -242,7 +258,7 @@ function IncenseOfferingModal({ event, onClose }) {
               setHasOffered(true);
               setSelectedGiftIds([]);
               setIsGiftPickerOpen(false);
-              setOfferMessage("Bạn đã thắp hương cho kỳ giỗ này rồi.");
+              setOfferMessage("Bạn đã thắp hương rồi !");
             } else {
               setHasOffered(false);
               setOfferMessage("");
@@ -291,7 +307,7 @@ function IncenseOfferingModal({ event, onClose }) {
         setIsGiftPickerOpen(false);
         setOfferMessage(data.offered
           ? "Nén hương của bạn đã được ghi nhận."
-          : "Bạn đã thắp hương cho kỳ giỗ này rồi."
+          : "Bạn đã thắp hương rồi !"
         );
       } else {
         setError(data.error || "Chưa thắp hương được, vui lòng thử lại.");
@@ -318,7 +334,7 @@ function IncenseOfferingModal({ event, onClose }) {
         <header className="incense-modal-header">
           <span className="incense-modal-title">
             <Flame size={18} strokeWidth={2.2} />
-            Thắp hương online
+            Thắp hương trực tuyến
           </span>
           <button type="button" className="incense-modal-close" onClick={onClose} aria-label="Đóng">
             <X size={22} strokeWidth={2.4} />

@@ -35,6 +35,12 @@
   isolation: isolate;
 }
 
+body.incense-modal-open .homepage-container {
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
 .homepage-container::before {
   content: "";
   position: fixed;
