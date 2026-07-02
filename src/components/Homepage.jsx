@@ -90,11 +90,11 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     for (let i = 0; i < 10; i += 1) {
       const x = 36 + Math.random() * 40;
       const y = 28 + Math.random() * 52;
-      const radius = 16 + Math.random() * 18;
+      const radius = 18 + Math.random() * 20;
       const spriteGradient = spriteCtx.createRadialGradient(x, y, 0, x, y, radius);
-      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.78)");
-      spriteGradient.addColorStop(0.25, "rgba(248, 244, 236, 0.52)");
-      spriteGradient.addColorStop(0.62, "rgba(226, 220, 210, 0.24)");
+      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.88)");
+      spriteGradient.addColorStop(0.25, "rgba(248, 244, 236, 0.64)");
+      spriteGradient.addColorStop(0.62, "rgba(226, 220, 210, 0.32)");
       spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
       spriteCtx.fillStyle = spriteGradient;
       spriteCtx.beginPath();
@@ -103,28 +103,28 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     }
 
     const spawnSmoke = (width, height, now) => {
-      if (now < lastSpawn + 38) return;
+      if (now < lastSpawn + 58) return;
       lastSpawn = now;
-      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.878;
+      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.872;
       const emitterY = height * emitterYRatio;
-      const spawnCount = Math.random() > 0.38 ? 3 : 2;
+      const spawnCount = Math.random() > 0.42 ? 2 : 1;
 
       for (let i = 0; i < spawnCount; i += 1) {
         particles.push({
-          x: width / 2 + (Math.random() - 0.5) * 3.4,
-          y: emitterY + (Math.random() - 0.5) * 2.4,
-          vx: (Math.random() - 0.5) * 0.24,
-          vy: -0.42 - Math.random() * 0.28,
+          x: width / 2 + (Math.random() - 0.5) * 3.6,
+          y: emitterY + (Math.random() - 0.5) * 1.8,
+          vx: (Math.random() - 0.5) * 0.18,
+          vy: -0.44 - Math.random() * 0.24,
           wave: Math.random() * Math.PI * 2,
-          waveSpeed: 0.0014 + Math.random() * 0.0013,
-          waveSize: 0.2 + Math.random() * 0.34,
+          waveSpeed: 0.0012 + Math.random() * 0.0012,
+          waveSize: 0.16 + Math.random() * 0.28,
           angle: Math.random() * Math.PI * 2,
           spin: (Math.random() - 0.5) * 0.006,
           start: now,
-          life: 3900 + Math.random() * 1500,
-          startSize: 3.8 + Math.random() * 2.5,
-          endSize: 30 + Math.random() * 24,
-          peakAlpha: 0.46 + Math.random() * 0.18
+          life: 4300 + Math.random() * 1600,
+          startSize: 3.4 + Math.random() * 2,
+          endSize: 20 + Math.random() * 16,
+          peakAlpha: 0.36 + Math.random() * 0.16
         });
       }
     };
@@ -141,21 +141,50 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       ctx.clearRect(0, 0, width, height);
-      ctx.globalCompositeOperation = "lighter";
+      ctx.globalCompositeOperation = "source-over";
       spawnSmoke(width, height, time);
-      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.878;
-      const plumeY = height * emitterYRatio - height * 0.32;
+      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.872;
+      const plumeY = height * emitterYRatio - height * 0.36;
+
+      const baseY = height * emitterYRatio - 1;
+      for (let wisp = 0; wisp < 6; wisp += 1) {
+        const phase = time * (0.00085 + wisp * 0.00008) + wisp * 1.37;
+        const lift = height * (0.42 + wisp * 0.025);
+        const sway = 7 + wisp * 2.3;
+        const startX = width / 2 + Math.sin(phase) * 1.2;
+        const endX = width / 2 + Math.sin(phase + 2.4) * sway;
+        const midX = width / 2 + Math.sin(phase + 0.9) * (sway * 0.72);
+
+        ctx.save();
+        ctx.globalAlpha = 0.28 + wisp * 0.026;
+        ctx.filter = "blur(2.2px)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.88)";
+        ctx.lineWidth = 2.6 + wisp * 0.24;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(startX, baseY);
+        ctx.bezierCurveTo(
+          midX,
+          baseY - lift * 0.32,
+          width / 2 + Math.sin(phase + 1.8) * sway,
+          baseY - lift * 0.68,
+          endX,
+          baseY - lift
+        );
+        ctx.stroke();
+        ctx.restore();
+      }
 
       ctx.save();
-      ctx.globalAlpha = 0.2;
-      ctx.filter = "blur(12px)";
-      const plumeGradient = ctx.createRadialGradient(width / 2, plumeY, 0, width / 2, plumeY, height * 0.42);
-      plumeGradient.addColorStop(0, "rgba(255, 255, 255, 0.34)");
-      plumeGradient.addColorStop(0.42, "rgba(238, 232, 220, 0.16)");
+      ctx.globalAlpha = 0.16;
+      ctx.filter = "blur(9px)";
+      const plumeGradient = ctx.createRadialGradient(width / 2, plumeY, 0, width / 2, plumeY, height * 0.34);
+      plumeGradient.addColorStop(0, "rgba(255, 255, 255, 0.42)");
+      plumeGradient.addColorStop(0.42, "rgba(238, 232, 220, 0.18)");
       plumeGradient.addColorStop(1, "rgba(220, 214, 204, 0)");
       ctx.fillStyle = plumeGradient;
       ctx.beginPath();
-      ctx.ellipse(width / 2, plumeY, width * 0.14, height * 0.34, Math.sin(time * 0.0008) * 0.18, 0, Math.PI * 2);
+      ctx.ellipse(width / 2, plumeY, width * 0.13, height * 0.31, Math.sin(time * 0.0008) * 0.18, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
@@ -174,23 +203,23 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
         particle.angle += particle.spin;
 
         ctx.save();
-        ctx.globalAlpha = alpha * 0.56;
+        ctx.globalAlpha = alpha * 0.28;
         ctx.translate(particle.x, particle.y + size * 0.72);
         ctx.rotate(particle.angle * 0.45);
-        ctx.filter = "blur(8px)";
+        ctx.filter = "blur(7px)";
         const trailGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.9);
-        trailGradient.addColorStop(0, "rgba(255, 255, 255, 0.58)");
-        trailGradient.addColorStop(0.38, "rgba(240, 235, 224, 0.34)");
+        trailGradient.addColorStop(0, "rgba(255, 255, 255, 0.62)");
+        trailGradient.addColorStop(0.38, "rgba(240, 235, 224, 0.28)");
         trailGradient.addColorStop(1, "rgba(224, 218, 206, 0)");
         ctx.fillStyle = trailGradient;
         ctx.beginPath();
-        ctx.ellipse(0, 0, size * 0.44, size * 1.72, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, size * 0.34, size * 1.38, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
         ctx.save();
-        ctx.globalAlpha = alpha * 0.48;
-        ctx.filter = "blur(2px)";
+        ctx.globalAlpha = alpha * 0.42;
+        ctx.filter = "blur(1.4px)";
         ctx.translate(particle.x, particle.y);
         ctx.rotate(particle.angle);
         ctx.drawImage(smokeSprite, -size / 2, -size / 2, size, size);
