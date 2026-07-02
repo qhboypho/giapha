@@ -1406,7 +1406,7 @@
 
 .incense-altar {
   position: relative;
-  z-index: 4;
+  z-index: 3;
   display: grid;
   justify-items: center;
   gap: 0.26rem;
@@ -1465,7 +1465,7 @@
 
 .incense-flame-stage {
   position: relative;
-  z-index: 8;
+  z-index: 30;
   margin: 0 1.5rem;
   padding: 0.2rem 0 0.58rem;
   display: grid;
@@ -1513,11 +1513,11 @@
 
 .incense-smoke-canvas {
   position: absolute;
-  z-index: 120;
+  z-index: 260;
   left: 50%;
-  top: -124%;
-  width: 118px;
-  height: 144%;
+  top: -158%;
+  width: 132px;
+  height: 182%;
   transform: translateX(-50%);
   mix-blend-mode: normal;
   opacity: 1;
@@ -1526,11 +1526,11 @@
 
 .incense-smoke-fallback {
   position: absolute;
-  z-index: 110;
+  z-index: 240;
   left: 50%;
-  top: -124%;
-  width: 118px;
-  height: 126%;
+  top: -154%;
+  width: 132px;
+  height: 166%;
   transform: translateX(-50%);
   pointer-events: none;
   overflow: visible;
@@ -1543,7 +1543,7 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.38) 0 18%, rgba(238, 232, 219, 0.2) 34%, transparent 72%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0 18%, rgba(238, 232, 219, 0.28) 34%, transparent 72%);
   filter: blur(4px);
   opacity: 0;
   transform: translate3d(-50%, 0, 0) scale(0.45);
@@ -1575,15 +1575,15 @@
     transform: translate3d(-50%, 0, 0) scale(0.42) rotate(0deg);
   }
   16% {
-    opacity: 0.42;
+    opacity: 0.52;
   }
   58% {
-    opacity: 0.26;
-    transform: translate3d(calc(-50% + 13px), -104px, 0) scale(1.35) rotate(8deg);
+    opacity: 0.32;
+    transform: translate3d(calc(-50% + 15px), -132px, 0) scale(1.45) rotate(8deg);
   }
   100% {
     opacity: 0;
-    transform: translate3d(calc(-50% - 18px), -220px, 0) scale(2.1) rotate(-10deg);
+    transform: translate3d(calc(-50% - 20px), -278px, 0) scale(2.22) rotate(-10deg);
   }
 }
 

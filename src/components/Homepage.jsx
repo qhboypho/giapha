@@ -92,9 +92,9 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       const y = 28 + Math.random() * 52;
       const radius = 16 + Math.random() * 18;
       const spriteGradient = spriteCtx.createRadialGradient(x, y, 0, x, y, radius);
-      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.46)");
-      spriteGradient.addColorStop(0.26, "rgba(248, 244, 236, 0.28)");
-      spriteGradient.addColorStop(0.6, "rgba(226, 220, 210, 0.12)");
+      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.58)");
+      spriteGradient.addColorStop(0.26, "rgba(248, 244, 236, 0.36)");
+      spriteGradient.addColorStop(0.6, "rgba(226, 220, 210, 0.16)");
       spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
       spriteCtx.fillStyle = spriteGradient;
       spriteCtx.beginPath();
@@ -105,7 +105,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     const spawnSmoke = (width, height, now) => {
       if (now < lastSpawn + 64) return;
       lastSpawn = now;
-      const emitterY = height * 0.872;
+      const emitterY = height * 0.84;
       const spawnCount = Math.random() > 0.38 ? 2 : 1;
 
       for (let i = 0; i < spawnCount; i += 1) {
@@ -113,7 +113,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
           x: width / 2 + (Math.random() - 0.5) * 3.4,
           y: emitterY + (Math.random() - 0.5) * 2.4,
           vx: (Math.random() - 0.5) * 0.24,
-          vy: -0.36 - Math.random() * 0.22,
+          vy: -0.42 - Math.random() * 0.26,
           wave: Math.random() * Math.PI * 2,
           waveSpeed: 0.0014 + Math.random() * 0.0013,
           waveSize: 0.2 + Math.random() * 0.34,
@@ -123,7 +123,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
           life: 3300 + Math.random() * 1300,
           startSize: 3.6 + Math.random() * 2.6,
           endSize: 24 + Math.random() * 20,
-          peakAlpha: 0.34 + Math.random() * 0.16
+          peakAlpha: 0.44 + Math.random() * 0.2
         });
       }
     };
