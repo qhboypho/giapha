@@ -1419,7 +1419,36 @@ body.incense-modal-open .homepage-container {
 }
 
 .incense-modal-title svg {
-  color: var(--color-brand-accent);
+  color: var(--home-gold);
+}
+
+.incense-modal-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.incense-audio-toggle {
+  width: 2.15rem;
+  height: 2.15rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(215, 169, 77, 0.48);
+  border-radius: 999px;
+  background: rgba(191, 161, 95, 0.1);
+  color: var(--home-gold);
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.incense-audio-toggle:hover {
+  border-color: rgba(215, 169, 77, 0.72);
+  background: rgba(191, 161, 95, 0.18);
+  transform: translateY(-1px);
+}
+
+.incense-audio-toggle svg {
+  color: currentColor;
 }
 
 .incense-modal-close {

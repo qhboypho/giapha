@@ -29,10 +29,13 @@ import {
   ScrollText,
   Soup,
   TreeDeciduous,
+  Volume2,
+  VolumeX,
   X,
   UserRoundCheck,
   Users
 } from "lucide-react";
+import adidaphatAudio from "../assets/adidaphat1.mp3";
 import incenseBurnerImage from "../assets/lu-huong-1-nen-huong-transparent-2k-9x16.png";
 import paperBg from "../assets/homepage-design/paper-bg.png";
 import mountainBg from "../assets/homepage-design/new-mountain-bg.png";
@@ -202,10 +205,12 @@ function MemberAvatar({ member, className = "" }) {
 function IncenseOfferingModal({ event, onClose }) {
   const member = event?.member;
   const anniversaryKey = buildIncenseAnniversaryKey(event);
+  const audioRef = useRef(null);
   const [count, setCount] = useState(0);
   const [isLoadingCount, setIsLoadingCount] = useState(true);
   const [isOffering, setIsOffering] = useState(false);
   const [hasOffered, setHasOffered] = useState(false);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [offerMessage, setOfferMessage] = useState("");
   const [error, setError] = useState("");
   const [selectedGiftIds, setSelectedGiftIds] = useState([]);
@@ -237,6 +242,26 @@ function IncenseOfferingModal({ event, onClose }) {
       if (homepageContainer) {
         homepageContainer.style.overflowY = previousHomepageOverflowY || "";
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = new Audio(adidaphatAudio);
+    audio.loop = true;
+    audio.volume = 0.42;
+    audioRef.current = audio;
+
+    const playRequest = audio.play();
+    if (playRequest?.catch) {
+      playRequest.catch(() => {
+        setIsAudioEnabled(false);
+      });
+    }
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+      audioRef.current = null;
     };
   }, []);
 
@@ -328,6 +353,26 @@ function IncenseOfferingModal({ event, onClose }) {
     ));
   };
 
+  const handleToggleAudio = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isAudioEnabled) {
+      audio.pause();
+      setIsAudioEnabled(false);
+      return;
+    }
+
+    const playRequest = audio.play();
+    if (playRequest?.then) {
+      playRequest
+        .then(() => setIsAudioEnabled(true))
+        .catch(() => setIsAudioEnabled(false));
+      return;
+    }
+    setIsAudioEnabled(true);
+  };
+
   return createPortal((
     <div className="incense-modal-overlay" role="dialog" aria-modal="true" aria-label={`Thắp hương cho ${member.name}`} onClick={onClose}>
       <div className="incense-modal" onClick={(eventClick) => eventClick.stopPropagation()}>
@@ -336,9 +381,20 @@ function IncenseOfferingModal({ event, onClose }) {
             <Flame size={18} strokeWidth={2.2} />
             Thắp hương trực tuyến
           </span>
-          <button type="button" className="incense-modal-close" onClick={onClose} aria-label="Đóng">
-            <X size={22} strokeWidth={2.4} />
-          </button>
+          <div className="incense-modal-controls">
+            <button
+              type="button"
+              className="incense-audio-toggle"
+              onClick={handleToggleAudio}
+              aria-label={isAudioEnabled ? "Tắt âm thanh" : "Bật âm thanh"}
+              title={isAudioEnabled ? "Tắt âm thanh" : "Bật âm thanh"}
+            >
+              {isAudioEnabled ? <Volume2 size={21} strokeWidth={2.35} /> : <VolumeX size={21} strokeWidth={2.35} />}
+            </button>
+            <button type="button" className="incense-modal-close" onClick={onClose} aria-label="Đóng">
+              <X size={22} strokeWidth={2.4} />
+            </button>
+          </div>
         </header>
 
         <div className="incense-altar">
