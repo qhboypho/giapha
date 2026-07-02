@@ -102,11 +102,11 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     }
 
     const spawnSmoke = (width, height, now) => {
-      if (now < lastSpawn + 36) return;
+      if (now < lastSpawn + 44) return;
       lastSpawn = now;
       const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.872;
       const emitterY = height * emitterYRatio;
-      const spawnCount = Math.random() > 0.34 ? 2 : 1;
+      const spawnCount = Math.random() > 0.46 ? 2 : 1;
 
       for (let i = 0; i < spawnCount; i += 1) {
         particles.push({
@@ -123,7 +123,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
           life: 2500 + Math.random() * 1700,
           startSize: 5 + Math.random() * 3,
           endSize: 18 + Math.random() * 18,
-          peakAlpha: 0.5 + Math.random() * 0.24
+          peakAlpha: 0.42 + Math.random() * 0.18
         });
       }
     };
