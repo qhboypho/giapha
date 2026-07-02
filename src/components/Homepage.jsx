@@ -98,6 +98,33 @@ function IncenseSmokeCanvas() {
       ctx.clearRect(0, 0, width, height);
       ctx.globalCompositeOperation = "lighter";
 
+      for (let index = 0; index < 5; index += 1) {
+        const progress = ((time * 0.00012) + index * 0.18) % 1;
+        const rise = progress * height * 0.92;
+        const baseX = width * 0.5 + Math.sin(time * 0.001 + index) * 3;
+        const baseY = height * 0.92;
+        const sway = Math.sin(progress * Math.PI * 2 + index * 1.7) * (14 + index * 2);
+        const alpha = Math.sin(progress * Math.PI) * 0.56;
+
+        ctx.save();
+        ctx.filter = "blur(1.4px)";
+        ctx.lineCap = "round";
+        ctx.lineWidth = 2.4 - index * 0.18;
+        ctx.strokeStyle = `rgba(248, 239, 219, ${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(baseX, baseY - 4);
+        ctx.bezierCurveTo(
+          baseX + sway * 0.25,
+          baseY - rise * 0.35,
+          baseX - sway * 0.7,
+          baseY - rise * 0.64,
+          baseX + sway,
+          baseY - rise
+        );
+        ctx.stroke();
+        ctx.restore();
+      }
+
       particles.forEach((particle, index) => {
         const progress = ((time * 0.00008) + particle.seed) % 1;
         const wave = Math.sin(progress * Math.PI * 2 + index) * 14;

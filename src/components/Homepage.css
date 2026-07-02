@@ -1514,6 +1514,21 @@
   overflow: visible;
 }
 
+.incense-image-wrap::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 6.8%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #fff1a8 0 18%, #ffb94a 20% 52%, #c7411c 54% 76%, transparent 78%);
+  box-shadow: 0 0 12px rgba(255, 183, 65, 0.85);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 .incense-burner-image {
   position: relative;
   z-index: 2;
@@ -1528,11 +1543,11 @@
 
 .incense-smoke-canvas {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   left: 50%;
-  top: -18%;
-  width: 74%;
-  height: 46%;
+  top: -47%;
+  width: 128%;
+  height: 72%;
   transform: translateX(-50%);
   mix-blend-mode: lighten;
   opacity: 1;
