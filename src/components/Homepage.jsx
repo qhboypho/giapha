@@ -434,7 +434,7 @@ function IncenseOfferingModal({ event, onClose }) {
               <span />
               <span />
             </div>
-            {member?.avatar && <MemberAvatar member={member} className="incense-frame-portrait" />}
+            <MemberAvatar member={member} className="incense-frame-portrait" />
             <img src={incenseAltarImage} alt="" className="incense-burner-image" />
           </div>
         </div>
