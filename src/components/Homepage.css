@@ -1405,6 +1405,8 @@
 }
 
 .incense-altar {
+  position: relative;
+  z-index: 4;
   display: grid;
   justify-items: center;
   gap: 0.26rem;
@@ -1462,6 +1464,8 @@
 }
 
 .incense-flame-stage {
+  position: relative;
+  z-index: 8;
   margin: 0 1.5rem;
   padding: 0.2rem 0 0.58rem;
   display: grid;
@@ -1509,11 +1513,11 @@
 
 .incense-smoke-canvas {
   position: absolute;
-  z-index: 12;
+  z-index: 80;
   left: 50%;
-  top: -60%;
-  width: 76px;
-  height: 70%;
+  top: -140%;
+  width: 106px;
+  height: 150%;
   transform: translateX(-50%);
   mix-blend-mode: normal;
   opacity: 0.96;
@@ -1522,11 +1526,11 @@
 
 .incense-smoke-fallback {
   position: absolute;
-  z-index: 13;
+  z-index: 90;
   left: 50%;
-  top: -39%;
-  width: 94px;
-  height: 44%;
+  top: -128%;
+  width: 124px;
+  height: 128%;
   transform: translateX(-50%);
   pointer-events: none;
   overflow: visible;
@@ -1536,13 +1540,13 @@
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 18px;
-  height: 54px;
+  width: 22px;
+  height: 86px;
   border-radius: 999px;
   background:
     radial-gradient(ellipse at 50% 18%, rgba(255, 255, 255, 0.34), transparent 56%),
     radial-gradient(ellipse at 50% 62%, rgba(235, 230, 218, 0.2), transparent 66%);
-  filter: blur(8px);
+  filter: blur(9px);
   opacity: 0;
   transform: translate3d(-50%, 0, 0) scale(0.45);
   animation: incenseSmokeRise 5.8s ease-in-out infinite;
@@ -1551,20 +1555,20 @@
 
 .incense-smoke-fallback span:nth-child(2) {
   animation-delay: 1.25s;
-  width: 22px;
-  height: 64px;
+  width: 28px;
+  height: 104px;
 }
 
 .incense-smoke-fallback span:nth-child(3) {
   animation-delay: 2.55s;
-  width: 16px;
-  height: 58px;
+  width: 20px;
+  height: 92px;
 }
 
 .incense-smoke-fallback span:nth-child(4) {
   animation-delay: 3.8s;
-  width: 24px;
-  height: 70px;
+  width: 30px;
+  height: 112px;
 }
 
 @keyframes incenseSmokeRise {
@@ -1577,11 +1581,11 @@
   }
   58% {
     opacity: 0.34;
-    transform: translate3d(calc(-50% + 11px), -54px, 0) scale(0.95) rotate(8deg);
+    transform: translate3d(calc(-50% + 16px), -108px, 0) scale(0.98) rotate(8deg);
   }
   100% {
     opacity: 0;
-    transform: translate3d(calc(-50% - 13px), -116px, 0) scale(1.45) rotate(-10deg);
+    transform: translate3d(calc(-50% - 18px), -224px, 0) scale(1.55) rotate(-10deg);
   }
 }
 
