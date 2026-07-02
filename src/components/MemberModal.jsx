@@ -4,6 +4,11 @@ import { getEditableScopeIds } from "../utils/editorScope";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
 const memberVal = (val) => val === undefined || val === null ? "" : val;
+const MAX_AVATAR_DATA_URI_LENGTH = 180 * 1024;
+const AVATAR_MAX_EDGE = 512;
+const AVATAR_MIN_EDGE = 192;
+const AVATAR_QUALITY_STEPS = [0.82, 0.72, 0.62, 0.52, 0.44, 0.34];
+const ALLOWED_AVATAR_DATA_URI_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 const createEmptyFormData = () => ({
   name: "",
@@ -59,6 +64,76 @@ const createInitialFormData = (editPerson, addRelativeOf) => {
   return createEmptyFormData();
 };
 
+const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result || ""));
+  reader.onerror = () => reject(new Error("Không đọc được ảnh."));
+  reader.readAsDataURL(file);
+});
+
+const loadImage = (src) => new Promise((resolve, reject) => {
+  const image = new Image();
+  image.onload = () => resolve(image);
+  image.onerror = () => reject(new Error("Ảnh không hợp lệ."));
+  image.src = src;
+});
+
+const canvasToDataUrl = (canvas, mimeType, quality) => {
+  const dataUrl = canvas.toDataURL(mimeType, quality);
+  return dataUrl.startsWith(`data:${mimeType}`) ? dataUrl : "";
+};
+
+const isAllowedAvatarDataUri = (value) => {
+  const match = String(value || "").match(/^data:([^;,]+);base64,/i);
+  return Boolean(match && ALLOWED_AVATAR_DATA_URI_TYPES.has(match[1].toLowerCase()));
+};
+
+const compressAvatarFile = async (file) => {
+  if (!file?.type?.startsWith("image/")) {
+    throw new Error("Vui lòng chọn file ảnh hợp lệ.");
+  }
+
+  const originalDataUrl = await readFileAsDataUrl(file);
+  if (originalDataUrl.length <= MAX_AVATAR_DATA_URI_LENGTH && isAllowedAvatarDataUri(originalDataUrl)) {
+    return originalDataUrl;
+  }
+
+  const image = await loadImage(originalDataUrl);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Trình duyệt không hỗ trợ xử lý ảnh.");
+  const originalWidth = image.naturalWidth || image.width;
+  const originalHeight = image.naturalHeight || image.height;
+  let maxEdge = AVATAR_MAX_EDGE;
+  let smallestCandidate = "";
+
+  while (maxEdge >= AVATAR_MIN_EDGE) {
+    const scale = Math.min(1, maxEdge / Math.max(originalWidth, originalHeight));
+    canvas.width = Math.max(1, Math.round(originalWidth * scale));
+    canvas.height = Math.max(1, Math.round(originalHeight * scale));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#f3ead8";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    for (const mimeType of ["image/webp", "image/jpeg"]) {
+      for (const quality of AVATAR_QUALITY_STEPS) {
+        const candidate = canvasToDataUrl(canvas, mimeType, quality);
+        if (!candidate) continue;
+        if (!smallestCandidate || candidate.length < smallestCandidate.length) {
+          smallestCandidate = candidate;
+        }
+        if (candidate.length <= MAX_AVATAR_DATA_URI_LENGTH) return candidate;
+      }
+    }
+
+    maxEdge = Math.floor(maxEdge * 0.82);
+  }
+
+  if (smallestCandidate && smallestCandidate.length <= MAX_AVATAR_DATA_URI_LENGTH) return smallestCandidate;
+  throw new Error("Ảnh đại diện quá lớn. Vui lòng chọn ảnh nhỏ hơn hoặc cắt gần khuôn mặt hơn.");
+};
+
 export default function MemberModal({
   isOpen,
   onClose,
@@ -70,6 +145,7 @@ export default function MemberModal({
   siteConfig = DEFAULT_SITE_CONFIG
 }) {
   const [formData, setFormData] = useState(() => createInitialFormData(editPerson, addRelativeOf));
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -83,14 +159,19 @@ export default function MemberModal({
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, avatar: reader.result }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setAvatarUploading(true);
+    try {
+      const avatar = await compressAvatarFile(file);
+      setFormData((prev) => ({ ...prev, avatar }));
+    } catch (err) {
+      alert(err.message || "Không xử lý được ảnh đại diện.");
+    } finally {
+      setAvatarUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -100,6 +181,7 @@ export default function MemberModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (avatarUploading) return alert("Ảnh đại diện đang được xử lý, vui lòng chờ một chút.");
     if (!formData.name) return alert("Vui lòng điền họ tên thành viên");
     
     // Process input data
@@ -182,8 +264,8 @@ export default function MemberModal({
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
                 <label className="btn btn-secondary" style={{ flex: "none", fontSize: "0.8rem", cursor: "pointer", borderRadius: "15px" }}>
-                  📁 Tải ảnh
-                  <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
+                  {avatarUploading ? "⏳ Đang xử lý..." : "📁 Tải ảnh"}
+                  <input type="file" accept="image/*" onChange={handleFileChange} disabled={avatarUploading} style={{ display: "none" }} />
                 </label>
                 {formData.avatar && (
                   <button type="button" className="btn btn-secondary" onClick={handleRemoveAvatar} style={{ flex: "none", fontSize: "0.8rem", borderRadius: "15px", color: "var(--color-brand-accent)" }}>
@@ -430,8 +512,8 @@ export default function MemberModal({
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Hủy bỏ
             </button>
-            <button type="submit" className="btn btn-primary">
-              💾 Lưu thông tin
+            <button type="submit" className="btn btn-primary" disabled={avatarUploading}>
+              {avatarUploading ? "⏳ Đang xử lý ảnh..." : "💾 Lưu thông tin"}
             </button>
           </div>
         </form>
