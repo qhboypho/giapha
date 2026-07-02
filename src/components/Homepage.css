@@ -1545,9 +1545,9 @@
   position: absolute;
   z-index: 5;
   left: 50%;
-  top: -105%;
-  width: 80px;
-  height: 112%;
+  top: -118%;
+  width: 128px;
+  height: 142%;
   transform: translateX(-50%);
   mix-blend-mode: screen;
   opacity: 1;
