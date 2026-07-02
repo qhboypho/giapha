@@ -103,27 +103,27 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     }
 
     const spawnSmoke = (width, height, now) => {
-      if (now < lastSpawn + 64) return;
+      if (now < lastSpawn + 46) return;
       lastSpawn = now;
       const emitterY = height * 0.84;
-      const spawnCount = Math.random() > 0.38 ? 2 : 1;
+      const spawnCount = Math.random() > 0.3 ? 3 : 2;
 
       for (let i = 0; i < spawnCount; i += 1) {
         particles.push({
           x: width / 2 + (Math.random() - 0.5) * 3.4,
           y: emitterY + (Math.random() - 0.5) * 2.4,
           vx: (Math.random() - 0.5) * 0.24,
-          vy: -0.42 - Math.random() * 0.26,
+          vy: -0.46 - Math.random() * 0.3,
           wave: Math.random() * Math.PI * 2,
           waveSpeed: 0.0014 + Math.random() * 0.0013,
           waveSize: 0.2 + Math.random() * 0.34,
           angle: Math.random() * Math.PI * 2,
           spin: (Math.random() - 0.5) * 0.006,
           start: now,
-          life: 3300 + Math.random() * 1300,
-          startSize: 3.6 + Math.random() * 2.6,
-          endSize: 24 + Math.random() * 20,
-          peakAlpha: 0.44 + Math.random() * 0.2
+          life: 3600 + Math.random() * 1500,
+          startSize: 4.2 + Math.random() * 3,
+          endSize: 30 + Math.random() * 24,
+          peakAlpha: 0.5 + Math.random() * 0.22
         });
       }
     };
@@ -158,7 +158,23 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
         particle.angle += particle.spin;
 
         ctx.save();
+        ctx.globalAlpha = alpha * 0.28;
+        ctx.translate(particle.x, particle.y + size * 0.72);
+        ctx.rotate(particle.angle * 0.45);
+        ctx.filter = "blur(7px)";
+        const trailGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 1.9);
+        trailGradient.addColorStop(0, "rgba(255, 255, 255, 0.34)");
+        trailGradient.addColorStop(0.38, "rgba(240, 235, 224, 0.18)");
+        trailGradient.addColorStop(1, "rgba(224, 218, 206, 0)");
+        ctx.fillStyle = trailGradient;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, size * 0.38, size * 1.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
         ctx.globalAlpha = alpha;
+        ctx.filter = "blur(1.2px)";
         ctx.translate(particle.x, particle.y);
         ctx.rotate(particle.angle);
         ctx.drawImage(smokeSprite, -size / 2, -size / 2, size, size);
