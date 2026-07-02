@@ -197,16 +197,26 @@ function IncenseOfferingModal({ event, onClose }) {
   useEffect(() => {
     if (!member?.id) return undefined;
     let cancelled = false;
+    const viewerId = getOrCreateIncenseViewerId();
 
     const loadCount = async () => {
       setIsLoadingCount(true);
       setError("");
       try {
-        const res = await fetch(`/api/incense-offerings/${encodeURIComponent(member.id)}?anniversaryKey=${encodeURIComponent(anniversaryKey)}`);
+        const res = await fetch(`/api/incense-offerings/${encodeURIComponent(member.id)}?anniversaryKey=${encodeURIComponent(anniversaryKey)}&viewerId=${encodeURIComponent(viewerId)}`);
         const data = await res.json();
         if (!cancelled) {
           if (data.success) {
             setCount(Number(data.count || 0));
+            if (data.hasOffered) {
+              setHasOffered(true);
+              setSelectedGiftIds([]);
+              setIsGiftPickerOpen(false);
+              setOfferMessage("Bạn đã thắp hương cho kỳ giỗ này rồi.");
+            } else {
+              setHasOffered(false);
+              setOfferMessage("");
+            }
           } else {
             setError(data.error || "Chưa tải được số lượt thắp hương.");
           }
@@ -227,7 +237,7 @@ function IncenseOfferingModal({ event, onClose }) {
   if (!event || !member) return null;
 
   const handleOfferIncense = async () => {
-    if (isOffering) return;
+    if (isOffering || hasOffered) return;
     if (selectedGiftIds.length === 0) {
       setError("Vui lòng chọn ít nhất một lễ vật.");
       return;
@@ -248,6 +258,7 @@ function IncenseOfferingModal({ event, onClose }) {
       if (data.success) {
         setCount(Number(data.count || 0));
         setHasOffered(true);
+        setIsGiftPickerOpen(false);
         setOfferMessage(data.offered
           ? "Nén hương của bạn đã được ghi nhận."
           : "Bạn đã thắp hương cho kỳ giỗ này rồi."
@@ -310,12 +321,12 @@ function IncenseOfferingModal({ event, onClose }) {
           <strong className="incense-counter-number">{isLoadingCount ? "..." : count.toLocaleString("vi-VN")}</strong>
         </div>
 
+        {!hasOffered && (
         <div className="incense-gift-section">
           <button
             type="button"
             className="incense-gift-toggle"
             onClick={() => setIsGiftPickerOpen(true)}
-            disabled={hasOffered}
           >
             <span>
               <Gift size={16} strokeWidth={2.1} />
@@ -340,20 +351,23 @@ function IncenseOfferingModal({ event, onClose }) {
             <p className="incense-gift-hint">Chọn ít nhất một lễ vật trước khi thắp hương.</p>
           )}
         </div>
+        )}
 
         {error && <p className="incense-error">{error}</p>}
         {hasOffered && offerMessage && <p className="incense-success">{offerMessage}</p>}
 
-        <button
-          type="button"
-          className="incense-submit-btn"
-          onClick={handleOfferIncense}
-          disabled={isOffering || selectedGiftIds.length === 0 || hasOffered}
-        >
-          <Flame size={17} strokeWidth={2.2} />
-          {isOffering ? "Đang thắp..." : hasOffered ? "Đã thắp hương" : "Thắp hương"}
-        </button>
-        {isGiftPickerOpen && (
+        {!hasOffered && (
+          <button
+            type="button"
+            className="incense-submit-btn"
+            onClick={handleOfferIncense}
+            disabled={isOffering || selectedGiftIds.length === 0}
+          >
+            <Flame size={17} strokeWidth={2.2} />
+            {isOffering ? "Đang thắp..." : "Thắp hương"}
+          </button>
+        )}
+        {isGiftPickerOpen && !hasOffered && (
           <div className="incense-gift-picker-backdrop" role="dialog" aria-modal="true" aria-label="Chọn lễ vật" onClick={() => setIsGiftPickerOpen(false)}>
             <div className="incense-gift-picker" onClick={(eventClick) => eventClick.stopPropagation()}>
               <div className="incense-gift-picker-head">

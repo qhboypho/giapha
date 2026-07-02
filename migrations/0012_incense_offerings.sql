@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS incense_offerings (
   anniversaryKey TEXT NOT NULL,
   giftItems TEXT,
   ipAddress TEXT,
+  ipHash TEXT,
   userAgent TEXT,
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(memberId, viewerId, anniversaryKey),
@@ -18,3 +19,7 @@ CREATE INDEX IF NOT EXISTS idx_incense_offerings_member_key
 
 CREATE INDEX IF NOT EXISTS idx_incense_offerings_created_at
   ON incense_offerings(createdAt);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_incense_offerings_client_once
+  ON incense_offerings(memberId, anniversaryKey, ipHash)
+  WHERE ipHash IS NOT NULL;

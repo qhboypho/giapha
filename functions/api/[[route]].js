@@ -330,6 +330,33 @@ function getClientIp(c) {
   ).trim().slice(0, 80) || 'unknown';
 }
 
+async function hashIncenseClientIp(ipAddress = '') {
+  const normalized = String(ipAddress || '').trim().toLowerCase();
+  if (!normalized || normalized === 'unknown') return null;
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`incense-offering:${normalized}`)
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 40);
+}
+
+async function getIncenseClientHash(c) {
+  const ipAddress = getClientIp(c);
+  if (ipAddress && ipAddress !== 'unknown') {
+    return hashIncenseClientIp(ipAddress);
+  }
+
+  const hostname = new URL(c.req.url).hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') {
+    return hashIncenseClientIp(`local-dev:${hostname}`);
+  }
+
+  return null;
+}
+
 function getSessionCookieOptions(c) {
   const url = new URL(c.req.url);
   return {
@@ -456,6 +483,7 @@ async function ensureIncenseOfferingsSchema(db) {
       anniversaryKey TEXT NOT NULL,
       giftItems TEXT,
       ipAddress TEXT,
+      ipHash TEXT,
       userAgent TEXT,
       createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(memberId, viewerId, anniversaryKey),
@@ -470,12 +498,21 @@ async function ensureIncenseOfferingsSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_incense_offerings_created_at
     ON incense_offerings(createdAt)
   `).run();
-
   const info = await db.prepare("PRAGMA table_info(incense_offerings)").all();
-  const hasGiftItems = (info.results || []).some((column) => column.name === 'giftItems');
+  const columns = info.results || [];
+  const hasGiftItems = columns.some((column) => column.name === 'giftItems');
   if (!hasGiftItems) {
     await db.prepare("ALTER TABLE incense_offerings ADD COLUMN giftItems TEXT").run();
   }
+  const hasIpHash = columns.some((column) => column.name === 'ipHash');
+  if (!hasIpHash) {
+    await db.prepare("ALTER TABLE incense_offerings ADD COLUMN ipHash TEXT").run();
+  }
+  await db.prepare(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_incense_offerings_client_once
+    ON incense_offerings(memberId, anniversaryKey, ipHash)
+    WHERE ipHash IS NOT NULL
+  `).run();
 }
 
 async function countIncenseOfferings(db, memberId, anniversaryKey) {
@@ -512,6 +549,21 @@ async function getIncenseOfferingStats(db, memberId, anniversaryKey) {
     giftCounts,
     giftTotal
   };
+}
+
+async function hasIncenseOffering(db, memberId, anniversaryKey, viewerId, ipHash) {
+  const row = await db.prepare(`
+    SELECT id
+    FROM incense_offerings
+    WHERE memberId = ?
+      AND anniversaryKey = ?
+      AND (
+        viewerId = ?
+        OR (? IS NOT NULL AND ipHash = ?)
+      )
+    LIMIT 1
+  `).bind(memberId, anniversaryKey, viewerId, ipHash, ipHash).first();
+  return Boolean(row);
 }
 
 function buildMediaUrl(key = '') {
@@ -1713,11 +1765,17 @@ app.get('/incense-offerings/:memberId', async (c) => {
     }
 
     const stats = await getIncenseOfferingStats(c.env.DB, memberId, anniversaryKey);
+    const viewerId = normalizeViewerId(c.req.query('viewerId'));
+    const ipHash = await getIncenseClientHash(c);
+    const hasOffered = viewerId
+      ? await hasIncenseOffering(c.env.DB, memberId, anniversaryKey, viewerId, ipHash)
+      : false;
     return c.json({
       success: true,
       count: stats.count,
       giftCounts: stats.giftCounts,
-      giftTotal: stats.giftTotal
+      giftTotal: stats.giftTotal,
+      hasOffered
     });
   } catch (err) {
     return serverError(c, 'incense/count', err);
@@ -1745,18 +1803,30 @@ app.post('/incense-offerings/:memberId', async (c) => {
       return c.json({ success: false, error: 'Không tìm thấy thành viên.' }, 404);
     }
 
+    const ipAddress = getClientIp(c);
+    const ipHash = await getIncenseClientHash(c);
+    const alreadyOffered = await hasIncenseOffering(c.env.DB, memberId, anniversaryKey, viewerId, ipHash);
+    if (alreadyOffered) {
+      return c.json({
+        success: true,
+        offered: false,
+        count: await countIncenseOfferings(c.env.DB, memberId, anniversaryKey)
+      });
+    }
+
     const id = generateSecureToken(18);
     const result = await c.env.DB.prepare(`
       INSERT OR IGNORE INTO incense_offerings (
-        id, memberId, viewerId, anniversaryKey, giftItems, ipAddress, userAgent, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        id, memberId, viewerId, anniversaryKey, giftItems, ipAddress, ipHash, userAgent, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `).bind(
       id,
       memberId,
       viewerId,
       anniversaryKey,
       JSON.stringify(giftItems),
-      getClientIp(c),
+      ipAddress,
+      ipHash,
       String(c.req.header('user-agent') || '').slice(0, 240)
     ).run();
 

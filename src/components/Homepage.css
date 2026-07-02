@@ -1336,7 +1336,7 @@
 .incense-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 12050;
+  z-index: 30000;
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -1614,7 +1614,7 @@
 .incense-gift-picker-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 12060;
+  z-index: 30010;
   display: grid;
   place-items: center;
   padding: 1rem;
