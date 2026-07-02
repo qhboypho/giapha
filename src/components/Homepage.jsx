@@ -105,7 +105,8 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     const spawnSmoke = (width, height, now) => {
       if (now < lastSpawn + 46) return;
       lastSpawn = now;
-      const emitterY = height * 0.84;
+      const emitterYRatio = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--smoke-emitter-y")) || 0.84;
+      const emitterY = height * emitterYRatio;
       const spawnCount = Math.random() > 0.3 ? 4 : 3;
 
       for (let i = 0; i < spawnCount; i += 1) {

@@ -1489,12 +1489,12 @@
   position: absolute;
   z-index: 4;
   left: 50%;
-  top: 1.4%;
-  width: 6px;
-  height: 6px;
+  top: 1.55%;
+  width: 3px;
+  height: 3px;
   border-radius: 999px;
   background: radial-gradient(circle, #fff1a8 0 18%, #ffb94a 20% 52%, #c7411c 54% 76%, transparent 78%);
-  box-shadow: 0 0 12px rgba(255, 183, 65, 0.85);
+  box-shadow: 0 0 7px rgba(255, 183, 65, 0.82);
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -1512,6 +1512,7 @@
 }
 
 .incense-smoke-canvas {
+  --smoke-emitter-y: 0.84;
   position: absolute;
   z-index: 260;
   left: 50%;
@@ -1589,6 +1590,7 @@
 
 @media (max-width: 640px) {
   .incense-smoke-canvas {
+    --smoke-emitter-y: 0.805;
     top: -178%;
     width: 168px;
     height: 214%;
