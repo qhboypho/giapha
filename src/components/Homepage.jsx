@@ -84,32 +84,48 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
     const smokeSprite = document.createElement("canvas");
     const spriteCtx = smokeSprite.getContext("2d");
 
-    smokeSprite.width = 96;
-    smokeSprite.height = 96;
-    const spriteGradient = spriteCtx.createRadialGradient(48, 48, 0, 48, 48, 48);
-    spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.68)");
-    spriteGradient.addColorStop(0.24, "rgba(252, 248, 240, 0.38)");
-    spriteGradient.addColorStop(0.58, "rgba(225, 220, 210, 0.16)");
-    spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
-    spriteCtx.fillStyle = spriteGradient;
-    spriteCtx.fillRect(0, 0, 96, 96);
+    smokeSprite.width = 112;
+    smokeSprite.height = 112;
+
+    for (let i = 0; i < 10; i += 1) {
+      const x = 36 + Math.random() * 40;
+      const y = 28 + Math.random() * 52;
+      const radius = 16 + Math.random() * 18;
+      const spriteGradient = spriteCtx.createRadialGradient(x, y, 0, x, y, radius);
+      spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.2)");
+      spriteGradient.addColorStop(0.28, "rgba(248, 244, 236, 0.13)");
+      spriteGradient.addColorStop(0.62, "rgba(226, 220, 210, 0.06)");
+      spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
+      spriteCtx.fillStyle = spriteGradient;
+      spriteCtx.beginPath();
+      spriteCtx.arc(x, y, radius, 0, Math.PI * 2);
+      spriteCtx.fill();
+    }
 
     const spawnSmoke = (width, height, now) => {
-      if (now < lastSpawn + 210) return;
+      if (now < lastSpawn + 78) return;
       lastSpawn = now;
-      const emitterY = height * 0.88;
-      particles.push({
-        x: width / 2 + (Math.random() - 0.5) * 4,
-        y: emitterY + Math.random() * 3,
-        vx: (Math.random() - 0.5) * 0.38,
-        vy: -0.72 - Math.random() * 0.42,
-        angle: Math.random() * Math.PI * 2,
-        spin: (Math.random() - 0.5) * 0.01,
-        start: now,
-        life: 2200 + Math.random() * 650,
-        startSize: 4 + Math.random() * 2,
-        endSize: 16 + Math.random() * 10
-      });
+      const emitterY = height * 0.872;
+      const spawnCount = Math.random() > 0.38 ? 2 : 1;
+
+      for (let i = 0; i < spawnCount; i += 1) {
+        particles.push({
+          x: width / 2 + (Math.random() - 0.5) * 3.4,
+          y: emitterY + (Math.random() - 0.5) * 2.4,
+          vx: (Math.random() - 0.5) * 0.24,
+          vy: -0.36 - Math.random() * 0.22,
+          wave: Math.random() * Math.PI * 2,
+          waveSpeed: 0.0014 + Math.random() * 0.0013,
+          waveSize: 0.2 + Math.random() * 0.34,
+          angle: Math.random() * Math.PI * 2,
+          spin: (Math.random() - 0.5) * 0.006,
+          start: now,
+          life: 3300 + Math.random() * 1300,
+          startSize: 3.6 + Math.random() * 2.6,
+          endSize: 24 + Math.random() * 20,
+          peakAlpha: 0.17 + Math.random() * 0.12
+        });
+      }
     };
 
     const resizeCanvas = () => {
@@ -124,7 +140,7 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       ctx.clearRect(0, 0, width, height);
-      ctx.globalCompositeOperation = "lighter";
+      ctx.globalCompositeOperation = "source-over";
       spawnSmoke(width, height, time);
 
       for (let index = particles.length - 1; index >= 0; index -= 1) {
@@ -136,8 +152,8 @@ function IncenseSmokeCanvas({ className = "incense-smoke-canvas" }) {
         }
 
         const size = particle.startSize + (particle.endSize - particle.startSize) * progress;
-        const alpha = Math.sin(progress * Math.PI) * 0.46;
-        particle.x += particle.vx + Math.sin(time * 0.0015 + index) * 0.06;
+        const alpha = Math.sin(progress * Math.PI) * particle.peakAlpha;
+        particle.x += particle.vx + Math.sin(time * particle.waveSpeed + particle.wave + index * 0.7) * particle.waveSize;
         particle.y += particle.vy;
         particle.angle += particle.spin;
 
