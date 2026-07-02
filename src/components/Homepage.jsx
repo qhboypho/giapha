@@ -78,11 +78,37 @@ function IncenseSmokeCanvas() {
 
     const ctx = canvas.getContext("2d");
     let animationFrame = 0;
-    const particles = Array.from({ length: 24 }, (_, index) => ({
-      seed: index / 24,
-      drift: (index % 5 - 2) * 0.24,
-      radius: 7 + (index % 6) * 1.8
-    }));
+    let lastSpawn = 0;
+    const particles = [];
+    const smokeSprite = document.createElement("canvas");
+    const spriteCtx = smokeSprite.getContext("2d");
+
+    smokeSprite.width = 64;
+    smokeSprite.height = 64;
+    const spriteGradient = spriteCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    spriteGradient.addColorStop(0, "rgba(255, 255, 255, 0.72)");
+    spriteGradient.addColorStop(0.28, "rgba(245, 240, 232, 0.38)");
+    spriteGradient.addColorStop(0.62, "rgba(220, 215, 206, 0.16)");
+    spriteGradient.addColorStop(1, "rgba(220, 215, 206, 0)");
+    spriteCtx.fillStyle = spriteGradient;
+    spriteCtx.fillRect(0, 0, 64, 64);
+
+    const spawnSmoke = (width, height, now) => {
+      if (now < lastSpawn + 82) return;
+      lastSpawn = now;
+      particles.push({
+        x: width / 2 + (Math.random() - 0.5) * 3,
+        y: height - 6,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: -0.78 - Math.random() * 0.55,
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.012,
+        start: now,
+        life: 2600 + Math.random() * 900,
+        startSize: 4 + Math.random() * 3,
+        endSize: 22 + Math.random() * 18
+      });
+    };
 
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
@@ -97,51 +123,29 @@ function IncenseSmokeCanvas() {
       const height = canvas.clientHeight;
       ctx.clearRect(0, 0, width, height);
       ctx.globalCompositeOperation = "lighter";
+      spawnSmoke(width, height, time);
 
-      for (let index = 0; index < 5; index += 1) {
-        const progress = ((time * 0.00012) + index * 0.18) % 1;
-        const rise = progress * height * 0.92;
-        const baseX = width * 0.5 + Math.sin(time * 0.001 + index) * 3;
-        const baseY = height * 0.92;
-        const sway = Math.sin(progress * Math.PI * 2 + index * 1.7) * (14 + index * 2);
-        const alpha = Math.sin(progress * Math.PI) * 0.56;
+      for (let index = particles.length - 1; index >= 0; index -= 1) {
+        const particle = particles[index];
+        const progress = (time - particle.start) / particle.life;
+        if (progress >= 1 || particle.y < -particle.endSize) {
+          particles.splice(index, 1);
+          continue;
+        }
+
+        const size = particle.startSize + (particle.endSize - particle.startSize) * progress;
+        const alpha = Math.sin(progress * Math.PI) * 0.9;
+        particle.x += particle.vx + Math.sin(time * 0.0015 + index) * 0.06;
+        particle.y += particle.vy;
+        particle.angle += particle.spin;
 
         ctx.save();
-        ctx.filter = "blur(1.4px)";
-        ctx.lineCap = "round";
-        ctx.lineWidth = 2.4 - index * 0.18;
-        ctx.strokeStyle = `rgba(248, 239, 219, ${alpha})`;
-        ctx.beginPath();
-        ctx.moveTo(baseX, baseY - 4);
-        ctx.bezierCurveTo(
-          baseX + sway * 0.25,
-          baseY - rise * 0.35,
-          baseX - sway * 0.7,
-          baseY - rise * 0.64,
-          baseX + sway,
-          baseY - rise
-        );
-        ctx.stroke();
+        ctx.globalAlpha = alpha;
+        ctx.translate(particle.x, particle.y);
+        ctx.rotate(particle.angle);
+        ctx.drawImage(smokeSprite, -size / 2, -size / 2, size, size);
         ctx.restore();
       }
-
-      particles.forEach((particle, index) => {
-        const progress = ((time * 0.00008) + particle.seed) % 1;
-        const wave = Math.sin(progress * Math.PI * 2 + index) * 14;
-        const x = width * 0.5 + wave + particle.drift * progress * 34;
-        const y = height * (0.9 - progress * 0.82);
-        const alpha = Math.sin(progress * Math.PI) * 0.42;
-        const radius = particle.radius + progress * 18;
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-
-        gradient.addColorStop(0, `rgba(255, 236, 199, ${alpha})`);
-        gradient.addColorStop(0.4, `rgba(232, 222, 204, ${alpha * 0.62})`);
-        gradient.addColorStop(1, "rgba(208, 197, 178, 0)");
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.ellipse(x, y, radius * 0.65, radius * 1.12, wave * 0.018, 0, Math.PI * 2);
-        ctx.fill();
-      });
 
       ctx.globalCompositeOperation = "source-over";
       animationFrame = window.requestAnimationFrame(draw);

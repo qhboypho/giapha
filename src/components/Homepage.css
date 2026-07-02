@@ -1545,11 +1545,11 @@
   position: absolute;
   z-index: 5;
   left: 50%;
-  top: -47%;
-  width: 128%;
-  height: 72%;
+  top: -105%;
+  width: 80px;
+  height: 112%;
   transform: translateX(-50%);
-  mix-blend-mode: lighten;
+  mix-blend-mode: screen;
   opacity: 1;
   pointer-events: none;
 }
