@@ -1513,11 +1513,11 @@
 
 .incense-smoke-canvas {
   position: absolute;
-  z-index: 80;
+  z-index: 120;
   left: 50%;
-  top: -140%;
-  width: 106px;
-  height: 150%;
+  top: -124%;
+  width: 118px;
+  height: 144%;
   transform: translateX(-50%);
   mix-blend-mode: normal;
   opacity: 0.96;
@@ -1526,11 +1526,11 @@
 
 .incense-smoke-fallback {
   position: absolute;
-  z-index: 90;
+  z-index: 110;
   left: 50%;
-  top: -128%;
-  width: 124px;
-  height: 128%;
+  top: -124%;
+  width: 118px;
+  height: 126%;
   transform: translateX(-50%);
   pointer-events: none;
   overflow: visible;
@@ -1540,35 +1540,33 @@
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 22px;
-  height: 86px;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
-  background:
-    radial-gradient(ellipse at 50% 18%, rgba(255, 255, 255, 0.34), transparent 56%),
-    radial-gradient(ellipse at 50% 62%, rgba(235, 230, 218, 0.2), transparent 66%);
-  filter: blur(9px);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.42) 0 18%, rgba(238, 232, 219, 0.22) 34%, transparent 72%);
+  filter: blur(4px);
   opacity: 0;
   transform: translate3d(-50%, 0, 0) scale(0.45);
-  animation: incenseSmokeRise 5.8s ease-in-out infinite;
+  animation: incenseSmokeRise 5.4s ease-in-out infinite;
   will-change: transform, opacity;
 }
 
 .incense-smoke-fallback span:nth-child(2) {
   animation-delay: 1.25s;
-  width: 28px;
-  height: 104px;
+  width: 18px;
+  height: 18px;
 }
 
 .incense-smoke-fallback span:nth-child(3) {
   animation-delay: 2.55s;
-  width: 20px;
-  height: 92px;
+  width: 12px;
+  height: 12px;
 }
 
 .incense-smoke-fallback span:nth-child(4) {
   animation-delay: 3.8s;
-  width: 30px;
-  height: 112px;
+  width: 20px;
+  height: 20px;
 }
 
 @keyframes incenseSmokeRise {
@@ -1577,15 +1575,15 @@
     transform: translate3d(-50%, 0, 0) scale(0.42) rotate(0deg);
   }
   16% {
-    opacity: 0.5;
+    opacity: 0.58;
   }
   58% {
-    opacity: 0.34;
-    transform: translate3d(calc(-50% + 16px), -108px, 0) scale(0.98) rotate(8deg);
+    opacity: 0.36;
+    transform: translate3d(calc(-50% + 13px), -104px, 0) scale(1.35) rotate(8deg);
   }
   100% {
     opacity: 0;
-    transform: translate3d(calc(-50% - 18px), -224px, 0) scale(1.55) rotate(-10deg);
+    transform: translate3d(calc(-50% - 18px), -220px, 0) scale(2.1) rotate(-10deg);
   }
 }
 
