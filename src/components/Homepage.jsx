@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
 import { buildUpcomingAnniversaries, getCurrentLunarDateLabel, getYearsString } from "../utils/anniversaryUtils";
 import { buildHomepageHistoryEvents, formatHistoryEventDate } from "../utils/familyHistoryUtils";
@@ -195,6 +196,18 @@ function IncenseOfferingModal({ event, onClose }) {
   const selectedGifts = INCENSE_GIFT_OPTIONS.filter((item) => selectedGiftIds.includes(item.id));
 
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!member?.id) return undefined;
     let cancelled = false;
     const viewerId = getOrCreateIncenseViewerId();
@@ -282,7 +295,7 @@ function IncenseOfferingModal({ event, onClose }) {
     ));
   };
 
-  return (
+  return createPortal((
     <div className="incense-modal-overlay" role="dialog" aria-modal="true" aria-label={`Thắp hương cho ${member.name}`} onClick={onClose}>
       <div className="incense-modal" onClick={(eventClick) => eventClick.stopPropagation()}>
         <header className="incense-modal-header">
@@ -309,6 +322,12 @@ function IncenseOfferingModal({ event, onClose }) {
         <div className="incense-flame-stage" aria-hidden="true">
           <div className="incense-image-wrap">
             <IncenseSmokeCanvas />
+            <div className="incense-smoke-fallback" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
             <img src={incenseBurnerImage} alt="" className="incense-burner-image" />
           </div>
         </div>
@@ -407,7 +426,7 @@ function IncenseOfferingModal({ event, onClose }) {
         )}
       </div>
     </div>
-  );
+  ), document.body);
 }
 
 const features = [

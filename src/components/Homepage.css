@@ -1335,20 +1335,32 @@
 
 .incense-modal-overlay {
   position: fixed;
-  inset: 0;
-  z-index: 30000;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+  overflow: hidden;
+  overscroll-behavior: contain;
   background: rgba(10, 6, 3, 0.62);
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   animation: fadeIn 180ms ease forwards;
+  isolation: isolate;
 }
 
 .incense-modal {
   width: min(520px, 100%);
-  max-height: min(88vh, calc(100dvh - 5.4rem));
+  max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border-card);
   border-radius: 8px;
   background:
@@ -1506,6 +1518,71 @@
   mix-blend-mode: normal;
   opacity: 0.96;
   pointer-events: none;
+}
+
+.incense-smoke-fallback {
+  position: absolute;
+  z-index: 13;
+  left: 50%;
+  top: -39%;
+  width: 94px;
+  height: 44%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  overflow: visible;
+}
+
+.incense-smoke-fallback span {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 18px;
+  height: 54px;
+  border-radius: 999px;
+  background:
+    radial-gradient(ellipse at 50% 18%, rgba(255, 255, 255, 0.34), transparent 56%),
+    radial-gradient(ellipse at 50% 62%, rgba(235, 230, 218, 0.2), transparent 66%);
+  filter: blur(8px);
+  opacity: 0;
+  transform: translate3d(-50%, 0, 0) scale(0.45);
+  animation: incenseSmokeRise 5.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.incense-smoke-fallback span:nth-child(2) {
+  animation-delay: 1.25s;
+  width: 22px;
+  height: 64px;
+}
+
+.incense-smoke-fallback span:nth-child(3) {
+  animation-delay: 2.55s;
+  width: 16px;
+  height: 58px;
+}
+
+.incense-smoke-fallback span:nth-child(4) {
+  animation-delay: 3.8s;
+  width: 24px;
+  height: 70px;
+}
+
+@keyframes incenseSmokeRise {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, 0, 0) scale(0.42) rotate(0deg);
+  }
+  16% {
+    opacity: 0.5;
+  }
+  58% {
+    opacity: 0.34;
+    transform: translate3d(calc(-50% + 11px), -54px, 0) scale(0.95) rotate(8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(-50% - 13px), -116px, 0) scale(1.45) rotate(-10deg);
+  }
 }
 
 .incense-counter-panel {

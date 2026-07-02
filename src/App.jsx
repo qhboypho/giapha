@@ -22,7 +22,7 @@ import "./App.css";
 
 const shouldIgnoreSwipeTarget = (target) => (
   target?.closest?.(
-    ".mobile-drawer, .mobile-search-overlay, .modal-overlay, .sidebar, .sidebar-backdrop, .modal-content"
+    ".mobile-drawer, .mobile-search-overlay, .modal-overlay, .sidebar, .sidebar-backdrop, .modal-content, .incense-modal-overlay, .incense-modal"
   )
 );
 
