@@ -2460,6 +2460,8 @@ body.incense-modal-open .homepage-container {
     content: "Con cái";
     align-self: center;
     display: inline-flex;
+    position: relative;
+    z-index: 4;
     min-height: 20px;
     align-items: center;
     padding: 0 0.55rem;
@@ -2470,6 +2472,59 @@ body.incense-modal-open .homepage-container {
     border: 1px solid rgba(175, 127, 63, 0.32);
     font-size: 0.62rem;
     font-weight: 850;
+  }
+
+  .mobile-tree-slide-nav {
+    position: absolute;
+    top: -0.02rem;
+    left: 50%;
+    z-index: 5;
+    width: min(10.2rem, calc(100% - 2.2rem));
+    height: 24px;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .mobile-tree-slide-btn {
+    position: absolute;
+    top: 50%;
+    display: inline-grid;
+    width: 28px;
+    height: 24px;
+    place-items: center;
+    border: 1px solid rgba(175, 127, 63, 0.42);
+    border-radius: 999px;
+    color: #704119;
+    background: linear-gradient(180deg, rgba(255, 248, 232, 0.96), rgba(232, 207, 169, 0.92));
+    box-shadow:
+      0 5px 12px rgba(38, 18, 8, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    font-size: 1.26rem;
+    font-weight: 900;
+    line-height: 1;
+    transform: translateY(-50%);
+    pointer-events: auto;
+  }
+
+  .mobile-tree-slide-btn:active {
+    transform: translateY(-50%) scale(0.96);
+  }
+
+  .mobile-tree-slide-btn-prev {
+    left: 0;
+  }
+
+  .mobile-tree-slide-btn-next {
+    right: 0;
+  }
+
+  [data-theme="dark"] .mobile-tree-slide-btn {
+    border-color: rgba(245, 192, 91, 0.35);
+    color: #f5c05b;
+    background: linear-gradient(180deg, rgba(60, 37, 20, 0.98), rgba(28, 18, 12, 0.96));
+    box-shadow:
+      0 6px 14px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(255, 238, 188, 0.1);
   }
 
   .mobile-child-family-card strong {

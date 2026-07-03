@@ -1103,6 +1103,30 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
 
                   {/* Children list */}
                   <div className="mini-tree-children-wrapper">
+                    {mobileSlides.length > 1 && (
+                      <div className="mobile-tree-slide-nav" aria-label="Điều hướng cây gia phả dòng chính">
+                        {activeSlideIndex > 0 && (
+                          <button
+                            type="button"
+                            className="mobile-tree-slide-btn mobile-tree-slide-btn-prev"
+                            onClick={() => setActiveSlide((prev) => Math.max(prev - 1, 0))}
+                            aria-label="Xem nhánh trước"
+                          >
+                            ‹
+                          </button>
+                        )}
+                        {activeSlideIndex < mobileSlides.length - 1 && (
+                          <button
+                            type="button"
+                            className="mobile-tree-slide-btn mobile-tree-slide-btn-next"
+                            onClick={() => setActiveSlide((prev) => Math.min(prev + 1, mobileSlides.length - 1))}
+                            aria-label="Xem nhánh sau"
+                          >
+                            ›
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {currentSlide.children.map((child, idx) => {
                       const childSpouse = (child.spouseIds || [])
                         .map(spouseId => members.find(candidate => candidate.id === spouseId))
