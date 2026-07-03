@@ -2476,12 +2476,12 @@ body.incense-modal-open .homepage-container {
 
   .mobile-tree-slide-nav {
     position: absolute;
-    top: -0.02rem;
-    left: 50%;
+    top: 0;
+    left: 0;
     z-index: 5;
-    width: min(10.2rem, calc(100% - 2.2rem));
-    height: 24px;
-    transform: translateX(-50%);
+    width: 100%;
+    height: 1px;
+    transform: none;
     pointer-events: none;
   }
 
@@ -2489,17 +2489,17 @@ body.incense-modal-open .homepage-container {
     position: absolute;
     top: 50%;
     display: inline-grid;
-    width: 28px;
-    height: 24px;
+    width: 30px;
+    height: 30px;
     place-items: center;
     border: 1px solid rgba(175, 127, 63, 0.42);
-    border-radius: 999px;
+    border-radius: 50%;
     color: #704119;
     background: linear-gradient(180deg, rgba(255, 248, 232, 0.96), rgba(232, 207, 169, 0.92));
     box-shadow:
       0 5px 12px rgba(38, 18, 8, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    font-size: 1.26rem;
+    font-size: 1.3rem;
     font-weight: 900;
     line-height: 1;
     transform: translateY(-50%);
@@ -2511,11 +2511,11 @@ body.incense-modal-open .homepage-container {
   }
 
   .mobile-tree-slide-btn-prev {
-    left: 0;
+    left: 0.1rem;
   }
 
   .mobile-tree-slide-btn-next {
-    right: 0;
+    right: 0.1rem;
   }
 
   [data-theme="dark"] .mobile-tree-slide-btn {
