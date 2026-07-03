@@ -1552,6 +1552,7 @@ body.incense-modal-open .homepage-container {
   display: grid;
   place-items: center;
   overflow: visible;
+  transform: translateY(0.46rem);
 }
 
 .incense-image-wrap::after {
