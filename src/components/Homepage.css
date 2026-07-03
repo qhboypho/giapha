@@ -1586,12 +1586,13 @@ body.incense-modal-open .homepage-container {
 }
 
 .incense-smoke-canvas {
-  --smoke-emitters: 0.478, 0.282 | 0.494, 0.262 | 0.509, 0.282;
+  --smoke-emitters: 0.478, 0.551 | 0.494, 0.538 | 0.509, 0.551;
   position: absolute;
   z-index: 260;
-  inset: 0;
+  left: 0;
+  top: -60%;
   width: 100%;
-  height: 100%;
+  height: 160%;
   mix-blend-mode: normal;
   opacity: 1;
   pointer-events: none;
