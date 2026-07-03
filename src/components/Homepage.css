@@ -149,6 +149,17 @@ body.incense-modal-open .homepage-container {
   opacity: 0.95;
 }
 
+[data-theme="light"] .hero-divider.has-image {
+  opacity: 1;
+  filter:
+    sepia(1)
+    saturate(1.55)
+    hue-rotate(350deg)
+    brightness(0.72)
+    contrast(1.38)
+    drop-shadow(0 1px 0 rgba(255, 248, 232, 0.82));
+}
+
 .hero-description {
   color: #57412e;
   font-size: clamp(0.88rem, 0.92vw, 0.95rem);
@@ -2063,6 +2074,19 @@ body.incense-modal-open .homepage-container {
 
 .footer-quote span {
   display: block;
+}
+
+[data-theme="light"] .traditional-footer {
+  color: #9f6a1e;
+}
+
+[data-theme="light"] .footer-quote {
+  color: #9f6a1e;
+  text-shadow: 0 1px 0 rgba(255, 249, 235, 0.76);
+}
+
+[data-theme="light"] .footer-quote span {
+  color: #a7742a;
 }
 
 .footer-contact {
