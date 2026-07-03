@@ -306,16 +306,13 @@ export default function Sidebar({
                   {spouses.map((spouse) => (
                     <div 
                       key={spouse.id} 
-                      className="relation-item has-tooltip" 
+                      className="relation-item relation-spouse-item has-tooltip" 
                       onClick={() => onSelectPerson(spouse.id)}
                       data-tooltip={spouse.name}
                     >
                       {renderRelationAvatar(spouse, "relation-avatar")}
                       <div className="relation-details">
                         <span className="relation-name">{spouse.name}</span>
-                        <span className="relation-role">
-                          {getInLawLabel(spouse)}
-                        </span>
                       </div>
                     </div>
                   ))}

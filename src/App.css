@@ -2819,6 +2819,10 @@
   color: var(--text-muted);
 }
 
+.relation-spouse-item .relation-role {
+  display: none;
+}
+
 .relation-spouse-role {
   color: var(--color-brand-primary);
   font-weight: 800;
