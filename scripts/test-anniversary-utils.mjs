@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  buildUpcomingAnniversaries,
   buildUpcomingAnniversariesForMode,
   buildUpcomingSolarAnniversaries,
   getCurrentAnniversaryDateLabel
@@ -16,6 +17,17 @@ const member = {
 };
 
 const now = new Date(2026, 6, 6);
+const [lunarAnniversary] = buildUpcomingAnniversaries([member], now);
+
+assert.equal(lunarAnniversary.day, "12");
+assert.equal(lunarAnniversary.month, "Tháng 7");
+assert.equal(lunarAnniversary.date, "Âm lịch ngày 12/07");
+assert.equal(lunarAnniversary.note, "Tạ thế ngày 12/07/2001");
+assert.equal(lunarAnniversary.daysUntil, 48);
+assert.equal(lunarAnniversary.nextSolarDate.getFullYear(), 2026);
+assert.equal(lunarAnniversary.nextSolarDate.getMonth(), 7);
+assert.equal(lunarAnniversary.nextSolarDate.getDate(), 23);
+
 const [solarAnniversary] = buildUpcomingSolarAnniversaries([member], now);
 
 assert.equal(solarAnniversary.day, "12");
@@ -28,20 +40,12 @@ assert.equal(solarAnniversary.nextSolarDate.getMonth(), 6);
 assert.equal(solarAnniversary.nextSolarDate.getDate(), 12);
 
 const [defaultModeAnniversary] = buildUpcomingAnniversariesForMode([member], undefined, now);
-assert.equal(defaultModeAnniversary.date, "Dương lịch ngày 12/07");
+assert.equal(defaultModeAnniversary.date, "Âm lịch ngày 12/07");
 
 const config = normalizeSiteConfig({});
-assert.equal(config.anniversary.calendarMode, "solar");
+assert.equal(config.anniversary.calendarMode, "lunar");
+assert.equal(config.anniversary.pageDescription, "Lịch giỗ các thành viên trong dòng họ tính theo lịch âm.");
 assert.equal(getCurrentAnniversaryDateLabel("solar", now), "Hôm nay: 06/07");
-
-const legacyConfig = normalizeSiteConfig({
-  anniversary: {
-    calendarMode: "lunar",
-    pageDescription: "Lịch giỗ các thành viên trong dòng họ tính theo lịch âm."
-  }
-});
-assert.equal(legacyConfig.anniversary.calendarMode, "solar");
-assert.equal(legacyConfig.anniversary.pageDescription, "Lịch giỗ các thành viên trong dòng họ tính theo ngày mất đã nhập.");
 
 const customLunarConfig = normalizeSiteConfig({
   anniversary: {

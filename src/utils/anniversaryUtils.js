@@ -66,10 +66,10 @@ export const buildUpcomingAnniversaries = (members, now = new Date()) => {
   return members
     .filter((member) => member.isDeceased && member.deathDate)
     .map((member) => {
-      const deathSolar = parseSolarDate(member.deathDate);
-      if (!deathSolar) return null;
+      const lunarDeath = parseSolarDate(member.deathDate);
+      if (!lunarDeath) return null;
 
-      const lunarDeath = solarToLunar(deathSolar.day, deathSolar.month, deathSolar.year);
+      lunarDeath.leap = Boolean(lunarDeath.leap);
       const currentLunarYear = solarToLunar(today.getDate(), today.getMonth() + 1, today.getFullYear()).year;
       const candidates = [currentLunarYear, currentLunarYear + 1, currentLunarYear + 2]
         .map((year) => getValidAnniversarySolarDate(lunarDeath, year))
@@ -146,13 +146,13 @@ export const buildUpcomingSolarAnniversaries = (members, now = new Date()) => {
     ));
 };
 
-export const buildUpcomingAnniversariesForMode = (members, calendarMode = "solar", now = new Date()) => {
+export const buildUpcomingAnniversariesForMode = (members, calendarMode = "lunar", now = new Date()) => {
   return calendarMode === "lunar"
     ? buildUpcomingAnniversaries(members, now)
     : buildUpcomingSolarAnniversaries(members, now);
 };
 
-export const getCurrentAnniversaryDateLabel = (calendarMode = "solar", now = new Date()) => {
+export const getCurrentAnniversaryDateLabel = (calendarMode = "lunar", now = new Date()) => {
   return calendarMode === "lunar"
     ? getCurrentLunarDateLabel(now)
     : getCurrentSolarDateLabel(now);
