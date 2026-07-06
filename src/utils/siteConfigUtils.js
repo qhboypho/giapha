@@ -138,9 +138,9 @@ export const DEFAULT_SITE_CONFIG = {
     aboutLabel: "Giới thiệu"
   },
   anniversary: {
-    calendarMode: "lunar",
+    calendarMode: "solar",
     pageTitle: "Lịch giỗ",
-    pageDescription: "Lịch giỗ các thành viên trong dòng họ tính theo lịch âm.",
+    pageDescription: "Lịch giỗ các thành viên trong dòng họ tính theo ngày mất đã nhập.",
     summaryLabel: "ngày giỗ có dữ liệu",
     upcomingWindowDays: 30,
     showSolarDate: true,
@@ -285,6 +285,7 @@ const ANNIVERSARY_TEXT_LIMITS = {
   emptyTitle: 100,
   emptyDescription: 240
 };
+const LEGACY_LUNAR_ANNIVERSARY_DESCRIPTION = "Lịch giỗ các thành viên trong dòng họ tính theo lịch âm.";
 const SAMPLE_DATA_TEXT_LIMITS = {
   generationCount: 10,
   rootMaleName: 120,
@@ -528,10 +529,16 @@ export function normalizeNavigationConfig(navigation = {}) {
 export function normalizeAnniversaryConfig(anniversary = {}) {
   const source = anniversary && typeof anniversary === "object" ? anniversary : {};
   const mode = normalizeString(source.calendarMode, DEFAULT_SITE_CONFIG.anniversary.calendarMode, 20);
+  const sourceDescription = normalizeString(source.pageDescription, "", ANNIVERSARY_TEXT_LIMITS.pageDescription);
+  const isLegacyLunarDefault = mode === "lunar" && sourceDescription === LEGACY_LUNAR_ANNIVERSARY_DESCRIPTION;
   return {
-    calendarMode: ["lunar", "solar"].includes(mode) ? mode : DEFAULT_SITE_CONFIG.anniversary.calendarMode,
+    calendarMode: isLegacyLunarDefault
+      ? "solar"
+      : (["lunar", "solar"].includes(mode) ? mode : DEFAULT_SITE_CONFIG.anniversary.calendarMode),
     pageTitle: normalizeString(source.pageTitle, DEFAULT_SITE_CONFIG.anniversary.pageTitle, ANNIVERSARY_TEXT_LIMITS.pageTitle),
-    pageDescription: normalizeString(source.pageDescription, DEFAULT_SITE_CONFIG.anniversary.pageDescription, ANNIVERSARY_TEXT_LIMITS.pageDescription),
+    pageDescription: isLegacyLunarDefault
+      ? DEFAULT_SITE_CONFIG.anniversary.pageDescription
+      : normalizeString(source.pageDescription, DEFAULT_SITE_CONFIG.anniversary.pageDescription, ANNIVERSARY_TEXT_LIMITS.pageDescription),
     summaryLabel: normalizeString(source.summaryLabel, DEFAULT_SITE_CONFIG.anniversary.summaryLabel, ANNIVERSARY_TEXT_LIMITS.summaryLabel),
     upcomingWindowDays: clampNumber(source.upcomingWindowDays, DEFAULT_SITE_CONFIG.anniversary.upcomingWindowDays, 1, 365),
     showSolarDate: source.showSolarDate !== false,

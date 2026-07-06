@@ -1,4 +1,4 @@
-import { buildUpcomingAnniversaries } from "./anniversaryUtils";
+import { buildUpcomingAnniversariesForMode } from "./anniversaryUtils";
 import { formatHistoryEventDate } from "./familyHistoryUtils";
 import { isAdmin } from "./authRoles";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "./siteConfigUtils";
@@ -28,7 +28,7 @@ export function buildFamilyNotifications({
   const notifications = [];
 
   if (notificationConfig.enableAnniversary) {
-    buildUpcomingAnniversaries(members)
+    buildUpcomingAnniversariesForMode(members, config.anniversary.calendarMode)
       .filter((event) => event.daysUntil <= notificationConfig.anniversaryDaysAhead)
       .slice(0, notificationConfig.anniversaryLimit)
       .forEach((event) => {

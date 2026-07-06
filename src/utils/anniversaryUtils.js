@@ -1,4 +1,4 @@
-import { lunarToSolar, parseSolarDate, solarToLunar, toLocalDate } from "./lunarCalendar";
+import { lunarToSolar, parseSolarDate, solarToLunar, toLocalDate } from "./lunarCalendar.js";
 
 export const formatDayMonth = (value) => String(value).padStart(2, "0");
 
@@ -54,6 +54,10 @@ const getValidAnniversarySolarDate = (lunarDeath, lunarYear) => {
 export const getCurrentLunarDateLabel = (now = new Date()) => {
   const lunar = solarToLunar(now.getDate(), now.getMonth() + 1, now.getFullYear());
   return `Hôm nay: ${formatDayMonth(lunar.day)}/${formatDayMonth(lunar.month)}${lunar.leap ? " nhuận" : ""}`;
+};
+
+export const getCurrentSolarDateLabel = (now = new Date()) => {
+  return `Hôm nay: ${formatDayMonth(now.getDate())}/${formatDayMonth(now.getMonth() + 1)}`;
 };
 
 export const buildUpcomingAnniversaries = (members, now = new Date()) => {
@@ -140,4 +144,16 @@ export const buildUpcomingSolarAnniversaries = (members, now = new Date()) => {
       a.member.generation - b.member.generation ||
       a.member.name.localeCompare(b.member.name, "vi")
     ));
+};
+
+export const buildUpcomingAnniversariesForMode = (members, calendarMode = "solar", now = new Date()) => {
+  return calendarMode === "lunar"
+    ? buildUpcomingAnniversaries(members, now)
+    : buildUpcomingSolarAnniversaries(members, now);
+};
+
+export const getCurrentAnniversaryDateLabel = (calendarMode = "solar", now = new Date()) => {
+  return calendarMode === "lunar"
+    ? getCurrentLunarDateLabel(now)
+    : getCurrentSolarDateLabel(now);
 };

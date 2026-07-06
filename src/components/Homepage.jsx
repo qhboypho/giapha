@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { getAvatarInitials, getAvatarStyle } from "../utils/avatarUtils";
-import { buildUpcomingAnniversaries, getCurrentLunarDateLabel, getYearsString } from "../utils/anniversaryUtils";
+import { buildUpcomingAnniversariesForMode, getCurrentAnniversaryDateLabel, getYearsString } from "../utils/anniversaryUtils";
 import { buildHomepageHistoryEvents, formatHistoryEventDate } from "../utils/familyHistoryUtils";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 import { sortMembersByBirthOrder } from "../utils/sortUtils";
@@ -590,7 +590,8 @@ function HeritageIcon({ type }) {
 export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate, onOpenPerson, onOpenPersonModal, members = [], historyEvents = [], isLoading = false, activeViewersCount = 0 }) {
   const config = normalizeSiteConfig(siteConfig);
   const homepageConfig = config.homepage;
-  const currentLunarDateLabel = getCurrentLunarDateLabel();
+  const anniversaryConfig = config.anniversary;
+  const currentAnniversaryDateLabel = getCurrentAnniversaryDateLabel(anniversaryConfig.calendarMode);
   const homepageHistoryEvents = buildHomepageHistoryEvents(historyEvents);
 
   // Calculate dynamic stats from database data
@@ -819,7 +820,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
   const visibleFeaturedMembers = featuredMembers.slice(0, homepageConfig.featuredLimit);
   const shouldScrollFeaturedMembers = visibleFeaturedMembers.length > 4;
 
-  const upcomingAnniversaries = buildUpcomingAnniversaries(members);
+  const upcomingAnniversaries = buildUpcomingAnniversariesForMode(members, anniversaryConfig.calendarMode);
   const upcomingAnniversariesCount = members.length > 0
     ? upcomingAnniversaries.filter((event) => event.daysUntil <= homepageConfig.anniversaryWindowDays).length
     : 0;
@@ -1261,7 +1262,7 @@ export default function Homepage({ siteConfig = DEFAULT_SITE_CONFIG, onNavigate,
               <CalendarDays className="header-mark" aria-hidden="true" />
               Ngày giỗ sắp tới
             </h2>
-            <span className="lunar-today-pill">{currentLunarDateLabel}</span>
+            <span className="lunar-today-pill">{currentAnniversaryDateLabel}</span>
             <button className="column-more-link" onClick={() => onNavigate("anniversary")}>Xem lịch đầy đủ <span aria-hidden="true">→</span></button>
           </div>
           <div className="anniversaries-list">

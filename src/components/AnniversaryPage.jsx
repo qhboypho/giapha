@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Clock3, Gift, MapPin, Moon, Search, Sun } from "lucide-react";
-import { buildUpcomingAnniversaries, buildUpcomingSolarAnniversaries, getCurrentLunarDateLabel } from "../utils/anniversaryUtils";
+import { buildUpcomingAnniversariesForMode, getCurrentAnniversaryDateLabel } from "../utils/anniversaryUtils";
 import { buildIncenseAnniversaryKey } from "../utils/incenseUtils";
 import { DEFAULT_SITE_CONFIG, normalizeSiteConfig } from "../utils/siteConfigUtils";
 
@@ -37,10 +37,8 @@ export default function AnniversaryPage({ members = [], isLoading = false, onOpe
   const anniversaryConfig = config.anniversary;
   const isSolarMode = anniversaryConfig.calendarMode === "solar";
   const anniversaries = useMemo(() => (
-    isSolarMode
-      ? buildUpcomingSolarAnniversaries(members)
-      : buildUpcomingAnniversaries(members)
-  ), [isSolarMode, members]);
+    buildUpcomingAnniversariesForMode(members, anniversaryConfig.calendarMode)
+  ), [anniversaryConfig.calendarMode, members]);
   const [incenseStats, setIncenseStats] = useState({});
   const incenseStatKeys = useMemo(() => (
     anniversaries.map((item) => `${item.member.id}:${buildIncenseAnniversaryKey(item)}`).join("|")
@@ -82,7 +80,7 @@ export default function AnniversaryPage({ members = [], isLoading = false, onOpe
         <div>
           <span className="directory-kicker">
             {isSolarMode ? <Sun strokeWidth={1.8} /> : <Moon strokeWidth={1.8} />}
-            {isSolarMode ? "Tính theo dương lịch" : getCurrentLunarDateLabel()}
+            {isSolarMode ? getCurrentAnniversaryDateLabel("solar") : getCurrentAnniversaryDateLabel("lunar")}
           </span>
           <h1>{anniversaryConfig.pageTitle}</h1>
           <p>{anniversaryConfig.pageDescription}</p>
